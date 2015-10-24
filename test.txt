@@ -1,0 +1,16 @@
+main(){
+/*
+This is a test
+Should all be commented
+foo
+*/
+int i = 0
+/*
+comment 1
+/* 
+nested comment!
+*/
+int x = 0
+*/
+int y = 1
+}
