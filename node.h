@@ -106,3 +106,20 @@ class NFunctionDeclaration : public NStatement {
                                         type(type), id(id), arguments(arguments), block(block) { }
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
+
+class NFunctionPrototype : public NStatement {
+    public:
+        const NIdentifier& type;
+        const NIdentifier& id;
+        VariableList arguments;
+        NFunctionPrototype(const NIdentifier& type, const NIdentifier& id, const VariableList& arguments) :
+                                        type(type), id(id), arguments(arguments) { }
+        //virtual llvm::Value* codeGen(CodeGenContext& context);
+};
+
+class NProgram : public Node {
+    public:
+        std::vector<NFunctionPrototype*> prototypes;
+        std::vector<NBlock*> blocks;
+        NProgram() {}
+};

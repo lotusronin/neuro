@@ -12,6 +12,8 @@ extern "C" int yywrap() { }
 int comment_depth = 0;
 %}
 [ \t\n]                     ;
+"fn"                        return TOKEN(TFN);
+"extern"                    return TOKEN(TEXTERN);
 [a-zA-Z_][a-zA-Z0-9_]*      SAVE_TOKEN; return TIDENTIFIER;
 [0-9]+\.[0-9]*              SAVE_TOKEN; return TDOUBLE;
 [0-9]+                      SAVE_TOKEN; return TINTEGER;
