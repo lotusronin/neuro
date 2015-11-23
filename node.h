@@ -1,3 +1,5 @@
+#ifndef NODE_H
+#define NODE_H
 #include <iostream>
 #include <vector>
 #include <llvm/IR/Value.h>
@@ -13,34 +15,42 @@ typedef std::vector<NVariableDeclaration*> VariableList;
 
 class Node {
     public:
-        virtual ~Node() {}
+        static int nid;
+        int unique_id;
+        Node();
+        virtual ~Node();
         //virtual llvm::Value* codeGen(CodeGenContext& context) { return NULL; }
 };
 
 class NExpression : public Node {
+    public:
+    NExpression();
 };
 
 class NStatement : public Node {
+    public:
+    NStatement();
+    virtual void print();
 };
 
 class NInteger : public NExpression {
     public:
         long long value;
-        NInteger(long long value) : value(value) { }
+        NInteger(long long value);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
 class NDouble : public NExpression {
     public:
         double value;
-        NDouble(double value) : value(value) { }
+        NDouble(double value);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
 class NIdentifier : public NExpression {
     public:
         std::string name;
-        NIdentifier(const std::string& name) : name(name) { }
+        NIdentifier(const std::string& name);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -48,8 +58,8 @@ class NMethodCall : public NExpression {
     public:
         const NIdentifier& id;
         ExpressionList arguments;
-        NMethodCall(const NIdentifier& id, ExpressionList& arguments) : id(id), arguments(arguments) { }
-        NMethodCall(const NIdentifier& id) : id(id) { }
+        NMethodCall(const NIdentifier& id, ExpressionList& arguments);
+        NMethodCall(const NIdentifier& id);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -58,7 +68,7 @@ class NBinaryOperator : public NExpression {
         int op;
         NExpression& lhs;
         NExpression& rhs;
-        NBinaryOperator(NExpression& lhs, int op, NExpression& rhs) : lhs(lhs), rhs(rhs), op(op) { }
+        NBinaryOperator(NExpression& lhs, int op, NExpression& rhs);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -66,21 +76,22 @@ class NAssignment : public NExpression {
     public:
         NIdentifier& lhs;
         NExpression& rhs;
-        NAssignment(NIdentifier& lhs, NExpression& rhs) : lhs(lhs), rhs(rhs) { }
+        NAssignment(NIdentifier& lhs, NExpression& rhs);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
 class NBlock : public NExpression {
     public:
         StatementList statements;
-        NBlock() { }
+        NBlock();
         //virtual llvm::Value* codeGen(CodeGenContext& context);
+       void print(); 
 };
 
 class NExpressionStatement : public NStatement {
     public:
         NExpression& expression;
-        NExpressionStatement(NExpression& expression) : expression(expression) { }
+        NExpressionStatement(NExpression& expression);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -102,8 +113,7 @@ class NFunctionDeclaration : public NStatement {
         const NIdentifier& id;
         VariableList arguments;
         NBlock& block;
-        NFunctionDeclaration(const NIdentifier& type, const NIdentifier& id, const VariableList& arguments, NBlock& block) :
-                                        type(type), id(id), arguments(arguments), block(block) { }
+        NFunctionDeclaration(const NIdentifier& type, const NIdentifier& id, const VariableList& arguments, NBlock& block);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -112,8 +122,7 @@ class NFunctionPrototype : public NStatement {
         const NIdentifier& type;
         const NIdentifier& id;
         VariableList arguments;
-        NFunctionPrototype(const NIdentifier& type, const NIdentifier& id, const VariableList& arguments) :
-                                        type(type), id(id), arguments(arguments) { }
+        NFunctionPrototype(const NIdentifier& type, const NIdentifier& id, const VariableList& arguments);
         //virtual llvm::Value* codeGen(CodeGenContext& context);
 };
 
@@ -121,5 +130,8 @@ class NProgram : public Node {
     public:
         std::vector<NFunctionPrototype*> prototypes;
         std::vector<NBlock*> blocks;
-        NProgram() {}
+        NProgram();
+        void print();
 };
+
+#endif
