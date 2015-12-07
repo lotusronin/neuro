@@ -165,7 +165,7 @@ std::string LexerTarget::lex(bool b) {
             return "EOF";
         ln = content.at(lineNum);
     }
-
+lex:
     while(isspace(ln[colNum])) {
         colNum++;
 
@@ -191,6 +191,23 @@ std::string LexerTarget::lex(bool b) {
         std::cout << '-';
     }
     std::cout << "-^\n";
+
+    std::smatch match_comment;
+    std::string t = ln.substr(colNum);
+    if(std::regex_search(t,match_comment,std::regex("//"))) {
+        for(int i = 0; i < match_comment.size(); i++) {
+            if(match_comment.position(i) != 0) continue;
+
+            colNum = 0;
+            lineNum++;
+            if(lineNum >= content.size()) {
+                return "EOF";
+            }
+            ln = content.at(lineNum);
+            goto lex;
+        }
+    }
+
     for (int i = 0; i < num_regexes; i++) {
         std::smatch tmp;
         std::string remaining = ln.substr(colNum);
