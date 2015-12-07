@@ -165,7 +165,7 @@ std::string LexerTarget::lex(bool b) {
             return "EOF";
         ln = content.at(lineNum);
     }
-lex:
+    
     while(isspace(ln[colNum])) {
         colNum++;
 
@@ -204,7 +204,7 @@ lex:
                 return "EOF";
             }
             ln = content.at(lineNum);
-            goto lex;
+            return lex(true);
         }
     }
 
