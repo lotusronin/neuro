@@ -11,14 +11,14 @@ public:
     LexerTarget(std::string name);
     ~LexerTarget();
     std::string lex();
-    std::string lex(bool);
-    std::string lexcomment();
+    void lexcomment();
 
 private:
     std::string filename;
     std::vector<std::string> content;
     int lineNum, colNum;
     int sub_begin, sub_len;
+    int comment_depth;
     /* data */
 };
 
