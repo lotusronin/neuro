@@ -49,14 +49,14 @@ void LexerTarget::lexcomment() {
     
         std::string t = ln.substr(colNum);
 
-        if(std::regex_search(t,match_blk_comment_open,std::regex("/\\*"))) {
+        if(std::regex_search(t,match_blk_comment_open,std::regex("^/\\*"))) {
             for(int i = 0; i < match_blk_comment_open.size(); i++) {
                 if(match_blk_comment_open.position(i) != 0) continue;
                 ++comment_depth;
                 colNum += 2;
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
             }
-        } else if(std::regex_search(t,match_blk_comment_close,std::regex("\\*/"))) {
+        } else if(std::regex_search(t,match_blk_comment_close,std::regex("^\\*/"))) {
             for(int i = 0; i < match_blk_comment_close.size(); i++) {
                 if(match_blk_comment_close.position(i) != 0) continue;
                 --comment_depth;
@@ -113,7 +113,7 @@ std::string LexerTarget::lex() {
     /*
      * check for block comments
      */
-    if(std::regex_search(t,match_blk_comment,std::regex("/\\*"))) {
+    if(std::regex_search(t,match_blk_comment,std::regex("^/\\*"))) {
         for(int i = 0; i < match_blk_comment.size(); i++) {
             if(match_blk_comment.position(i) != 0) continue;
             ++comment_depth;
@@ -141,7 +141,7 @@ std::string LexerTarget::lex() {
     /*
      * Check for line comments
      */
-    if(std::regex_search(t,match_comment,std::regex("//"))) {
+    if(std::regex_search(t,match_comment,std::regex("^//"))) {
         for(int i = 0; i < match_comment.size(); i++) {
             if(match_comment.position(i) != 0) continue;
 
