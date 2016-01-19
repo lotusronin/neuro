@@ -2,3 +2,4 @@
 *.o
 neuro
 *.output
+/build
