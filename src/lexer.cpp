@@ -199,12 +199,3 @@ std::vector<std::string> read_file(const std::string& filename) {
     return content;
 }
 
-int main() {
-    LexerTarget target1 = LexerTarget("test.txt");
-    //target1.lex();
-    std::string tok;
-    while(tok.compare("EOF") != 0) {
-        tok = target1.lex();
-    }
-    return 0;
-}
