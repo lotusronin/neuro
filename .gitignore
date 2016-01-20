@@ -1,5 +1,6 @@
 *.swp
 *.o
 neuro
+Neuro
 *.output
 /build
