@@ -3,21 +3,43 @@
 #include <vector>
 #include "lexer.h"
 
+bool debug_lexer;
+
+void badargspass() {
+    std::cout << "Usage:\n  Neuro <inputfiles>\n";
+    std::cout << "Options:\n  -dbgl = lexer debug output\n";
+    std::cout << "Coming:\n  -dbgp = parser debug output\n  -dbga = all debug output\n";
+}
+
+void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
+    std::string dbgl("-dbgl");
+    for(int i = 1; i < argc; i++) {
+        if(dbgl.compare(argv[i]) == 0) {
+            debug_lexer = true;
+        } else {
+            cmd_args.push_back(argv[i]);
+        }
+    }
+}
 
 int main(int argc, char** argv) {
     std::cout << "Welcome to the neuro compiler.\n";
 
     if(argc < 2) {
-        std::cout << "Usage:\n  Neuro <inputfiles>\n";
+        badargspass();
         return 0;
     } else {
-        std::vector<std::string> cmd_args;
-        for(int i = 1; i < argc; i++) {
-            cmd_args.push_back(argv[i]);
+        std::vector<std::string> sources;
+        parseargs(argc, argv, sources);
+        if(sources.size() == 0) {
+            badargspass();
+            return 0;
         }
 
-        for (auto f : cmd_args) {
-            LexerTarget target1 = LexerTarget(f);
+        std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
+
+        for (auto f : sources) {
+            LexerTarget target1 = LexerTarget(f, debug_lexer);
             std::string tok;
             while(tok.compare("EOF") != 0) {
                 tok = target1.lex();

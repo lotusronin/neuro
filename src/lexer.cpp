@@ -7,13 +7,16 @@
 #include <ctype.h>
 #include "lexer.h"
 
-LexerTarget::LexerTarget(std::string name) {
+#define DEBUGLEX(a) if(debug_out){a}
+
+LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
     content = read_file(name);
     lineNum = 0;
     colNum = 0;
     sub_begin = sub_len = 0;
     comment_depth = 0;
+    debug_out = debug;
 }
 
 LexerTarget::~LexerTarget() {
@@ -27,7 +30,7 @@ void LexerTarget::lexcomment() {
         std::smatch match_blk_comment_close;
         
         if(lineNum >= content.size()) {
-            std::cout << "Comment reaches the end of the file\n";
+            DEBUGLEX(std::cout << "Comment reaches the end of the file\n";)
             //we've reached end of file, stop
             comment_depth = 0;
             return;
@@ -40,7 +43,7 @@ void LexerTarget::lexcomment() {
             lineNum++;
             colNum = 0;
             if(lineNum >= content.size()) {
-                std::cout << "Comment reaches the end of the file\n";
+                DEBUGLEX(std::cout << "Comment reaches the end of the file\n";)
                 comment_depth = 0;
                 return;
             }
@@ -127,6 +130,7 @@ std::string LexerTarget::lex() {
    
 
     //std::cout << "colNum = " << colNum << '\n';
+    DEBUGLEX(
     std::cout << ln << '\n';
     if(colNum == 0) {
         std::cout << "^\n";
@@ -136,6 +140,7 @@ std::string LexerTarget::lex() {
         }
         std::cout << "-^\n";
     }
+    )
 
 
     /*
@@ -181,7 +186,7 @@ std::string LexerTarget::lex() {
     token = ln.substr(colNum,longest_match);
     colNum += longest_match;
     
-    std::cout << "token: " << token << "\n\n";
+    DEBUGLEX(std::cout << "token: " << token << "\n\n";)
     return token;
 
 }

@@ -9,7 +9,7 @@
 class LexerTarget
 {
 public:
-    LexerTarget(std::string name);
+    LexerTarget(std::string name, bool debug);
     ~LexerTarget();
     std::string lex();
     void lexcomment();
@@ -20,6 +20,7 @@ private:
     unsigned int lineNum, colNum;
     int sub_begin, sub_len;
     int comment_depth;
+    bool debug_out;
     /* data */
 };
 
