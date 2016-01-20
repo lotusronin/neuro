@@ -50,14 +50,14 @@ void LexerTarget::lexcomment() {
         std::string t = ln.substr(colNum);
 
         if(std::regex_search(t,match_blk_comment_open,std::regex("^/\\*"))) {
-            for(int i = 0; i < match_blk_comment_open.size(); i++) {
+            for(unsigned int i = 0; i < match_blk_comment_open.size(); i++) {
                 if(match_blk_comment_open.position(i) != 0) continue;
                 ++comment_depth;
                 colNum += 2;
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
             }
         } else if(std::regex_search(t,match_blk_comment_close,std::regex("^\\*/"))) {
-            for(int i = 0; i < match_blk_comment_close.size(); i++) {
+            for(unsigned int i = 0; i < match_blk_comment_close.size(); i++) {
                 if(match_blk_comment_close.position(i) != 0) continue;
                 --comment_depth;
                 colNum += 2;
@@ -114,7 +114,7 @@ std::string LexerTarget::lex() {
      * check for block comments
      */
     if(std::regex_search(t,match_blk_comment,std::regex("^/\\*"))) {
-        for(int i = 0; i < match_blk_comment.size(); i++) {
+        for(unsigned int i = 0; i < match_blk_comment.size(); i++) {
             if(match_blk_comment.position(i) != 0) continue;
             ++comment_depth;
             colNum += 2;
@@ -131,7 +131,7 @@ std::string LexerTarget::lex() {
     if(colNum == 0) {
         std::cout << "^\n";
     } else {
-        for(int c = 0; c < colNum-1; c++) {
+        for(unsigned int c = 0; c < colNum-1; c++) {
             std::cout << '-';
         }
         std::cout << "-^\n";
@@ -142,7 +142,7 @@ std::string LexerTarget::lex() {
      * Check for line comments
      */
     if(std::regex_search(t,match_comment,std::regex("^//"))) {
-        for(int i = 0; i < match_comment.size(); i++) {
+        for(unsigned int i = 0; i < match_comment.size(); i++) {
             if(match_comment.position(i) != 0) continue;
 
             colNum = 0;
@@ -158,14 +158,14 @@ std::string LexerTarget::lex() {
     /*
      * Match other tokens
      */
-    for (int i = 0; i < num_regexes; i++) {
+    for (unsigned int i = 0; i < num_regexes; i++) {
         std::smatch tmp;
         std::string remaining = ln.substr(colNum);
         bool matched = std::regex_search(remaining,tmp,regexes[i]);
         if(matched) {
             //std::cout << "Matched for regex: " << i << '\n';
             //std::cout << "Total # of matches: " << tmp.size() << '\n';
-        for(int j = 0; j < tmp.size(); j++) {
+        for(unsigned int j = 0; j < tmp.size(); j++) {
             //make sure match starts at beginning of last token
             //std::cout << "Match for: " << tmp[j] << " at pos " << tmp.position(j) <<'\n';
             if(tmp.position(j) != 0) continue;
@@ -189,12 +189,18 @@ std::string LexerTarget::lex() {
 std::vector<std::string> read_file(const std::string& filename) {
     std::ifstream in(filename);
     std::vector<std::string> content;
+    
+    if(!in.is_open()) {
+        std::cerr << "Error opening file: " << filename << "\n";
+        return content;
+    }
+    
     std::string line;
     while(std::getline(in, line)) {
         content.push_back(line);
-        std::cout << line << '\n';
+        //std::cout << line << '\n';
     }
-    std::cout << '\n';
+    //std::cout << '\n';
     
     return content;
 }

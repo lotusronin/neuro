@@ -4,6 +4,6 @@
 #include <regex>
 
 extern std::regex regexes[];
-extern int num_regexes;
+extern unsigned int num_regexes;
 
 #endif

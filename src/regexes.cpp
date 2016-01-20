@@ -31,6 +31,6 @@ std::regex regexes[] = {
     std::regex("\\?")   
 };
 
-int num_regexes = sizeof(regexes)/sizeof(std::regex);
+unsigned int num_regexes = sizeof(regexes)/sizeof(std::regex);
 
 

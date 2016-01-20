@@ -17,7 +17,7 @@ public:
 private:
     std::string filename;
     std::vector<std::string> content;
-    int lineNum, colNum;
+    unsigned int lineNum, colNum;
     int sub_begin, sub_len;
     int comment_depth;
     /* data */
