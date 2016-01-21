@@ -4,10 +4,14 @@
 #include <sstream>
 #include <vector>
 #include <regex>
+#include <utility>
 #include <ctype.h>
 #include "lexer.h"
+#include "tokens.h"
 
 #define DEBUGLEX(a) if(debug_out){a}
+
+Token EOFTOKEN { .type = TokenType::eof, .col = 0, .line = 0, .token = "EOF"};
 
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
@@ -72,12 +76,11 @@ void LexerTarget::lexcomment() {
     }
 }
 
-std::string LexerTarget::lex() {
+Token LexerTarget::lex() {
     std::string token = "";
-    std::string tokentype = "";
 
     if(lineNum >= content.size()) {
-        return "EOF";
+        return EOFTOKEN;
     }
     
     std::string ln = content.at(lineNum);
@@ -85,7 +88,7 @@ std::string LexerTarget::lex() {
         lineNum++;
         colNum = 0;
         if(lineNum >= content.size())
-            return "EOF";
+            return EOFTOKEN;
         ln = content.at(lineNum);
     }
     
@@ -95,7 +98,7 @@ std::string LexerTarget::lex() {
         //std::cout << "there is a space!!!\n";
         if(colNum >= ln.size()) {
             if(lineNum+1 >= content.size()) {
-                return "EOF";
+                return EOFTOKEN;
             } else {
                 lineNum++;
                 ln = content.at(lineNum);
@@ -106,6 +109,7 @@ std::string LexerTarget::lex() {
             
 
     std::regex longest_regex_match;
+    TokenType longest_match_type;
     int longest_match = 0;
 
 
@@ -153,7 +157,7 @@ std::string LexerTarget::lex() {
             colNum = 0;
             lineNum++;
             if(lineNum >= content.size()) {
-                return "EOF";
+                return EOFTOKEN;
             }
             ln = content.at(lineNum);
             return lex();
@@ -166,7 +170,7 @@ std::string LexerTarget::lex() {
     for (unsigned int i = 0; i < num_regexes; i++) {
         std::smatch tmp;
         std::string remaining = ln.substr(colNum);
-        bool matched = std::regex_search(remaining,tmp,regexes[i]);
+        bool matched = std::regex_search(remaining,tmp,regexes[i].first);
         if(matched) {
             //std::cout << "Matched for regex: " << i << '\n';
             //std::cout << "Total # of matches: " << tmp.size() << '\n';
@@ -177,17 +181,20 @@ std::string LexerTarget::lex() {
 
             if(tmp.length(j) > longest_match) {
                 longest_match = tmp.length(j);
-                longest_regex_match = regexes[i];
+                longest_regex_match = regexes[i].first;
+                longest_match_type = regexes[i].second;
             }
         }
         }
     }
     
     token = ln.substr(colNum,longest_match);
+    Token ret = {.type = longest_match_type, .col = colNum, .line = lineNum, .token = token};
     colNum += longest_match;
+
     
     DEBUGLEX(std::cout << "token: " << token << "\n\n";)
-    return token;
+    return ret;
 
 }
 

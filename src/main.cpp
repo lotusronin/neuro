@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include "lexer.h"
+#include "tokens.h"
 
 bool debug_lexer;
 
@@ -40,9 +41,10 @@ int main(int argc, char** argv) {
 
         for (auto f : sources) {
             LexerTarget target1 = LexerTarget(f, debug_lexer);
-            std::string tok;
-            while(tok.compare("EOF") != 0) {
+            Token tok;
+            while(tok.type != TokenType::eof) {
                 tok = target1.lex();
+                //std::cout << "Token: " << tok.token << " at (" << tok.line << "," << tok.col << ")\n";
             }
         }
         return 0;

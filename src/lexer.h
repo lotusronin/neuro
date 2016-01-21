@@ -5,13 +5,14 @@
 #include <string>
 #include <regex>
 #include "regexes.h"
+#include "tokens.h"
 
 class LexerTarget
 {
 public:
     LexerTarget(std::string name, bool debug);
     ~LexerTarget();
-    std::string lex();
+    Token lex();
     void lexcomment();
 
 private:
