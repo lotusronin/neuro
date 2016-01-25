@@ -6,6 +6,7 @@
 enum class TokenType {
     fn,
     foreign,
+    import,
     id,
     floatlit,
     intlit,

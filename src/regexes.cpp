@@ -3,6 +3,7 @@
 std::pair<std::regex,TokenType> regexes[] = { 
     std::make_pair(std::regex("fn"),TokenType::fn),
     std::make_pair(std::regex("extern"),TokenType::foreign),
+    std::make_pair(std::regex("import"),TokenType::import),
     std::make_pair(std::regex("/\\*"),TokenType::comment),
     std::make_pair(std::regex("//.*"),TokenType::comment),
     std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id),
