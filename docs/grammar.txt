@@ -1,0 +1,71 @@
+Program -> tl_statements
+
+tl_statements -> imports tl_statements | prototypes tl_statements | functiondefs tl_statements | null
+
+imports -> import id ;
+
+prototypes -> extern fn id ( opt_args ) : type ;
+
+functiondefs -> fn id ( opt_args ) : type block
+
+opt_args -> null | id : type opt_args_tail
+opt_args_tail -> null | , opt_args
+
+block -> { stmtlist }
+
+stmtlist -> stmt stmtlisttail
+stmtlisttail -> stmtlist | null
+
+
+##
+#Add keywords for flow control on top of usual statements
+##
+stmtloop -> stmt | flowctrl
+stmtlistloop -> stmtloop  stmtlistlooptail
+stmtlistlooptail -> stmtlistloop | null
+
+flowctrl -> break ; | continue ;
+
+stmt -> deferblock | ifblock | loop | varstmt ; | expr ; | funccall ; | block | returnstmt | ;
+returnstmt -> return optreturn ;
+optreturn -> expr | funccall | null
+
+##
+#Defer statements and blocks
+##
+deferblock -> defer stmt | defer { stmtlist }
+
+##
+#If statements in language
+##
+ifblock -> if ( expression ) ifelsebody optelseblock
+optelseblock -> else ifelsebody | null
+ifelsebody -> { stmtlist } | stmt ;
+
+##
+#loop support
+##
+loop -> loophead { stmtlistloop }
+loophead -> for ( vardecassign ; conditional ; expr ) | while ( expression )
+
+expr -> expr plusmin multdiv | multdiv
+multdiv -> multdiv starslash parenexp | parenexp
+parenexp -> ( expr ) | const | var
+
+varstmt -> vardec | vardecassign | varassign
+var -> id
+vardec -> var : type
+varassign -> var = expression
+vardecassign -> vardec = expression
+
+funcname -> id
+funccall -> funcname ( opt_args )
+
+type -> int | char | float | double | bool | id
+opttype -> type | null
+
+binop -> + | - | * | / | '|' | '||' | & | && | ^ | %
+plusmin -> + | -
+starslash -> * | /
+
+const -> ilit | flit | charlit
