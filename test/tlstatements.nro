@@ -1,0 +1,4 @@
+import somefile;
+import stillgood;
+extern fn myfunc() : void;
+extern fn myfunc() : void;
