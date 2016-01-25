@@ -191,11 +191,16 @@ Token LexerTarget::lex() {
     token = ln.substr(colNum,longest_match);
     Token ret = {.type = longest_match_type, .col = colNum, .line = lineNum, .token = token};
     colNum += longest_match;
+    currentTok = ret;
 
     
     DEBUGLEX(std::cout << "token: " << token << "\n\n";)
     return ret;
 
+}
+
+Token LexerTarget::peek() {
+    return currentTok;
 }
 
 std::vector<std::string> read_file(const std::string& filename) {
