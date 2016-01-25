@@ -42,7 +42,7 @@ void LexerTarget::lexcomment() {
     
         std::string ln = content.at(lineNum);
         
-        if(colNum >= ln.size()) {
+        while(colNum >= ln.size()) {
             //std::cout << ln << '\n';
             lineNum++;
             colNum = 0;
@@ -84,19 +84,19 @@ Token LexerTarget::lex() {
     }
     
     std::string ln = content.at(lineNum);
-    if(colNum >= ln.size()) {
+    while(colNum >= ln.size()) {
         lineNum++;
         colNum = 0;
         if(lineNum >= content.size())
             return EOFTOKEN;
         ln = content.at(lineNum);
     }
-    
+
     while(isspace(ln[colNum])) {
         colNum++;
 
         //std::cout << "there is a space!!!\n";
-        if(colNum >= ln.size()) {
+        while(colNum >= ln.size()) {
             if(lineNum+1 >= content.size()) {
                 return EOFTOKEN;
             } else {
