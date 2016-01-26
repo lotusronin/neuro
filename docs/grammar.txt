@@ -62,6 +62,9 @@ vardecassign -> vardec = expression
 funcname -> id
 funccall -> funcname ( opt_args )
 
+opt_args -> null | id . | id . , opt_args2
+opt_args2 -> id | id , opt_args2
+
 type -> int | char | float | double | bool | id
 opttype -> type | null
 

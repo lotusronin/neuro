@@ -30,6 +30,13 @@ void parseDeferBlock(LexerTarget* lexer);
 void parseWhileLoop(LexerTarget* lexer);
 void parseReturnStatement(LexerTarget* lexer);
 void parseExpression(LexerTarget* lexer);
+void parseMultdiv(LexerTarget* lexer);
+void parseParenexp(LexerTarget* lexer);
+void parseConst(LexerTarget* lexer);
+void parseFunccallOrVar(LexerTarget* lexer);
+void parseFunccall(LexerTarget* lexer);
+void parseOptargs(LexerTarget* lexer);
+void parseOptargs2(LexerTarget* lexer);
 
 int parse_error(ParseErrorType type, Token& t) {
     switch (type) {
@@ -380,6 +387,11 @@ void parseStatement(LexerTarget* lexer) {
 }
 
 void parseStatementListLoop(LexerTarget* lexer) {
+/* stmtloop -> stmt | flowctrl
+ * stmtlistloop -> stmtloop  stmtlistlooptail
+ * stmtlistlooptail -> stmtlistloop | null
+ * flowctrl -> break ; | continue ;
+ */
 }
 
 void parseIfblock(LexerTarget* lexer) {
@@ -405,6 +417,7 @@ void parseIfElseBody(LexerTarget* lexer) {
     /*
      * ifelsebody -> block | stmt ;
      */
+    //May not need to actually lex here, just call parsestatement() again...
     Token tok = lexer->lex();
     //Double check for error with peek/lex below. (rewrite earlier functions?)
     if(tok.type == TokenType::lbrace) {
@@ -507,8 +520,125 @@ void parseReturnStatement(LexerTarget* lexer) {
 }
 
 void parseExpression(LexerTarget* lexer) {
-/* expr -> expr plusmin multdiv | multdiv
- * multdiv -> multdiv starslash parenexp | parenexp
- * parenexp -> ( expr ) | const | var | funcall
+/* 
+ * expr -> multdiv plusmin expr  | multdiv
  */
+    Token tok = lexer->lex();
+    parseMultdiv(lexer);
+    tok = lexer->peek();
+    if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
+        //don't consume as we already do above
+        parseExpression(lexer);
+    }
+    return;
+}
+
+void parseMultdiv(LexerTarget* lexer) {
+ /* 
+  * multdiv -> parenexp starslash multdiv | parenexp
+  */
+    parseParenexp(lexer);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
+        //consume token
+        lexer->lex();
+        parseMultdiv(lexer);
+    }
+    return;
+}
+
+void parseParenexp(LexerTarget* lexer) {
+ /* 
+  * parenexp -> ( expr ) | const | var | funcall
+  */
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::lparen) {
+        parseExpression(lexer);
+        tok = lexer->peek(); //or is it lex?
+        if(tok.type != TokenType::rparen) {
+            parse_error(PET::Unknown, tok);
+        }
+        //consume token
+        lexer->lex();
+        return;
+    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit) {
+        parseConst(lexer);
+    } else if(tok.type == TokenType::id) {
+        parseFunccallOrVar(lexer);
+    } else {
+        parse_error(PET::Unknown, tok);
+    }
+    return;
+}
+
+void parseConst(LexerTarget* lexer) {
+    // const -> ilit | flit | charlit
+    //Consume token
+    lexer->lex();
+    return;
+}
+
+void parseFunccallOrVar(LexerTarget* lexer) {
+    Token tok = lexer->peek();
+    Token tokNext = lexer->lex();
+    if(tokNext.type == TokenType::lparen) {
+        parseFunccall(lexer);
+    } else {
+        //Will not work, have to fix somehow...
+        //pass token into parseVar?
+        //parseVar(lexer);    
+        //for now just manually check if it is an id
+        if(tok.type != TokenType::id) {
+            //unneeded check? do we already know its an id?
+            parse_error(PET::BadVarName, tok);
+        }
+    }
+}
+
+void parseFunccall(LexerTarget* lexer) {
+    //funccall -> funcname . ( opt_args )
+    // funcname -> id
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::Unknown, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type != TokenType::rparen) {
+        parseOptargs(lexer);
+    }
+    tok = lexer->peek();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::Unknown, tok);
+    }
+    //consume ')'
+    lexer->lex();
+    return;
+}
+
+void parseOptargs(LexerTarget* lexer) {
+    //opt_args -> null | id . | id . , opt_args2
+    Token tok = lexer->peek();
+    if(tok.type != TokenType::id) {
+        parse_error(PET::Unknown, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type == TokenType::comma) {
+        parseOptargs2(lexer);
+    }
+    //Else return. if it is a ')' we will catch it in parseFunccall
+    return;
+}
+
+void parseOptargs2(LexerTarget* lexer) {
+    //opt_args2 -> . id | . id , opt_args2
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::id) {
+        parse_error(PET::Unknown, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type == TokenType::comma) {
+        parseOptargs2(lexer);
+    }
+    //Else return. if it is a ')' we will catch it in parseFunccall
+    return;
 }
