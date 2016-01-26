@@ -16,6 +16,8 @@ void parseOptparams(LexerTarget* lexer);
 void parseOptparamsColon(LexerTarget* lexer);
 void parseOptparamsTail(LexerTarget* lexer);
 void parseType(LexerTarget* lexer);
+void parseVar(LexerTarget* lexer);
+void parseVarDec(LexerTarget* lexer);
 
 int parse_error(ParseErrorType type, Token& t) {
     switch (type) {
@@ -67,7 +69,15 @@ int parse_error(ParseErrorType type, Token& t) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Missing semicolon\n";
             std::cout << "  Token: " << t.token << " is not a ';'!\n";
             break;
-        default:
+        case ParseErrorType::BadVarName:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: bad variable name\n";
+            std::cout << "  Token: " << t.token << " is not a valid variable identifier!\n";
+            break;
+        case ParseErrorType::MissVardecColon:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: missing colon in variable declaration\n";
+            std::cout << "  Token: " << t.token << " is not a ':'!\n";
+            break;
+       default:
             std::cout << "Unknown Parse Error!\n";
             break;
     }
@@ -102,10 +112,6 @@ void parseTopLevelStatements(LexerTarget* lexer) {
     } else if(tok.type == TokenType::fn) {
         //parseFunctionDef(lexer, &tok);
         std::cout << "Function Definitions Parse (Coming Soon)\n";
-        //std::cout << "Token: " << tok.token << "\n";
-        //std::cout << "TokenType: " << static_cast<std::underlying_type<TokenType>::type>(tok.type) << "\n";
-        //TokenType t = TokenType::fn;
-        //std::cout << "TokenType fn: " << static_cast<std::underlying_type<TokenType>::type>(t) << "\n";
     } else if(tok.type == TokenType::foreign) {
         std::cout << "extern token, beginning to match prototype...\n";
         parsePrototypeBegin(lexer);
@@ -210,10 +216,44 @@ void parseOptparamsTail(LexerTarget* lexer) {
 
 void parseType(LexerTarget* lexer) {
     Token tok = lexer->lex();
-    //TODO(marcus): add keywords for primitive types
-    if(tok.type == TokenType::id) {
+    if(tok.type == TokenType::tint) {
+        return;
+    } else if(tok.type == TokenType::tchar) {
+        return;
+    } else if(tok.type == TokenType::tbool) {
+        return;
+    } else if(tok.type == TokenType::tfloat) {
+        return;
+    } else if(tok.type == TokenType::tdouble) {
+        return;
+    } else if(tok.type == TokenType::id) {
         return;
     } else {
         parse_error(PET::BadTypeIdentifier, tok);
     }
+}
+
+/*
+ *varstmt -> vardec | vardecassign | varassign
+ *varassign -> var = expression
+ *vardecassign -> vardec = expression
+ */
+void parseVar(LexerTarget* lexer) {
+    //var -> id
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::id) {
+        parse_error(PET::BadVarName, tok);
+    }
+    return;
+}
+
+void parseVarDec(LexerTarget* lexer) {
+    //vardec -> var : type
+    parseVar(lexer);
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::colon) {
+        parse_error(PET::MissVardecColon, tok);
+    }
+    parseType(lexer);
+    return;
 }

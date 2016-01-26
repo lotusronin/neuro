@@ -15,6 +15,8 @@ enum class ParseErrorType {
     BadOptparamTail,
     MissPrototypeColon,
     MissPrototypeSemicolon,
+    BadVarName,
+    MissVardecColon,
     BadAssign
 };
 
