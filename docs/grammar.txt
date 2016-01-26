@@ -4,12 +4,12 @@ tl_statements -> imports tl_statements | prototypes tl_statements | functiondefs
 
 imports -> import id ;
 
-prototypes -> extern fn id ( opt_args ) : type ;
+prototypes -> extern fn id ( opt_params ) : type ;
 
-functiondefs -> fn id ( opt_args ) : type block
+functiondefs -> fn id ( opt_params ) : type block
 
-opt_args -> null | id : type opt_args_tail
-opt_args_tail -> null | , opt_args
+opt_params -> null | id : type opt_params_tail
+opt_params_tail -> null | , opt_params
 
 block -> { stmtlist }
 

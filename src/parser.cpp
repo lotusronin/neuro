@@ -12,9 +12,9 @@ void parseImportId(LexerTarget* lexer);
 void parsePrototypeBegin(LexerTarget* lexer);
 void parsePrototypeId(LexerTarget* lexer);
 void parsePrototypeRParen(LexerTarget* lexer);
-void parseOptargs(LexerTarget* lexer);
-void parseOptargsColon(LexerTarget* lexer);
-void parseOptargsTail(LexerTarget* lexer);
+void parseOptparams(LexerTarget* lexer);
+void parseOptparamsColon(LexerTarget* lexer);
+void parseOptparamsTail(LexerTarget* lexer);
 void parseType(LexerTarget* lexer);
 
 int parse_error(ParseErrorType type, Token& t) {
@@ -153,7 +153,7 @@ void parsePrototypeBegin(LexerTarget* lexer) {
 void parsePrototypeId(LexerTarget* lexer) {
     Token tok = lexer->lex();
     if(tok.type == TokenType::lparen) {
-        parseOptargs(lexer);
+        parseOptparams(lexer);
     } else {
         parse_error(ParseErrorType::MissPrototypeLParen, tok);
     }
@@ -174,38 +174,34 @@ void parsePrototypeRParen(LexerTarget* lexer) {
 
 //opt_args -> null | id : type opt_args_tail
 //opt_args_tail -> null | , opt_args
-void parseOptargs(LexerTarget* lexer) {
+void parseOptparams(LexerTarget* lexer) {
     Token tok = lexer->lex();
     if(tok.type == TokenType::id) {
-        parseOptargsColon(lexer);
+        parseOptparamsColon(lexer);
     } else if(tok.type == TokenType::rparen) {
-        //FIXME(marcus): Optargs are also present in function definitions, not just prototypes
-        //FIXME(marcus): Optargs are also present in function calls but this is wrong
-        //should rename opt_args as it is currently used to opt_params and add an opt_arg
-        //rule for function calls in the grammar
+        //FIXME(marcus): Opt_params are also present in function definitions, not just prototypes
         parsePrototypeRParen(lexer);
     } else {
         parse_error(ParseErrorType::BadFunctionParameter, tok);
     }
 }
 
-void parseOptargsColon(LexerTarget* lexer) {
+void parseOptparamsColon(LexerTarget* lexer) {
     Token tok = lexer->lex();
     if(tok.type == TokenType::colon) {
         parseType(lexer);
-        parseOptargsTail(lexer);
+        parseOptparamsTail(lexer);
     } else {
         parse_error(PET::MissOptparamColon, tok);
     }
 }
 
-void parseOptargsTail(LexerTarget* lexer) {
+void parseOptparamsTail(LexerTarget* lexer) {
     Token tok = lexer->lex();
     if(tok.type == TokenType::comma) {
-        parseOptargs(lexer);
+        parseOptparams(lexer);
     } else if(tok.type == TokenType::rparen) {
-        //TODO(marcus): opt_args (which should be opt_params) can be found in function definitions
-        //too.
+        //TODO(marcus): opt_params can be found in function definitions too.
         parsePrototypeRParen(lexer);
     } else {
         parse_error(PET::BadOptparamTail, tok);
