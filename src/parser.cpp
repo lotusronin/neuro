@@ -8,12 +8,8 @@
 
 void parseTopLevelStatements(LexerTarget* lexer);
 void parseImportStatement(LexerTarget* lexer);
-void parseImportId(LexerTarget* lexer);
-void parsePrototypeBegin(LexerTarget* lexer);
-void parsePrototypeId(LexerTarget* lexer);
-void parsePrototypeRParen(LexerTarget* lexer);
+void parsePrototype(LexerTarget* lexer);
 void parseOptparams(LexerTarget* lexer);
-void parseOptparamsColon(LexerTarget* lexer);
 void parseOptparamsTail(LexerTarget* lexer);
 void parseType(LexerTarget* lexer);
 void parseVar(LexerTarget* lexer);
@@ -77,6 +73,10 @@ int parse_error(ParseErrorType type, Token& t) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: missing colon in variable declaration\n";
             std::cout << "  Token: " << t.token << " is not a ':'!\n";
             break;
+        case ParseErrorType::MissPrototypeRParen:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing right parentheses\n";
+            std::cout << "  Token: " << t.token << " is not a ')'!\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;
@@ -102,8 +102,11 @@ void Parser::parse() {
     parseTopLevelStatements(mlexer);
 }
 
-//TODO(marcus) add comments for each function indicating where in a rule we are
 void parseTopLevelStatements(LexerTarget* lexer) {
+    //tl_statements -> imports tl_statements 
+    //tl_statements -> prototypes tl_statements
+    //tl_statements -> functiondefs tl_statements 
+    //tl_statements -> null
     Token tok = lexer->lex();
     if(tok.type == TokenType::import) {
         std::cout << "import token, beginning to match import statement...\n";
@@ -114,7 +117,7 @@ void parseTopLevelStatements(LexerTarget* lexer) {
         std::cout << "Function Definitions Parse (Coming Soon)\n";
     } else if(tok.type == TokenType::foreign) {
         std::cout << "extern token, beginning to match prototype...\n";
-        parsePrototypeBegin(lexer);
+        parsePrototype(lexer);
         std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::eof) {
         std::cout << "File is parsed, no errors detected!\n";
@@ -126,95 +129,79 @@ void parseTopLevelStatements(LexerTarget* lexer) {
 }
 
 void parseImportStatement(LexerTarget* lexer) {
+    //imports -> import . id ;
     Token tok = lexer->lex();
-    if(tok.type == TokenType::id) {
-        parseImportId(lexer);
-    } else {
+    if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadImportName, tok);
     }
-}
-
-void parseImportId(LexerTarget* lexer) {
-    Token tok = lexer->lex();
+    tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
         parse_error(ParseErrorType::MissImportSemicolon, tok);
     }
     return;
 }
 
-void parsePrototypeBegin(LexerTarget* lexer) {
-//prototypes -> extern fn id ( opt_args ) : type ;
+void parsePrototype(LexerTarget* lexer) {
+    //prototypes -> extern . fn id ( opt_params ) : type ;
     Token tok = lexer->lex();
     if(tok.type != TokenType::fn) {
         parse_error(PET::MissPrototypeFn, tok);
     }
     tok = lexer->lex();
-    if(tok.type == TokenType::id) {
-        parsePrototypeId(lexer);
-    } else {
+    if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadPrototypeName, tok);
     }
-}
-
-void parsePrototypeId(LexerTarget* lexer) {
-    Token tok = lexer->lex();
-    if(tok.type == TokenType::lparen) {
-        parseOptparams(lexer);
-    } else {
+    tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
         parse_error(ParseErrorType::MissPrototypeLParen, tok);
     }
-}
-
-void parsePrototypeRParen(LexerTarget* lexer) {
-    Token tok = lexer->lex();
-    if(tok.type == TokenType::colon) {
-        parseType(lexer);
-        tok = lexer->lex();
-        if(tok.type != TokenType::semicolon) {
-            parse_error(PET::MissPrototypeSemicolon, tok);
-        }
-    } else {
-        parse_error(ParseErrorType::MissPrototypeColon, tok);
+    parseOptparams(lexer);
+    tok = lexer->peek();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissPrototypeRParen, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type != TokenType::colon) {
+        parse_error(PET::MissPrototypeColon, tok);
+    }
+    parseType(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::semicolon) {
+        parse_error(PET::MissPrototypeSemicolon, tok);
     }
 }
 
-//opt_args -> null | id : type opt_args_tail
-//opt_args_tail -> null | , opt_args
 void parseOptparams(LexerTarget* lexer) {
+    //opt_args -> null | id : type opt_args_tail
     Token tok = lexer->lex();
-    if(tok.type == TokenType::id) {
-        parseOptparamsColon(lexer);
-    } else if(tok.type == TokenType::rparen) {
-        //FIXME(marcus): Opt_params are also present in function definitions, not just prototypes
-        parsePrototypeRParen(lexer);
-    } else {
+    if(tok.type == TokenType::rparen) {
+        return;
+    }
+    if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadFunctionParameter, tok);
     }
-}
-
-void parseOptparamsColon(LexerTarget* lexer) {
-    Token tok = lexer->lex();
-    if(tok.type == TokenType::colon) {
-        parseType(lexer);
-        parseOptparamsTail(lexer);
-    } else {
+    tok = lexer->lex();
+    if(tok.type != TokenType::colon) {
         parse_error(PET::MissOptparamColon, tok);
     }
+    parseType(lexer);
+    parseOptparamsTail(lexer);
 }
 
 void parseOptparamsTail(LexerTarget* lexer) {
+    //opt_args_tail -> null | , opt_args
     Token tok = lexer->lex();
     if(tok.type == TokenType::comma) {
         parseOptparams(lexer);
     } else if(tok.type == TokenType::rparen) {
-        //TODO(marcus): opt_params can be found in function definitions too.
-        parsePrototypeRParen(lexer);
+        return;
     } else {
         parse_error(PET::BadOptparamTail, tok);
     }
 }
 
 void parseType(LexerTarget* lexer) {
+    //type -> int | char | float | double | bool | id
     Token tok = lexer->lex();
     if(tok.type == TokenType::tint) {
         return;
