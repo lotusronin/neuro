@@ -18,6 +18,8 @@ enum class ParseErrorType {
     BadVarName,
     MissVardecColon,
     MissPrototypeRParen,
+    BadBlockStart,
+    IncompleteBlock,
     BadAssign
 };
 

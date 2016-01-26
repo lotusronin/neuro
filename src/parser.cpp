@@ -14,6 +14,9 @@ void parseOptparamsTail(LexerTarget* lexer);
 void parseType(LexerTarget* lexer);
 void parseVar(LexerTarget* lexer);
 void parseVarDec(LexerTarget* lexer);
+void parseFunctionDef(LexerTarget* lexer);
+void parseBlock(LexerTarget* lexer);
+void parseStatementList(LexerTarget* lexer) {
 
 int parse_error(ParseErrorType type, Token& t) {
     switch (type) {
@@ -77,6 +80,10 @@ int parse_error(ParseErrorType type, Token& t) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing right parentheses\n";
             std::cout << "  Token: " << t.token << " is not a ')'!\n";
             break;
+        case ParseErrorType::IncompleteBlock:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Block was never closed\n";
+            std::cout << "  Token: " << t.token << " is not a '}'!\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;
@@ -113,8 +120,9 @@ void parseTopLevelStatements(LexerTarget* lexer) {
         parseImportStatement(lexer);
         std::cout << "import statement matched\n";
     } else if(tok.type == TokenType::fn) {
-        //parseFunctionDef(lexer, &tok);
-        std::cout << "Function Definitions Parse (Coming Soon)\n";
+        std::cout << "Function Definitions Parse\n";
+        parseFunctionDef(lexer);
+        std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
         std::cout << "extern token, beginning to match prototype...\n";
         parsePrototype(lexer);
@@ -243,4 +251,45 @@ void parseVarDec(LexerTarget* lexer) {
     }
     parseType(lexer);
     return;
+}
+
+void parseFunctionDef(LexerTarget* lexer) {
+    //functiondefs -> fn id ( opt_params ) : type block
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::id) {
+        parse_error(PET::BadPrototypeName, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::MissPrototypeLParen,tok);
+    }
+    parseOptparams(lexer);
+    tok = lexer->peek();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissPrototypeRParen,tok);
+    }
+    tok = lexer->lex();
+    if(tok.type != TokenType::colon) {
+        parse_error(PET::MissPrototypeColon,tok);
+    }
+    parseType(lexer);
+    parseBlock(lexer);
+}
+
+void parseBlock(LexerTarget* lexer) {
+    //block -> { stmtlist }
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::lbrace) {
+        parse_error(PET::BadBlockStart, tok);
+    }
+    do {
+        tok = lexer->lex();
+        if(tok.type == TokenType::eof) {
+            parse_error(PET::IncompleteBlock,tok);
+        }
+    } while(tok.type != TokenType::rbrace);
+}
+
+void parseStatementList(LexerTarget* lexer) {
+    //stmtlist -> stmt stmtlisttail
 }
