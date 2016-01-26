@@ -26,21 +26,22 @@ stmtlistlooptail -> stmtlistloop | null
 
 flowctrl -> break ; | continue ;
 
-stmt -> deferblock | ifblock | loop | varstmt ; | expr ; | funccall ; | block | returnstmt | ;
-returnstmt -> return optreturn ;
-optreturn -> expr | funccall | null
+stmt -> deferblock | ifblock | loop | varstmt ; | expr ; | block | returnstmt | ;
+returnstmt -> return expr ;
+returnstmt -> return funcall ;
+returnstmt -> return ;
 
 ##
-#Defer statements and blocks
+#Defer statements
 ##
-deferblock -> defer stmt | defer { stmtlist }
+deferblock -> defer stmt
 
 ##
 #If statements in language
 ##
 ifblock -> if ( expression ) ifelsebody optelseblock
 optelseblock -> else ifelsebody | null
-ifelsebody -> { stmtlist } | stmt ;
+ifelsebody -> block | stmt ;
 
 ##
 #loop support
@@ -50,7 +51,7 @@ loophead -> for ( vardecassign ; conditional ; expr ) | while ( expression )
 
 expr -> expr plusmin multdiv | multdiv
 multdiv -> multdiv starslash parenexp | parenexp
-parenexp -> ( expr ) | const | var
+parenexp -> ( expr ) | const | var | funcall
 
 varstmt -> vardec | vardecassign | varassign
 var -> id

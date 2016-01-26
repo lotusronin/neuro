@@ -20,7 +20,18 @@ enum class ParseErrorType {
     MissPrototypeRParen,
     BadBlockStart,
     IncompleteBlock,
-    BadAssign
+    MissIfLParen,
+    MissIfRParen,
+    MissLParenFor,
+    MissSemicolonFor1,
+    MissSemicolonFor2,
+    MissRParenFor,
+    MissLParenWhile,
+    MissRParenWhile,
+    MissEqVarDecAssign,
+    MissSemiReturn,
+    BadAssign,
+    Unknown
 };
 
 class Parser {

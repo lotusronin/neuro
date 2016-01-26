@@ -14,9 +14,22 @@ void parseOptparamsTail(LexerTarget* lexer);
 void parseType(LexerTarget* lexer);
 void parseVar(LexerTarget* lexer);
 void parseVarDec(LexerTarget* lexer);
+void parseVarDecAssign(LexerTarget* lexer);
 void parseFunctionDef(LexerTarget* lexer);
 void parseBlock(LexerTarget* lexer);
-void parseStatementList(LexerTarget* lexer) {
+void parseStatementList(LexerTarget* lexer);
+void parseStatementListTail(LexerTarget* lexer);
+void parseStatement(LexerTarget* lexer);
+void parseStatementListLoop(LexerTarget* lexer);
+void parseIfblock(LexerTarget* lexer);
+void parseIfElseBody(LexerTarget* lexer);
+void parseOptElseBlock(LexerTarget* lexer);
+void parseLoop(LexerTarget* lexer);
+void parseForLoop(LexerTarget* lexer);
+void parseDeferBlock(LexerTarget* lexer);
+void parseWhileLoop(LexerTarget* lexer);
+void parseReturnStatement(LexerTarget* lexer);
+void parseExpression(LexerTarget* lexer);
 
 int parse_error(ParseErrorType type, Token& t) {
     switch (type) {
@@ -83,6 +96,42 @@ int parse_error(ParseErrorType type, Token& t) {
         case ParseErrorType::IncompleteBlock:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Block was never closed\n";
             std::cout << "  Token: " << t.token << " is not a '}'!\n";
+            break;
+        case ParseErrorType::MissIfLParen:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in if statement\n";
+            std::cout << "  Token: " << t.token << " is not a '('!\n";
+            break;
+        case ParseErrorType::MissIfRParen:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in if statement\n";
+            std::cout << "  Token: " << t.token << " is not a ')'!\n";
+            break;
+        case ParseErrorType::MissLParenFor:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in for loop\n";
+            std::cout << "  Token: " << t.token << " is not a '('!\n";
+            break;
+        case ParseErrorType::MissSemicolonFor1:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop before condition\n";
+            std::cout << "  Token: " << t.token << " is not a ';'!\n";
+            break;
+        case ParseErrorType::MissSemicolonFor2:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop after condition\n";
+            std::cout << "  Token: " << t.token << " is not a ';'!\n";
+            break;
+        case ParseErrorType::MissRParenFor:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in for loop\n";
+            std::cout << "  Token: " << t.token << " is not a ')'!\n";
+            break;
+        case ParseErrorType::MissLParenWhile:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in while loop\n";
+            std::cout << "  Token: " << t.token << " is not a '('!\n";
+            break;
+        case ParseErrorType::MissRParenWhile:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in while loop\n";
+            std::cout << "  Token: " << t.token << " is not a ')'!\n";
+            break;
+        case ParseErrorType::MissEqVarDecAssign:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Malformed variable declaration assignment\n";
+            std::cout << "  Token: " << t.token << " is not a '='!\n";
             break;
        default:
             std::cout << "Unknown Parse Error!\n";
@@ -180,7 +229,7 @@ void parsePrototype(LexerTarget* lexer) {
 }
 
 void parseOptparams(LexerTarget* lexer) {
-    //opt_args -> null | id : type opt_args_tail
+    //opt_params -> null | id : type opt_params_tail
     Token tok = lexer->lex();
     if(tok.type == TokenType::rparen) {
         return;
@@ -197,7 +246,7 @@ void parseOptparams(LexerTarget* lexer) {
 }
 
 void parseOptparamsTail(LexerTarget* lexer) {
-    //opt_args_tail -> null | , opt_args
+    //opt_params_tail -> null | , opt_params
     Token tok = lexer->lex();
     if(tok.type == TokenType::comma) {
         parseOptparams(lexer);
@@ -253,6 +302,17 @@ void parseVarDec(LexerTarget* lexer) {
     return;
 }
 
+void parseVarDecAssign(LexerTarget* lexer) {
+    //vardecassign -> vardec = expression
+    parseVarDec(lexer);
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::assignment) {
+        parse_error(PET::MissEqVarDecAssign, tok);
+    }
+    parseExpression(lexer);
+    return;
+}
+
 void parseFunctionDef(LexerTarget* lexer) {
     //functiondefs -> fn id ( opt_params ) : type block
     Token tok = lexer->lex();
@@ -282,14 +342,173 @@ void parseBlock(LexerTarget* lexer) {
     if(tok.type != TokenType::lbrace) {
         parse_error(PET::BadBlockStart, tok);
     }
-    do {
-        tok = lexer->lex();
-        if(tok.type == TokenType::eof) {
-            parse_error(PET::IncompleteBlock,tok);
-        }
-    } while(tok.type != TokenType::rbrace);
+    parseStatementList(lexer);
+    tok = lexer->peek();
+    if(tok.type == TokenType::eof) {
+        parse_error(PET::IncompleteBlock,tok);
+    }
 }
 
 void parseStatementList(LexerTarget* lexer) {
     //stmtlist -> stmt stmtlisttail
+    parseStatement(lexer);
+    parseStatementListTail(lexer);
+}
+
+void parseStatementListTail(LexerTarget* lexer) {
+    //stmtlisttail -> stmtlist | null
+    parseStatementList(lexer);
+}
+
+void parseStatement(LexerTarget* lexer) {
+    //stmt -> deferblock | ifblock | loop | block | returnstmt
+    //     -> varstmt ; | expr ; | ;
+    Token tok = lexer->lex();
+    if(tok.type == TokenType::semicolon) {
+        return;
+    } else if(tok.type == TokenType::sif) {
+        parseIfblock(lexer);
+    } else if(tok.type == TokenType::sfor || tok.type == TokenType::swhile) {
+        parseLoop(lexer);
+    } else if(tok.type == TokenType::sdefer) {
+        parseDeferBlock(lexer);
+    } else if(tok.type == TokenType::lbrace) {
+        parseBlock(lexer);
+    } else if(tok.type == TokenType::sreturn) {
+        parseReturnStatement(lexer);
+    }
+}
+
+void parseStatementListLoop(LexerTarget* lexer) {
+}
+
+void parseIfblock(LexerTarget* lexer) {
+/*
+ * ifblock -> if ( expression ) ifelsebody optelseblock
+ */
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::MissIfLParen, tok);
+    }
+    parseExpression(lexer);
+    //TODO(marcus): is it peek or lex here?
+    //depends how expressions are parsed...
+    tok = lexer->peek();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissIfRParen, tok);
+    }
+    parseIfElseBody(lexer);
+    parseOptElseBlock(lexer);
+}
+
+void parseIfElseBody(LexerTarget* lexer) {
+    /*
+     * ifelsebody -> block | stmt ;
+     */
+    Token tok = lexer->lex();
+    //Double check for error with peek/lex below. (rewrite earlier functions?)
+    if(tok.type == TokenType::lbrace) {
+        parseBlock(lexer);
+    } else {
+        parseStatement(lexer);
+    }
+}
+
+void parseOptElseBlock(LexerTarget* lexer) {
+    /*
+     * optelseblock -> else ifelsebody | null
+     */
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::selse) {
+        return;
+    }
+    parseIfElseBody(lexer);
+}
+
+void parseLoop(LexerTarget* lexer) {
+    /*
+     * loop -> loophead { stmtlistloop }
+     * loophead -> for ( vardecassign ; conditional ; expr ) | while ( expression )
+     */
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::sfor) {
+        parseForLoop(lexer);
+    } else if(tok.type == TokenType::swhile) {
+        parseWhileLoop(lexer);
+    } else {
+        parse_error(PET::Unknown, tok);
+    }
+    tok = lexer->lex();
+    if(tok.type != TokenType::lbrace) {
+        parse_error(PET::Unknown, tok);
+    }
+    parseStatementListLoop(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::rbrace) {
+        parse_error(PET::Unknown, tok);
+    }
+}
+
+void parseForLoop(LexerTarget* lexer) {
+    //forloop -> for . ( vardecassign ; conditional ; expr )
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::MissLParenFor, tok);
+    }
+    parseVarDecAssign(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::semicolon) {
+        parse_error(PET::MissSemicolonFor1, tok);
+    }
+    parseExpression(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::semicolon) {
+        parse_error(PET::MissSemicolonFor2, tok);
+    }
+    parseExpression(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissRParenFor, tok);
+    }
+}
+
+void parseWhileLoop(LexerTarget* lexer) {
+    //whileloop -> while ( expression )
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::MissLParenWhile, tok);
+    }
+    parseExpression(lexer);
+    tok = lexer->lex();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissRParenWhile, tok);
+    }
+}
+
+void parseDeferBlock(LexerTarget* lexer) {
+    //deferblock -> defer . stmt
+    parseStatement(lexer);
+}
+void parseReturnStatement(LexerTarget* lexer) {
+    /*
+     * returnstmt -> return . expr ;
+     * returnstmt -> return . ;
+     */
+    Token tok = lexer->lex();
+    if(tok.type == TokenType::semicolon) {
+        return;
+    }
+    parseExpression(lexer);
+    tok = lexer->peek();
+    if(tok.type != TokenType::semicolon) {
+        parse_error(PET::MissSemiReturn, tok);
+    }
+    return;
+}
+
+void parseExpression(LexerTarget* lexer) {
+/* expr -> expr plusmin multdiv | multdiv
+ * multdiv -> multdiv starslash parenexp | parenexp
+ * parenexp -> ( expr ) | const | var | funcall
+ */
 }
