@@ -26,6 +26,10 @@ LexerTarget::LexerTarget(std::string name, bool debug) {
 LexerTarget::~LexerTarget() {
 }
 
+bool LexerTarget::isDebug() {
+    return debug_out;
+}
+
 void LexerTarget::lexcomment() {
     
     while(comment_depth > 0) {

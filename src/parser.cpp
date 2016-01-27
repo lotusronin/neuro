@@ -198,6 +198,10 @@ void parseImportStatement(LexerTarget* lexer) {
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadImportName, tok);
     }
+    std::string newfilename = tok.token+".nro";
+    LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
+    std::cout << "Importing file: " << newfilename << "\n";
+    parseTopLevelStatements(&importlex);
     tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
         parse_error(ParseErrorType::MissImportSemicolon, tok);

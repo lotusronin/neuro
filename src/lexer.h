@@ -15,6 +15,7 @@ public:
     Token lex();
     Token peek();
     void lexcomment();
+    bool isDebug();
 
 private:
     std::string filename;
