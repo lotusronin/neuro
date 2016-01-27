@@ -84,6 +84,7 @@ Token LexerTarget::lex() {
     std::string token = "";
 
     if(lineNum >= content.size()) {
+        currentTok = EOFTOKEN;
         return EOFTOKEN;
     }
     
@@ -91,8 +92,10 @@ Token LexerTarget::lex() {
     while(colNum >= ln.size()) {
         lineNum++;
         colNum = 0;
-        if(lineNum >= content.size())
+        if(lineNum >= content.size()) {
+            currentTok = EOFTOKEN;
             return EOFTOKEN;
+        }
         ln = content.at(lineNum);
     }
 
@@ -102,6 +105,7 @@ Token LexerTarget::lex() {
         //std::cout << "there is a space!!!\n";
         while(colNum >= ln.size()) {
             if(lineNum+1 >= content.size()) {
+                currentTok = EOFTOKEN;
                 return EOFTOKEN;
             } else {
                 lineNum++;
@@ -161,6 +165,7 @@ Token LexerTarget::lex() {
             colNum = 0;
             lineNum++;
             if(lineNum >= content.size()) {
+                currentTok = EOFTOKEN;
                 return EOFTOKEN;
             }
             ln = content.at(lineNum);

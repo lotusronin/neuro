@@ -1,0 +1,8 @@
+fn myfunc() : void {
+print(42);
+}
+
+fn main() : int {
+    myfunc();
+    return 0;
+}
