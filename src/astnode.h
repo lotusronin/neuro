@@ -1,6 +1,7 @@
 #ifndef ASTNODE_H
 #define ASTNODE_H
 
+#include <fstream>
 #include "tokens.h"
 
 /*
@@ -62,8 +63,9 @@ class AstNode {
     public:
         AstNode();
         virtual ~AstNode();
-        virtual void makeGraph();
+        virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType type();
+        virtual void addChild(AstNode* child);
         Token* mtoken;
 };
 

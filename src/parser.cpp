@@ -2,20 +2,21 @@
 #include <vector>
 #include "parser.h"
 #include "tokens.h"
+#include "astnodetypes.h"
 
 //ParseErrorType:: is a pain to write out every time... :)
 #define PET ParseErrorType
 
-void parseTopLevelStatements(LexerTarget* lexer);
-void parseImportStatement(LexerTarget* lexer);
-void parsePrototype(LexerTarget* lexer);
-void parseOptparams(LexerTarget* lexer);
-void parseOptparamsTail(LexerTarget* lexer);
+void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent);
+void parseImportStatement(LexerTarget* lexer, AstNode* parent);
+void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent);
+void parseOptparams(LexerTarget* lexer, AstNode* parent);
+void parseOptparamsTail(LexerTarget* lexer, AstNode* parent);
 void parseType(LexerTarget* lexer);
 void parseVar(LexerTarget* lexer);
 void parseVarDec(LexerTarget* lexer);
 void parseVarDecAssign(LexerTarget* lexer);
-void parseFunctionDef(LexerTarget* lexer);
+void parseFunctionDef(LexerTarget* lexer, AstNode* parent);
 void parseBlock(LexerTarget* lexer);
 void parseStatementList(LexerTarget* lexer);
 void parseStatement(LexerTarget* lexer);
@@ -158,43 +159,58 @@ void Parser::setLexer(LexerTarget* _lexer) {
     mlexer = _lexer;
 }
 
+//TODO(marcus): Currently goal program node is global. Is this okay or should we do it differently?
+ProgramNode* program;
+
 void Parser::parse() {
-    //TODO(marcus) make Translation unit/program parse node
+    program = new ProgramNode();
+    CompileUnitNode* compunit = new CompileUnitNode();
+    program->addChild(compunit);
     std::cout << "Beginning parse!\n";
     mlexer->lex();
-    parseTopLevelStatements(mlexer);
+    parseTopLevelStatements(mlexer, compunit);
+    
+    //Generate Dot file for debugging
+    std::ofstream dotfileout(mlexer->targetName()+".dot",std::ofstream::out);
+    program->makeGraph(dotfileout);
+    dotfileout.close();
+    std::string cmd = "dot -Tpng "+mlexer->targetName()+".dot -o "+mlexer->targetName()+".png";
+    std::cout << "Running command: " << cmd << "\n";
+    system(cmd.c_str());
 }
 
-void parseTopLevelStatements(LexerTarget* lexer) {
+void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
     //tl_statements -> imports tl_statements 
     //tl_statements -> prototypes tl_statements
     //tl_statements -> functiondefs tl_statements 
     //tl_statements -> null
     Token tok = lexer->peek();
     if(tok.type == TokenType::import) {
-        std::cout << "import token, beginning to match import statement...\n";
-        parseImportStatement(lexer);
-        std::cout << "import statement matched\n";
+        //std::cout << "import token, beginning to match import statement...\n";
+        parseImportStatement(lexer, parent);
+        //std::cout << "import statement matched\n";
     } else if(tok.type == TokenType::fn) {
-        std::cout << "Function Definitions Parse\n";
-        parseFunctionDef(lexer);
-        std::cout << "Function Definitions matched\n";
+        //std::cout << "Function Definitions Parse\n";
+        parseFunctionDef(lexer, parent);
+        //std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
-        std::cout << "extern token, beginning to match prototype...\n";
-        parsePrototype(lexer);
-        std::cout << "prototype matched\n";
+        //std::cout << "extern token, beginning to match prototype...\n";
+        parsePrototype(lexer, (CompileUnitNode*)parent);
+        //std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::eof) {
         std::cout << "File is parsed, no errors detected!\n\n";
         return;
     }else {
         parse_error(ParseErrorType::BadTopLevelStatement, tok);
     }
-    parseTopLevelStatements(lexer);
+    parseTopLevelStatements(lexer, parent);
 }
 
-void parseImportStatement(LexerTarget* lexer) {
+void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     //imports -> . import id ;
     //consume import
+    CompileUnitNode* compunit = new CompileUnitNode();
+    program->addChild(compunit);
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadImportName, tok);
@@ -210,12 +226,14 @@ void parseImportStatement(LexerTarget* lexer) {
     LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
     importlex.lex();
     std::cout << "\nImporting file: " << newfilename << "\n";
-    parseTopLevelStatements(&importlex);
+    //New parent?
+    parseTopLevelStatements(&importlex, compunit);
     return;
 }
 
-void parsePrototype(LexerTarget* lexer) {
+void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
     //prototypes -> . extern fn id ( opt_params ) : type ;
+    PrototypeNode* protonode = new PrototypeNode();
     //consume extern
     Token tok = lexer->lex();
     if(tok.type != TokenType::fn) {
@@ -226,6 +244,7 @@ void parsePrototype(LexerTarget* lexer) {
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadPrototypeName, tok);
     }
+    protonode->addFuncName(tok.token);
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -233,7 +252,7 @@ void parsePrototype(LexerTarget* lexer) {
     }
     //consume (
     lexer->lex();
-    parseOptparams(lexer);
+    parseOptparams(lexer, protonode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         parse_error(PET::MissPrototypeRParen, tok);
@@ -252,9 +271,10 @@ void parsePrototype(LexerTarget* lexer) {
     }
     //consume ;
     tok = lexer->lex();
+    parent->addChild(protonode);
 }
 
-void parseOptparams(LexerTarget* lexer) {
+void parseOptparams(LexerTarget* lexer, AstNode* parent) {
     //opt_params -> null | id : type opt_params_tail
     Token tok = lexer->peek();
     if(tok.type == TokenType::rparen) {
@@ -271,10 +291,12 @@ void parseOptparams(LexerTarget* lexer) {
     //consume :
     lexer->lex();
     parseType(lexer);
-    parseOptparamsTail(lexer);
+    ParamsNode* param = new ParamsNode();
+    parent->addChild(param);
+    parseOptparamsTail(lexer, parent);
 }
 
-void parseOptparamsTail(LexerTarget* lexer) {
+void parseOptparamsTail(LexerTarget* lexer, AstNode* parent) {
     //opt_params_tail -> null | , opt_params
     //TODO(marcus): currently allows prototypes like func(a:int,)
     //should not allow this, rewrite like optargs
@@ -282,7 +304,7 @@ void parseOptparamsTail(LexerTarget* lexer) {
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptparams(lexer);
+        parseOptparams(lexer, parent);
     } else if(tok.type == TokenType::rparen) {
         return;
     } else {
@@ -364,13 +386,16 @@ void parseVarDecAssign(LexerTarget* lexer) {
     return;
 }
 
-void parseFunctionDef(LexerTarget* lexer) {
+void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //functiondefs -> . fn id ( opt_params ) : type block
     //consume fn
+    FuncDefNode* funcnode = new FuncDefNode();
+    parent->addChild(funcnode);
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
         parse_error(PET::BadPrototypeName, tok);
     }
+    funcnode->addFuncName(tok.token);
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -378,7 +403,7 @@ void parseFunctionDef(LexerTarget* lexer) {
     }
     //consume (
     lexer->lex();
-    parseOptparams(lexer);
+    parseOptparams(lexer, funcnode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         parse_error(PET::MissPrototypeRParen,tok);

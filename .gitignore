@@ -3,4 +3,6 @@
 neuro
 Neuro
 *.output
+*.dot
+*.png
 /build

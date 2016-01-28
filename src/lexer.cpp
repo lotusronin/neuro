@@ -30,6 +30,10 @@ bool LexerTarget::isDebug() {
     return debug_out;
 }
 
+std::string LexerTarget::targetName() {
+    return filename;
+}
+
 void LexerTarget::lexcomment() {
     
     while(comment_depth > 0) {
