@@ -39,9 +39,8 @@ deferblock -> defer stmt
 ##
 #If statements in language
 ##
-ifblock -> if ( expression ) ifelsebody optelseblock
-optelseblock -> else ifelsebody | null
-ifelsebody -> block | stmt ;
+ifblock -> if ( expression ) stmt optelseblock
+optelseblock -> else stmt | null
 
 ##
 #loop support

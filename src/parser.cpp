@@ -22,7 +22,6 @@ void parseStatementList(LexerTarget* lexer);
 void parseStatement(LexerTarget* lexer);
 void parseStatementListLoop(LexerTarget* lexer);
 void parseIfblock(LexerTarget* lexer);
-void parseIfElseBody(LexerTarget* lexer);
 void parseOptElseBlock(LexerTarget* lexer);
 void parseLoop(LexerTarget* lexer);
 void parseForLoop(LexerTarget* lexer);
@@ -500,22 +499,8 @@ void parseIfblock(LexerTarget* lexer) {
     }
     //consume )
     lexer->lex();
-    parseIfElseBody(lexer);
+    parseStatement(lexer);
     parseOptElseBlock(lexer);
-}
-
-void parseIfElseBody(LexerTarget* lexer) {
-    /*
-     * ifelsebody -> block | stmt ;
-     */
-    //May not need to actually lex here, just call parsestatement() again...
-    Token tok = lexer->peek();
-    //Double check for error with peek/lex below. (rewrite earlier functions?)
-    if(tok.type == TokenType::lbrace) {
-        parseBlock(lexer);
-    } else {
-        parseStatement(lexer);
-    }
 }
 
 void parseOptElseBlock(LexerTarget* lexer) {
@@ -528,7 +513,7 @@ void parseOptElseBlock(LexerTarget* lexer) {
     }
     //consume else
     lexer->lex();
-    parseIfElseBody(lexer);
+    parseStatement(lexer);
 }
 
 void parseLoop(LexerTarget* lexer) {
