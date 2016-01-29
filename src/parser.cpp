@@ -464,7 +464,7 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
     } else if(tok.type == TokenType::sfor || tok.type == TokenType::swhile) {
         parseLoop(lexer, parent);
     } else if(tok.type == TokenType::sdefer) {
-        parseDeferBlock(lexer, nullptr);
+        parseDeferBlock(lexer, parent);
     } else if(tok.type == TokenType::lbrace) {
         parseBlock(lexer, parent);
     } else if(tok.type == TokenType::sreturn) {
@@ -605,9 +605,11 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
 
 void parseDeferBlock(LexerTarget* lexer, AstNode* parent) {
     //deferblock -> . defer stmt
+    DeferStmtNode* defernode = new DeferStmtNode();
+    parent->addChild(defernode);
     //consume defer
     lexer->lex();
-    parseStatement(lexer, nullptr);
+    parseStatement(lexer, defernode);
 }
 void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
     /*

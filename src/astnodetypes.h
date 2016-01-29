@@ -18,5 +18,6 @@
 #include "whileloopnode.h"
 #include "returnnode.h"
 #include "typenode.h"
+#include "deferstmtnode.h"
 
 #endif
