@@ -11,5 +11,12 @@
 #include "funcdefnode.h"
 #include "argsnode.h"
 #include "paramsnode.h"
+#include "blocknode.h"
+#include "vardecassignnode.h"
+#include "vardecnode.h"
+#include "forloopnode.h"
+#include "whileloopnode.h"
+#include "returnnode.h"
+#include "typenode.h"
 
 #endif

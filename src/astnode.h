@@ -66,6 +66,7 @@ class AstNode {
         virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType type();
         virtual void addChild(AstNode* child);
+        virtual AstNode* lastChild();
         Token* mtoken;
 };
 

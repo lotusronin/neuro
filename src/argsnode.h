@@ -4,7 +4,7 @@
 #include <vector>
 #include "astnode.h"
 
-class ArgsNode : AstNode {
+class ArgsNode : public AstNode {
     public:
         ArgsNode();
         ~ArgsNode();

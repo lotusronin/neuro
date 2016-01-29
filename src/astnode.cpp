@@ -18,3 +18,8 @@ void AstNode::makeGraph(std::ofstream& outfile) {
 void AstNode::addChild(AstNode* child) {
     std::cout << "addChild not called on subclass\n";
 }
+
+AstNode* AstNode::lastChild() {
+    std::cout << "lastChild not called on subclass\n";
+    return nullptr;
+}
