@@ -2,6 +2,7 @@
 #define PARAMSNODE_H
 
 #include <vector>
+#include <string>
 #include "astnode.h"
 
 class ParamsNode : public AstNode {
@@ -12,9 +13,11 @@ class ParamsNode : public AstNode {
         void makeGraph(std::ofstream& outfile);
         AstNodeType type();
         void addChild(AstNode* node);
+        void addParamName(std::string name);
         std::vector<AstNode*> mchildren;
     private:
         int id;
+        std::string mname;
 };
 
 #endif

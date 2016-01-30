@@ -2,6 +2,7 @@
 #define COMPILEUNITNODE_H
 
 #include <vector>
+#include <string>
 #include "astnode.h"
 
 class CompileUnitNode : public AstNode {
@@ -10,11 +11,13 @@ class CompileUnitNode : public AstNode {
         CompileUnitNode();
         ~CompileUnitNode();
         void makeGraph(std::ofstream& outfile);
+        void setFileName(std::string name);
         AstNodeType type();
         void addChild(AstNode* node);
         std::vector<AstNode*> mchildren;
     private:
         int id;
+        std::string mname;
 };
 
 #endif

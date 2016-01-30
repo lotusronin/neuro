@@ -164,6 +164,7 @@ ProgramNode* program;
 void Parser::parse() {
     program = new ProgramNode();
     CompileUnitNode* compunit = new CompileUnitNode();
+    compunit->setFileName(mlexer->targetName());
     program->addChild(compunit);
     std::cout << "Beginning parse!\n";
     mlexer->lex();
@@ -209,6 +210,7 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     //imports -> . import id ;
     //consume import
     CompileUnitNode* compunit = new CompileUnitNode();
+    compunit->setFileName(lexer->targetName());
     program->addChild(compunit);
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
@@ -282,12 +284,14 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
         parse_error(ParseErrorType::BadFunctionParameter, tok);
     }
     //consume id
+    std::string n = tok.token;
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
         parse_error(PET::MissOptparamColon, tok);
     }
     ParamsNode* param = new ParamsNode();
     parent->addChild(param);
+    param->addParamName(n);
     //consume :
     lexer->lex();
     parseType(lexer, param);

@@ -14,7 +14,7 @@ CompileUnitNode::~CompileUnitNode() {
 void CompileUnitNode::makeGraph(std::ofstream& outfile) {
     //implement this
     outfile << "CompilationUnit"<<id<<";\n";
-    outfile << "CompilationUnit"<<id<<"[label=\"CompUnit" << id << "\"];\n";
+    outfile << "CompilationUnit"<<id<<"[label=\"" << mname << "\"];\n";
     for (auto child : mchildren) {
         outfile << "CompilationUnit"<<id<<" -> ";
         child->makeGraph(outfile);
@@ -27,4 +27,8 @@ AstNodeType CompileUnitNode::type() {
 
 void CompileUnitNode::addChild(AstNode* node) {
     mchildren.push_back(node);
+}
+
+void CompileUnitNode::setFileName(std::string name) {
+    mname = name;
 }
