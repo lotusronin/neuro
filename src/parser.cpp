@@ -1,11 +1,17 @@
 #include <iostream>
 #include <vector>
+#include <string>
+#include <utility>
+#include <unordered_map>
 #include "parser.h"
 #include "tokens.h"
 #include "astnodetypes.h"
 
 //ParseErrorType:: is a pain to write out every time... :)
 #define PET ParseErrorType
+
+//Global imported files hashmap
+std::unordered_map<std::string, CompileUnitNode*> importedFiles;
 
 void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent);
 void parseImportStatement(LexerTarget* lexer, AstNode* parent);
@@ -36,6 +42,18 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent);
 void parseFunccall(LexerTarget* lexer, AstNode* parent);
 void parseOptargs(LexerTarget* lexer, AstNode* parent);
 void parseOptargs2(LexerTarget* lexer, AstNode* parent);
+
+bool fileImproted(std::string f) {
+    auto iter = importedFiles.find(f);
+    return (iter != importedFiles.end());
+}
+
+CompileUnitNode* importFile(std::string f) {
+    CompileUnitNode* compunit = new CompileUnitNode();
+    compunit->setFileName(f);
+    importedFiles.insert(std::make_pair(f,compunit));
+    return compunit;
+}
 
 int parse_error(ParseErrorType type, Token& t) {
     switch (type) {
@@ -163,8 +181,7 @@ ProgramNode* program;
 
 void Parser::parse() {
     program = new ProgramNode();
-    CompileUnitNode* compunit = new CompileUnitNode();
-    compunit->setFileName(mlexer->targetName());
+    CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
     std::cout << "Beginning parse!\n";
     mlexer->lex();
@@ -209,9 +226,6 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
 void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     //imports -> . import id ;
     //consume import
-    CompileUnitNode* compunit = new CompileUnitNode();
-    compunit->setFileName(lexer->targetName());
-    program->addChild(compunit);
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadImportName, tok);
@@ -224,10 +238,17 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     }
     //consume ;
     lexer->lex();
-    LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
-    importlex.lex();
-    std::cout << "\nImporting file: " << newfilename << "\n";
-    parseTopLevelStatements(&importlex, compunit);
+
+    if(!fileImproted(newfilename)) {
+        CompileUnitNode* compunit = importFile(newfilename);
+        LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
+        importlex.lex();
+        std::cout << "\nImporting file: " << newfilename << "\n";
+        parseTopLevelStatements(&importlex, compunit);
+        program->addChild(compunit);
+    } else {
+        std::cout << "Already imported " << newfilename << "\n";
+    }
     return;
 }
 
