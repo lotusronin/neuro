@@ -502,7 +502,7 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         return;
     } else if(tok.type == TokenType::sif) {
-        parseIfblock(lexer, nullptr);
+        parseIfblock(lexer, parent);
     } else if(tok.type == TokenType::sfor || tok.type == TokenType::swhile) {
         parseLoop(lexer, parent);
     } else if(tok.type == TokenType::sdefer) {
@@ -524,6 +524,8 @@ void parseIfblock(LexerTarget* lexer, AstNode* parent) {
 /*
  * ifblock -> . if ( expression ) ifelsebody optelseblock
  */
+    IfNode* ifnode = new IfNode();
+    parent->addChild(ifnode);
     //consume if
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -538,8 +540,8 @@ void parseIfblock(LexerTarget* lexer, AstNode* parent) {
     }
     //consume )
     lexer->lex();
-    parseStatement(lexer, nullptr);
-    parseOptElseBlock(lexer, nullptr);
+    parseStatement(lexer, ifnode);
+    parseOptElseBlock(lexer, ifnode);
 }
 
 void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
@@ -550,9 +552,11 @@ void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::selse) {
         return;
     }
+    ElseNode* elsenode = new ElseNode();
+    parent->addChild(elsenode);
     //consume else
     lexer->lex();
-    parseStatement(lexer, nullptr);
+    parseStatement(lexer, elsenode);
 }
 
 void parseLoop(LexerTarget* lexer, AstNode* parent) {
@@ -782,8 +786,7 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
         return;
     }
     parseExpression(lexer, nullptr);
-    //consume id
-    tok = lexer->lex();
+    tok = lexer->peek();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();

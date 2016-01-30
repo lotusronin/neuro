@@ -20,5 +20,7 @@
 #include "typenode.h"
 #include "deferstmtnode.h"
 #include "loopstmtnode.h"
+#include "ifnode.h"
+#include "elsenode.h"
 
 #endif
