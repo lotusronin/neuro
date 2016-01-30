@@ -20,16 +20,12 @@ stmtlisttail -> stmtlist | null
 ##
 #Add keywords for flow control on top of usual statements
 ##
-stmtloop -> stmt | flowctrl
-stmtlistloop -> stmtloop  stmtlistlooptail
-stmtlistlooptail -> stmtlistloop | null
 
-flowctrl -> break ; | continue ;
-
-stmt -> deferblock | ifblock | loop | varstmt ; | expr ; | block | returnstmt | ;
+stmt -> deferblock | ifblock | loop | varstmt ; | expr ; | block | returnstmt | flowctrl | ;
 returnstmt -> return expr ;
 returnstmt -> return funcall ;
 returnstmt -> return ;
+flowctrl -> break ; | continue ;
 
 ##
 #Defer statements
@@ -45,7 +41,7 @@ optelseblock -> else stmt | null
 ##
 #loop support
 ##
-loop -> loophead { stmtlistloop }
+loop -> loophead { stmtlist }
 loophead -> for ( vardecassign ; conditional ; expr ) | while ( expression )
 
 expr -> expr plusmin multdiv | multdiv

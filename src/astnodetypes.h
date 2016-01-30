@@ -19,5 +19,6 @@
 #include "returnnode.h"
 #include "typenode.h"
 #include "deferstmtnode.h"
+#include "loopstmtnode.h"
 
 #endif

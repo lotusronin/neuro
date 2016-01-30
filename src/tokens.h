@@ -18,6 +18,8 @@ enum class TokenType {
     sdefer,
     sreturn,
     selse,
+    sbreak,
+    scontinue,
     id,
     floatlit,
     intlit,

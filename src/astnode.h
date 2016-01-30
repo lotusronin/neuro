@@ -56,6 +56,7 @@ enum class AstNodeType {
     Funccall,
     Const,
     Args,
+    LoopStmt,
     Default
 };
 

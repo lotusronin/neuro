@@ -26,7 +26,6 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent);
 void parseBlock(LexerTarget* lexer, AstNode* parent);
 void parseStatementList(LexerTarget* lexer, AstNode* parent);
 void parseStatement(LexerTarget* lexer, AstNode* parent);
-void parseStatementListLoop(LexerTarget* lexer, AstNode* parent);
 void parseIfblock(LexerTarget* lexer, AstNode* parent);
 void parseOptElseBlock(LexerTarget* lexer, AstNode* parent);
 void parseLoop(LexerTarget* lexer, AstNode* parent);
@@ -42,6 +41,7 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent);
 void parseFunccall(LexerTarget* lexer, AstNode* parent);
 void parseOptargs(LexerTarget* lexer, AstNode* parent);
 void parseOptargs2(LexerTarget* lexer, AstNode* parent);
+void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
 
 bool fileImproted(std::string f) {
     auto iter = importedFiles.find(f);
@@ -494,21 +494,13 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         parseBlock(lexer, parent);
     } else if(tok.type == TokenType::sreturn) {
         parseReturnStatement(lexer, parent);
+    } else if(tok.type == TokenType::sbreak || tok.type == TokenType::scontinue) {
+        parseLoopStmt(lexer, parent);
     } else {
         parseExpression(lexer, nullptr);
         //consume ;
         lexer->lex();
     }
-}
-
-void parseStatementListLoop(LexerTarget* lexer, AstNode* parent) {
-/* stmtloop -> stmt | flowctrl
- * stmtlistloop -> stmtloop  stmtlistlooptail
- * stmtlistlooptail -> stmtlistloop | null
- * flowctrl -> break ; | continue ;
- */
-    //TODO(marcus): implement this function.
-    std::cout << "DON'T CALL ME!!!\n";
 }
 
 void parseIfblock(LexerTarget* lexer, AstNode* parent) {
@@ -565,7 +557,8 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume {
     lexer->lex();
-    parseStatementListLoop(lexer, parent->lastChild());
+    parseStatementList(lexer, parent->lastChild());
+    std::cout << "Statement list for loop finished\n";
     tok = lexer->peek();
     if(tok.type != TokenType::rbrace) {
         parse_error(PET::Unknown, tok);
@@ -578,6 +571,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     //forloop -> . for ( vardecassign ; conditional ; expr )
     ForLoopNode* fornode = new ForLoopNode();
     parent->addChild(fornode);
+    std::cout << "Parsing for loop!!\n";
     //consume for
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -612,6 +606,7 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
     //whileloop -> . while ( expression )
     WhileLoopNode* whilenode = new WhileLoopNode();
     parent->addChild(whilenode);
+    std::cout << "Parsing while loop!!\n";
     //consume while
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -799,5 +794,29 @@ void parseOptargs2(LexerTarget* lexer, AstNode* parent) {
         parseOptargs2(lexer, nullptr);
     }
     //Else return. if it is a ')' we will catch it in parseFunccall
+    return;
+}
+
+void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
+    /*
+     * flowctrl -> break ; | continue ;
+     */
+    std::cout << "Parsing a special loop statement\n";
+    LoopStmtNode* brkcntnode = new LoopStmtNode();
+    //consume break/continue
+    if(lexer->peek().type == TokenType::sbreak) {
+        brkcntnode->setBreak(true);
+    } else {
+        brkcntnode->setBreak(false);
+    }
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::semicolon) {
+        //consume ;
+        std::cout << "Token: " << tok.token << "\n";
+        parse_error(PET::Unknown, tok);
+    }
+    std::cout << "parseLoopStmt finished, no problem\n";
+    lexer->lex();
+    parent->addChild(brkcntnode);
     return;
 }
