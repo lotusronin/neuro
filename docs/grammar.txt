@@ -8,8 +8,8 @@ prototypes -> extern fn id ( opt_params ) : type ;
 
 functiondefs -> fn id ( opt_params ) : type block
 
-opt_params -> null | id : type opt_params_tail
-opt_params_tail -> null | , opt_params
+opt_params -> null | id : type | id : type , opt_params2
+opt_params2 -> id : type | id : type , opt_params2
 
 block -> { stmtlist }
 

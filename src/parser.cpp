@@ -10,6 +10,7 @@
 //ParseErrorType:: is a pain to write out every time... :)
 #define PET ParseErrorType
 
+//TODO(marcus): Currently this list is global. Is this okay or should we do it differently?
 //Global imported files hashmap
 std::unordered_map<std::string, CompileUnitNode*> importedFiles;
 
@@ -17,7 +18,7 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent);
 void parseImportStatement(LexerTarget* lexer, AstNode* parent);
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent);
 void parseOptparams(LexerTarget* lexer, AstNode* parent);
-void parseOptparamsTail(LexerTarget* lexer, AstNode* parent);
+void parseOptparams2(LexerTarget* lexer, AstNode* parent);
 void parseType(LexerTarget* lexer, AstNode* parent);
 void parseVar(LexerTarget* lexer, AstNode* parent);
 void parseVarDec(LexerTarget* lexer, AstNode* parent);
@@ -296,7 +297,7 @@ void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
 }
 
 void parseOptparams(LexerTarget* lexer, AstNode* parent) {
-    //opt_params -> null | id : type opt_params_tail
+    //opt_params -> null | id : type | id : type , opt_params2
     Token tok = lexer->peek();
     if(tok.type == TokenType::rparen) {
         return;
@@ -304,8 +305,8 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadFunctionParameter, tok);
     }
-    //consume id
     std::string n = tok.token;
+    //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
         parse_error(PET::MissOptparamColon, tok);
@@ -316,23 +317,39 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
     //consume :
     lexer->lex();
     parseType(lexer, param);
-    parseOptparamsTail(lexer, parent);
-}
-
-void parseOptparamsTail(LexerTarget* lexer, AstNode* parent) {
-    //opt_params_tail -> null | , opt_params
-    //TODO(marcus): currently allows prototypes like func(a:int,)
-    //should not allow this, rewrite like optargs
-    Token tok = lexer->peek();
+    tok = lexer->peek();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptparams(lexer, parent);
-    } else if(tok.type == TokenType::rparen) {
-        return;
-    } else {
+        parseOptparams2(lexer, parent);
+    }
+}
+
+void parseOptparams2(LexerTarget* lexer, AstNode* parent) {
+    //opt_params2 -> id : type | id : type , opt_params2
+    Token tok = lexer->peek();
+    if(tok.type != TokenType::id) {
         parse_error(PET::BadOptparamTail, tok);
     }
+    std::string n = tok.token;
+    //consume id
+    tok = lexer->lex();
+    if(tok.type != TokenType::colon) {
+        parse_error(PET::Unknown, tok);
+    }
+    //consume :
+    lexer->lex();
+    ParamsNode* param = new ParamsNode();
+    parent->addChild(param);
+    param->addParamName(n);
+    parseType(lexer, param);
+    tok = lexer->peek();
+    if(tok.type == TokenType::comma) {
+        //consume ,
+        lexer->lex();
+        parseOptparams2(lexer, parent);
+    }
+    return;
 }
 
 void parseType(LexerTarget* lexer, AstNode* parent) {
@@ -764,10 +781,7 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
     if(tok.type == TokenType::rparen) {
         return;
     }
-    //TODO(marcus): This should accept any expression. Should simplify code.
-    if(tok.type != TokenType::id && tok.type != TokenType::intlit) {
-        parse_error(PET::Unknown, tok);
-    }
+    parseExpression(lexer, nullptr);
     //consume id
     tok = lexer->lex();
     if(tok.type == TokenType::comma) {
@@ -782,16 +796,13 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
 void parseOptargs2(LexerTarget* lexer, AstNode* parent) {
     //opt_args2 -> . id | . id , opt_args2
     Token tok = lexer->peek();
-    //TODO(marcus): This should accept any expression. Should simplify code.
-    if(tok.type != TokenType::id) {
-        parse_error(PET::Unknown, tok);
-    }
+    parseExpression(lexer, parent);
     //consume id
     tok = lexer->lex();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptargs2(lexer, nullptr);
+        parseOptargs2(lexer, parent);
     }
     //Else return. if it is a ')' we will catch it in parseFunccall
     return;
