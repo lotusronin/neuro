@@ -32,3 +32,25 @@ The following are ideas that are planned or I am considering for the language:
   - Until loops
   - Owned memory
   - ADTs
+
+## Progress
+
+- [x] Lexer
+- [] Parser
+- [] Semantic Checking
+- [] IR Code Generation
+
+The current plan is to support a limited set of language features and get that working. Once that
+is working I will add more complex features to the language like templates and lambdas.
+
+## Hello World
+The following is Hello World in my language: 
+```
+import io;
+
+fn main(argc : int, argv : *char[]) : int {
+    io::println("Hello World");
+    return 0;
+}
+```
+** Note that the syntax, functions, and module names may change in the future. **
