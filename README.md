@@ -36,9 +36,9 @@ The following are ideas that are planned or I am considering for the language:
 ## Progress
 
 - [x] Lexer
-- [] Parser
-- [] Semantic Checking
-- [] IR Code Generation
+- [ ] Parser
+- [ ] Semantic Checking
+- [ ] IR Code Generation
 
 The current plan is to support a limited set of language features and get that working. Once that
 is working I will add more complex features to the language like templates and lambdas.
