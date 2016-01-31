@@ -54,3 +54,8 @@ fn main(argc : int, argv : *char[]) : int {
 }
 ```
 ** Note that the syntax, functions, and module names may change in the future. **
+
+## Other Languages
+If you are interested in my language or enjoy looking at new languages you may be interested in these other projects:
+- [Kraken](https://github.com/Limvot/kraken)
+- [Music](https://github.com/ChrisFadden/MusicCompiler)
