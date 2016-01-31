@@ -43,6 +43,8 @@ The following are ideas that are planned or I am considering for the language:
 The current plan is to support a limited set of language features and get that working. Once that
 is working I will add more complex features to the language like templates and lambdas.
 
+Syntax highlighting is available for vim [here](https://github.com/lotusronin/neuro.vim) 
+
 ## Hello World
 The following is Hello World in my language: 
 ```
