@@ -514,7 +514,7 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
     } else if(tok.type == TokenType::sbreak || tok.type == TokenType::scontinue) {
         parseLoopStmt(lexer, parent);
     } else {
-        parseExpression(lexer, nullptr);
+        parseExpression(lexer, parent);
         //consume ;
         lexer->lex();
     }
@@ -533,7 +533,7 @@ void parseIfblock(LexerTarget* lexer, AstNode* parent) {
     }
     //consume (
     lexer->lex();
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, ifnode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         parse_error(PET::MissIfRParen, tok);
@@ -607,14 +607,14 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume ;
     lexer->lex();
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
         parse_error(PET::MissSemicolonFor2, tok);
     }
     //consume ;
     lexer->lex();
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         parse_error(PET::MissRParenFor, tok);
@@ -635,7 +635,7 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume (
     lexer->lex();
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, whilenode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         parse_error(PET::MissRParenWhile, tok);
@@ -666,7 +666,7 @@ void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         return;
     }
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, retnode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
         parse_error(PET::MissSemiReturn, tok);
@@ -681,11 +681,11 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
  * expr -> multdiv plusmin expr  | multdiv
  */
     //Token tok = lexer->peek();
-    parseMultdiv(lexer, nullptr);
+    parseMultdiv(lexer, parent);
     Token tok = lexer->peek();
     if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
         //don't consume as we already do above
-        parseExpression(lexer, nullptr);
+        parseExpression(lexer, parent);
     }
     return;
 }
@@ -694,12 +694,12 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
  /* 
   * multdiv -> parenexp starslash multdiv | parenexp
   */
-    parseParenexp(lexer, nullptr);
+    parseParenexp(lexer, parent);
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
         //consume token
         lexer->lex();
-        parseMultdiv(lexer, nullptr);
+        parseMultdiv(lexer, parent);
     }
     return;
 }
@@ -712,7 +712,7 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
     if(tok.type == TokenType::lparen) {
         //consume (
         lexer->lex();
-        parseExpression(lexer, nullptr);
+        parseExpression(lexer, parent);
         tok = lexer->peek();
         if(tok.type != TokenType::rparen) {
             parse_error(PET::Unknown, tok);
@@ -723,7 +723,7 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
     } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit) {
         parseConst(lexer, nullptr);
     } else if(tok.type == TokenType::id) {
-        parseFunccallOrVar(lexer, nullptr);
+        parseFunccallOrVar(lexer, parent);
     } else {
         parse_error(PET::Unknown, tok);
     }
@@ -743,7 +743,7 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     //consume id, get potential (
     Token tokNext = lexer->lex();
     if(tokNext.type == TokenType::lparen) {
-        parseFunccall(lexer, nullptr);
+        parseFunccall(lexer, parent);
     } else {
         //Will not work, have to fix somehow...
         //pass token into parseVar?
@@ -753,12 +753,21 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
             //unneeded check? do we already know its an id?
             parse_error(PET::BadVarName, tok);
         }
+        VarNode* varnode = new VarNode();
+        varnode->addVarName(tok.token);
+        if(parent != nullptr) {
+            parent->addChild(varnode);
+        }
     }
 }
 
 void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     //funccall -> funcname . ( opt_args )
     // funcname -> id
+    FuncCallNode* funcallnode = new FuncCallNode();
+    if(parent != nullptr) {
+        parent->addChild(funcallnode);
+    }
     Token tok = lexer->peek();
     if(tok.type != TokenType::lparen) {
         std::cout << __FUNCTION__ << ": token wasn't (, was " << tok.token << '\n';
@@ -767,7 +776,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     //consume (
     tok = lexer->lex();
     if(tok.type != TokenType::rparen) {
-        parseOptargs(lexer, nullptr);
+        parseOptargs(lexer, funcallnode);
     }
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
@@ -785,12 +794,12 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
     if(tok.type == TokenType::rparen) {
         return;
     }
-    parseExpression(lexer, nullptr);
+    parseExpression(lexer, parent);
     tok = lexer->peek();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptargs2(lexer, nullptr);
+        parseOptargs2(lexer, parent);
     }
     //Else return. if it is a ')' we will catch it in parseFunccall
     return;

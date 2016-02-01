@@ -54,7 +54,7 @@ enum class AstNodeType {
     WhileLoop,
     RetStmnt,
     Expression,
-    Funccall,
+    FuncCall,
     Const,
     Args,
     LoopStmt,
