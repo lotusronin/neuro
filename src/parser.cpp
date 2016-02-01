@@ -23,6 +23,7 @@ void parseType(LexerTarget* lexer, AstNode* parent);
 void parseVar(LexerTarget* lexer, AstNode* parent);
 void parseVarDec(LexerTarget* lexer, AstNode* parent);
 void parseVarDecAssign(LexerTarget* lexer, AstNode* parent);
+void parseVarAssign(LexerTarget* lexer, AstNode* parent);
 void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent);
 void parseFunctionDef(LexerTarget* lexer, AstNode* parent);
 void parseBlock(LexerTarget* lexer, AstNode* parent);
@@ -433,6 +434,27 @@ void parseVarDecAssign(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
+    //varassign -> var = expression
+    AssignNode* anode = new AssignNode();
+    parent->addChild(anode);
+    Token tok = lexer->peek();
+    if(tok.type != TokenType::id) {
+        parse_error(PET::Unknown, tok);
+    }
+    VarNode* vnode = new VarNode();
+    vnode->addVarName(tok.token);
+    anode->addChild(vnode);
+    tok = lexer->lex();
+    if(tok.type != TokenType::assignment) {
+        parse_error(PET::MissEqVarDecAssign, tok);
+    }
+    //consume =
+    lexer->lex();
+    parseExpression(lexer, anode);
+    return;
+}
+
 bool tokenTypeIsAType(TokenType t) {
     switch (t) {
         case TokenType::tint:
@@ -591,6 +613,10 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         parseSomeVarDecStmt(lexer, parent);
         //consume ;
         lexer->lex();
+    } else if(tok.type == TokenType::id && lexer->peekNext().type == TokenType::assignment) {
+        parseVarAssign(lexer, parent);
+        //consume ;
+        lexer->lex();
     } else {
         parseExpression(lexer, parent);
         //consume ;
@@ -678,13 +704,15 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume (
     lexer->lex();
-    parseVarDecAssign(lexer, nullptr);
+    std::cout << "Parsing for init\n"; 
+    parseSomeVarDecStmt(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
         parse_error(PET::MissSemicolonFor1, tok);
     }
     //consume ;
     lexer->lex();
+    std::cout << "Parsing for conditional\n"; 
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
@@ -692,6 +720,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume ;
     lexer->lex();
+    std::cout << "Parsing for update\n"; 
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
@@ -758,12 +787,22 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
 /* 
  * expr -> multdiv plusmin expr  | multdiv
  */
-    //Token tok = lexer->peek();
-    parseMultdiv(lexer, parent);
+    /*
+     * TODO(marcus): expressions are right associative currently
+     */
+    std::cout << "Parsing Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("expression");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    parseMultdiv(lexer, opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
-        //don't consume as we already do above
-        parseExpression(lexer, parent);
+        s = std::string("+ -");
+        opnode->setOp(s);
+        //consume + or -
+        lexer->lex();
+        parseExpression(lexer, opnode);
     }
     return;
 }
@@ -772,12 +811,19 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
  /* 
   * multdiv -> parenexp starslash multdiv | parenexp
   */
-    parseParenexp(lexer, parent);
+    std::cout << "Parsing MultDiv Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("multdivexpr");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    parseParenexp(lexer, opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
         //consume token
+        s = std::string("* /");
+        opnode->setOp(s);
         lexer->lex();
-        parseMultdiv(lexer, parent);
+        parseMultdiv(lexer, opnode);
     }
     return;
 }
@@ -786,11 +832,18 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
  /* 
   * parenexp -> ( expr ) | const | var | funcall
   */
+    std::cout << "Parsing Paren Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("parenexpr");
+    opnode->setOp(s);
+    parent->addChild(opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::lparen) {
+        s = std::string("( )");
+        opnode->setOp(s);
         //consume (
         lexer->lex();
-        parseExpression(lexer, parent);
+        parseExpression(lexer, opnode);
         tok = lexer->peek();
         if(tok.type != TokenType::rparen) {
             parse_error(PET::Unknown, tok);
@@ -799,9 +852,10 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         return;
     } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit) {
-        parseConst(lexer, nullptr);
+        std::cout << "Parsing Const!\n";
+        parseConst(lexer, opnode);
     } else if(tok.type == TokenType::id) {
-        parseFunccallOrVar(lexer, parent);
+        parseFunccallOrVar(lexer, opnode);
     } else {
         parse_error(PET::Unknown, tok);
     }
@@ -811,6 +865,10 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
 void parseConst(LexerTarget* lexer, AstNode* parent) {
     // const -> ilit | flit | charlit
     //Consume token
+    ConstantNode* constnode = new ConstantNode();
+    parent->addChild(constnode);
+    std::string op = lexer->peek().token;
+    constnode->setVal(op);
     lexer->lex();
     return;
 }
@@ -821,8 +879,10 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     //consume id, get potential (
     Token tokNext = lexer->peekNext();
     if(tokNext.type == TokenType::lparen) {
+        std::cout << "Parsing FuncCall!\n";
         parseFunccall(lexer, parent);
     } else {
+        std::cout << "Parsing Variable!\n";
         //Will not work, have to fix somehow...
         //pass token into parseVar?
         //parseVar(lexer);    

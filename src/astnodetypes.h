@@ -24,5 +24,8 @@
 #include "elsenode.h"
 #include "funccallnode.h"
 #include "varnode.h"
+#include "binopnode.h"
+#include "constantnode.h"
+#include "assignnode.h"
 
 #endif
