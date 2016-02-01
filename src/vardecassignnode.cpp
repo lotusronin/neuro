@@ -14,9 +14,9 @@ VarDecAssignNode::~VarDecAssignNode() {
 void VarDecAssignNode::makeGraph(std::ofstream& outfile) {
     outfile << "vardecassign" << id << ";\n";
     outfile << "vardecassign" << id << "[label=\"vardecassign\"];\n";
-    for (auto param : mparams) {
+    for (auto child : mchildren) {
         outfile << "vardecassign" << id << " -> ";
-        param->makeGraph(outfile);
+        child->makeGraph(outfile);
     }
 }
 
@@ -25,6 +25,6 @@ AstNodeType VarDecAssignNode::type() {
 }
 
 void VarDecAssignNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 

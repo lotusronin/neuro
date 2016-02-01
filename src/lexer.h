@@ -14,11 +14,13 @@ public:
     ~LexerTarget();
     Token lex();
     Token peek();
+    Token peekNext();
     void lexcomment();
     bool isDebug();
     std::string targetName();
 
 private:
+    void updateTokens(Token& t);
     std::string filename;
     std::vector<std::string> content;
     unsigned int lineNum, colNum;
@@ -26,6 +28,7 @@ private:
     int comment_depth;
     bool debug_out;
     Token currentTok;
+    Token nextTok;
     /* data */
 };
 
