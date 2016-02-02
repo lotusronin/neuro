@@ -3,5 +3,6 @@
 #include "astnode.h"
 
 void collapseExpressionChains(AstNode* ast);
+void checkContinueBreak(AstNode* ast, int loopDepth);
 
 #endif

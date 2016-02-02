@@ -42,3 +42,20 @@ void collapseExpressionChains(AstNode* ast) {
         collapseExpressionChains(c);
     }
 }
+
+void checkContinueBreak(AstNode* ast, int loopDepth) {
+    AstNodeType type = ast->type();
+    if(type == AstNodeType::LoopStmt) {
+        if(loopDepth == 0) {
+            std::cout << "Error, Break or Continue used outside of a loop!\n";
+        }
+    }
+
+    int nextLoopDepth = loopDepth;
+    if(type == AstNodeType::ForLoop || type == AstNodeType::WhileLoop) {
+        nextLoopDepth += 1;
+    }
+    for(auto c : (*(ast->getChildren()))) {
+        checkContinueBreak(c, nextLoopDepth);
+    }
+}

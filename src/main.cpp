@@ -53,6 +53,7 @@ int main(int argc, char** argv) {
             
             std::cout << "Beginning AST transformations and Semantic analysis\n";
             collapseExpressionChains(ast);
+            checkContinueBreak(ast, 0);
             if(debug_parser) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);
