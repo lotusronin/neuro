@@ -36,3 +36,7 @@ void PrototypeNode::addChild(AstNode* node) {
 void PrototypeNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
 }
+
+std::vector<AstNode*>* PrototypeNode::getChildren() {
+    return &mparams;
+}

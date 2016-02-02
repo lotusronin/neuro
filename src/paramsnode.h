@@ -14,6 +14,7 @@ class ParamsNode : public AstNode {
         AstNodeType type();
         void addChild(AstNode* node);
         void addParamName(std::string name);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
     private:
         int id;

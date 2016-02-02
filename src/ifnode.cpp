@@ -28,3 +28,6 @@ void IfNode::addChild(AstNode* node) {
     mstatements.push_back(node);
 }
 
+std::vector<AstNode*>* IfNode::getChildren() {
+    return &mstatements;
+}

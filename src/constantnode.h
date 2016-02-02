@@ -13,6 +13,7 @@ class ConstantNode : public AstNode {
         void makeGraph(std::ofstream& outfile);
         AstNodeType type();
         void addChild(AstNode* node);
+        std::vector<AstNode*>* getChildren();
         void setVal(std::string& val);
         std::vector<AstNode*> mchildren;
     private:

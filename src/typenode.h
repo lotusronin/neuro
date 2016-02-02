@@ -14,6 +14,7 @@ class TypeNode : public AstNode {
         AstNodeType type();
         void addChild(AstNode* node);
         void setTypeName(std::string tname);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
     private:
         int id;

@@ -28,3 +28,6 @@ void VarDecAssignNode::addChild(AstNode* node) {
     mchildren.push_back(node);
 }
 
+std::vector<AstNode*>* VarDecAssignNode::getChildren() {
+    return &mchildren;
+}

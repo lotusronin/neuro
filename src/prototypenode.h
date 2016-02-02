@@ -15,6 +15,7 @@ class PrototypeNode : public AstNode {
         void addParams(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mparams;
         std::string mfuncname;
     private:

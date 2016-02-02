@@ -28,6 +28,10 @@ void ConstantNode::addChild(AstNode* node) {
     std::cerr << "Should not be adding child to constant!\n";
 }
 
+std::vector<AstNode*>* ConstantNode::getChildren() {
+    return &mchildren;
+}
+
 void ConstantNode::setVal(std::string& val) {
     mval = val;
 }

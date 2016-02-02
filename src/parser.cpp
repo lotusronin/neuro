@@ -182,7 +182,7 @@ void Parser::setLexer(LexerTarget* _lexer) {
 //TODO(marcus): Currently goal program node is global. Is this okay or should we do it differently?
 ProgramNode* program;
 
-void Parser::parse() {
+AstNode* Parser::parse() {
     program = new ProgramNode();
     CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
@@ -192,12 +192,16 @@ void Parser::parse() {
     parseTopLevelStatements(mlexer, compunit);
     
     //Generate Dot file for debugging
+    /*
     std::ofstream dotfileout(mlexer->targetName()+".dot",std::ofstream::out);
     program->makeGraph(dotfileout);
     dotfileout.close();
     std::string cmd = "dot -Tpng "+mlexer->targetName()+".dot -o "+mlexer->targetName()+".png";
     std::cout << "Running command: " << cmd << "\n";
     system(cmd.c_str());
+    */
+
+    return program;
 }
 
 void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {

@@ -28,3 +28,6 @@ void ForLoopNode::addChild(AstNode* node) {
     mstatements.push_back(node);
 }
 
+std::vector<AstNode*>* ForLoopNode::getChildren() {
+    return &mstatements;
+}

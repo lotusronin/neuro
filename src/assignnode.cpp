@@ -28,3 +28,6 @@ void AssignNode::addChild(AstNode* node) {
     mchildren.push_back(node);
 }
 
+std::vector<AstNode*>* AssignNode::getChildren() {
+    return &mchildren;
+}

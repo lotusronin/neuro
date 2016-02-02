@@ -11,6 +11,7 @@ class ArgsNode : public AstNode {
         void makeGraph();
         AstNodeType type();
         void addChild(AstNode* node);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
 };
 

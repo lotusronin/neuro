@@ -28,3 +28,6 @@ void ElseNode::addChild(AstNode* node) {
     mstatements.push_back(node);
 }
 
+std::vector<AstNode*>* ElseNode::getChildren() {
+    return &mstatements;
+}

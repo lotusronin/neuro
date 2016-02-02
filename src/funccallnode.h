@@ -15,6 +15,7 @@ class FuncCallNode : public AstNode {
         void addArgs(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> margs;
         std::string mfuncname;
     private:

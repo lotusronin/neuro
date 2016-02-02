@@ -2,6 +2,7 @@
 #define ASTNODE_H
 
 #include <fstream>
+#include <vector>
 #include "tokens.h"
 
 /*
@@ -71,6 +72,7 @@ class AstNode {
         virtual AstNodeType type();
         virtual void addChild(AstNode* child);
         virtual AstNode* lastChild();
+        virtual std::vector<AstNode*>* getChildren();
         Token* mtoken;
 };
 

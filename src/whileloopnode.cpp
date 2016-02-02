@@ -28,3 +28,6 @@ void WhileLoopNode::addChild(AstNode* node) {
     mstatements.push_back(node);
 }
 
+std::vector<AstNode*>* WhileLoopNode::getChildren() {
+    return &mstatements;
+}

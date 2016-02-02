@@ -36,3 +36,7 @@ void FuncDefNode::addChild(AstNode* node) {
 void FuncDefNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
 }
+
+std::vector<AstNode*>* FuncDefNode::getChildren() {
+    return &mparams;
+}

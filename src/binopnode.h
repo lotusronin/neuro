@@ -13,7 +13,9 @@ class BinOpNode : public AstNode {
         void makeGraph(std::ofstream& outfile);
         AstNodeType type();
         void addChild(AstNode* node);
+        std::vector<AstNode*>* getChildren();
         void setOp(std::string& op);
+        std::string getOp();
         std::vector<AstNode*> mchildren;
     private:
         int id;

@@ -11,6 +11,7 @@ class ProgramNode : public AstNode {
         void makeGraph(std::ofstream& outfile);
         AstNodeType type();
         void addChild(AstNode* node);
+        std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
 };
 

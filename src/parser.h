@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 #include "lexer.h"
+#include "astnode.h"
 
 enum class ParseErrorType {
     BadTopLevelStatement,
@@ -39,7 +40,7 @@ class Parser {
         Parser(LexerTarget* _lexer);
         ~Parser();
         void setLexer(LexerTarget* _lexer);
-        void parse();
+        AstNode* parse();
     private:
         LexerTarget* mlexer;
 };

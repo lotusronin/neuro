@@ -31,3 +31,7 @@ void BlockNode::addChild(AstNode* node) {
 AstNode* BlockNode::lastChild() {
     return mstatements.back();
 }
+
+std::vector<AstNode*>* BlockNode::getChildren() {
+    return &mstatements;
+}

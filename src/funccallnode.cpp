@@ -36,3 +36,7 @@ void FuncCallNode::addChild(AstNode* node) {
 void FuncCallNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
 }
+
+std::vector<AstNode*>* FuncCallNode::getChildren() {
+    return &margs;
+}

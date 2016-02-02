@@ -32,3 +32,7 @@ void VarNode::addChild(AstNode* node) {
 void VarNode::addVarName(std::string name) {
     mname = name;
 }
+
+std::vector<AstNode*>* VarNode::getChildren() {
+    return &mchildren;
+}

@@ -32,3 +32,7 @@ void CompileUnitNode::addChild(AstNode* node) {
 void CompileUnitNode::setFileName(std::string name) {
     mname = name;
 }
+
+std::vector<AstNode*>* CompileUnitNode::getChildren() {
+    return &mchildren;
+}

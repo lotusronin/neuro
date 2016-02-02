@@ -28,3 +28,7 @@ void TypeNode::addChild(AstNode* node) {
 void TypeNode::setTypeName(std::string tname) {
     mname = tname;
 }
+
+std::vector<AstNode*>* TypeNode::getChildren() {
+    return &mchildren;
+}

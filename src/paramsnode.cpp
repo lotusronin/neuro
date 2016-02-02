@@ -32,3 +32,7 @@ void ParamsNode::addChild(AstNode* node) {
 void ParamsNode::addParamName(std::string name) {
     mname = name;
 }
+
+std::vector<AstNode*>* ParamsNode::getChildren() {
+    return &mchildren;
+}

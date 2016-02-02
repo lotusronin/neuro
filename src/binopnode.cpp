@@ -31,3 +31,11 @@ void BinOpNode::addChild(AstNode* node) {
 void BinOpNode::setOp(std::string& op) {
     mop = op;
 }
+
+std::string BinOpNode::getOp() {
+    return mop;
+}
+
+std::vector<AstNode*>* BinOpNode::getChildren() {
+    return &mchildren;
+}

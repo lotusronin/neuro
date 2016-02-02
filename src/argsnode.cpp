@@ -18,3 +18,7 @@ AstNodeType ArgsNode::type() {
 void ArgsNode::addChild(AstNode* node) {
     mchildren.push_back(node);
 }
+
+std::vector<AstNode*>* ArgsNode::getChildren() {
+    return &mchildren;
+}
