@@ -39,3 +39,25 @@ std::string BinOpNode::getOp() {
 std::vector<AstNode*>* BinOpNode::getChildren() {
     return &mchildren;
 }
+
+AstNode* BinOpNode::LHS() {
+    if(mchildren.size() > 0) {
+        return mchildren[0];
+    }
+    return nullptr;
+}
+
+AstNode* BinOpNode::RHS() {
+    if(mchildren.size() > 1) {
+        return mchildren[1];
+    }
+    return nullptr;
+}
+
+void BinOpNode::setLHS(AstNode* ast) {
+        mchildren[0] = ast;
+}
+
+void BinOpNode::setRHS(AstNode* ast) {
+        mchildren[1] = ast;
+}

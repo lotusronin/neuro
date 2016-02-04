@@ -59,3 +59,30 @@ void checkContinueBreak(AstNode* ast, int loopDepth) {
         checkContinueBreak(c, nextLoopDepth);
     }
 }
+
+void fixOperatorAssociativity(AstNode* ast) {
+    std::vector<AstNode*>* children = ast->getChildren();
+    for(unsigned int i = 0; i < children->size(); i++) {
+        auto type = (*children)[i]->type();
+        if(type == ANT::BinOp) {
+            auto child = (BinOpNode*)(*children)[i];
+            while(child->RHS()->type() == ANT::BinOp) {
+                auto newChild = (BinOpNode*)child->RHS();
+                if(child->getOp().compare(newChild->getOp()) == 0) {
+                    //Rotate tree to the left if it is the same operator
+                    auto oldChildNewRHS = newChild->LHS();
+                    newChild->setLHS(child);
+                    child->setRHS(oldChildNewRHS);
+                    (*children)[i] = newChild;
+                    child = newChild;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+
+    for(auto c : (*children)) {
+        fixOperatorAssociativity(c);
+    }
+}

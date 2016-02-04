@@ -16,6 +16,10 @@ class BinOpNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         void setOp(std::string& op);
         std::string getOp();
+        AstNode* LHS();
+        void setLHS(AstNode* ast);
+        AstNode* RHS();
+        void setRHS(AstNode* ast);
         std::vector<AstNode*> mchildren;
     private:
         int id;
