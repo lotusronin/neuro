@@ -802,8 +802,7 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
     parseMultdiv(lexer, opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
-        s = std::string("+ -");
-        opnode->setOp(s);
+        opnode->setToken(tok);
         //consume + or -
         lexer->lex();
         parseExpression(lexer, opnode);
@@ -824,8 +823,7 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
         //consume token
-        s = std::string("* /");
-        opnode->setOp(s);
+        opnode->setToken(tok);
         lexer->lex();
         parseMultdiv(lexer, opnode);
     }
@@ -843,6 +841,7 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
     parent->addChild(opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::lparen) {
+        opnode->setToken(tok);
         s = std::string("( )");
         opnode->setOp(s);
         //consume (

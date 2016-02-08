@@ -72,8 +72,9 @@ class AstNode {
         virtual AstNodeType type();
         virtual void addChild(AstNode* child);
         virtual AstNode* lastChild();
+        virtual void setToken(Token& t);
         virtual std::vector<AstNode*>* getChildren();
-        Token* mtoken;
+        Token mtoken;
 };
 
 

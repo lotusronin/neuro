@@ -28,3 +28,7 @@ std::vector<AstNode*>* AstNode::getChildren() {
     std::cout << "getChildren not called on subclass\n";
     return nullptr;
 }
+
+void AstNode::setToken(Token& t) {
+    mtoken = t;
+}

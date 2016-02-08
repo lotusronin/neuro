@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "astnode.h"
+#include "tokens.h"
 
 class BinOpNode : public AstNode {
     public:
@@ -20,11 +21,14 @@ class BinOpNode : public AstNode {
         void setLHS(AstNode* ast);
         AstNode* RHS();
         void setRHS(AstNode* ast);
+        int getPriority();
+        void setToken(Token& t);
         std::vector<AstNode*> mchildren;
     private:
         int id;
         //TODO(marcus): make this an enum
         std::string mop;
+        int mpriority;
 };
 
 

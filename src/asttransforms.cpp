@@ -66,9 +66,14 @@ void fixOperatorAssociativity(AstNode* ast) {
         auto type = (*children)[i]->type();
         if(type == ANT::BinOp) {
             auto child = (BinOpNode*)(*children)[i];
+            //TODO(marcus): should replace this constant with an enum or macro
+            if(child->getPriority() == 3) {
+                //skip () nodes since they only have 1 child
+                continue;
+            }
             while(child->RHS()->type() == ANT::BinOp) {
                 auto newChild = (BinOpNode*)child->RHS();
-                if(child->getOp().compare(newChild->getOp()) == 0) {
+                if(child->getPriority() == newChild->getPriority()) {
                     //Rotate tree to the left if it is the same operator
                     auto oldChildNewRHS = newChild->LHS();
                     newChild->setLHS(child);
