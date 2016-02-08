@@ -21,7 +21,7 @@ void FuncDefNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType FuncDefNode::type() {
+AstNodeType FuncDefNode::nodeType() {
     return AstNodeType::FuncDef;
 }
 

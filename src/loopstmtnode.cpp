@@ -25,7 +25,7 @@ void LoopStmtNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType LoopStmtNode::type() {
+AstNodeType LoopStmtNode::nodeType() {
     return AstNodeType::LoopStmt;
 }
 

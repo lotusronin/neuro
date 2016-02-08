@@ -9,8 +9,8 @@ void collapseExpressionChains(AstNode* ast) {
     std::vector<AstNode*>* vec = ast->getChildren();
     for(unsigned int i = 0; i < vec->size(); i++) {
         AstNode* child = (*vec)[i];
-        if(child->type() == ANT::BinOp) {
-            while(child->type() == ANT::BinOp) {
+        if(child->nodeType() == ANT::BinOp) {
+            while(child->nodeType() == ANT::BinOp) {
                 BinOpNode* node = (BinOpNode*)child;
                 std::string op = node->getOp();
                 if(op.compare("expression") == 0) {
@@ -44,7 +44,7 @@ void collapseExpressionChains(AstNode* ast) {
 }
 
 void checkContinueBreak(AstNode* ast, int loopDepth) {
-    AstNodeType type = ast->type();
+    AstNodeType type = ast->nodeType();
     if(type == AstNodeType::LoopStmt) {
         if(loopDepth == 0) {
             std::cout << "Error, Break or Continue used outside of a loop!\n";
@@ -63,7 +63,7 @@ void checkContinueBreak(AstNode* ast, int loopDepth) {
 void fixOperatorAssociativity(AstNode* ast) {
     std::vector<AstNode*>* children = ast->getChildren();
     for(unsigned int i = 0; i < children->size(); i++) {
-        auto type = (*children)[i]->type();
+        auto type = (*children)[i]->nodeType();
         if(type == ANT::BinOp) {
             auto child = (BinOpNode*)(*children)[i];
             //TODO(marcus): should replace this constant with an enum or macro
@@ -71,7 +71,7 @@ void fixOperatorAssociativity(AstNode* ast) {
                 //skip () nodes since they only have 1 child
                 continue;
             }
-            while(child->RHS()->type() == ANT::BinOp) {
+            while(child->RHS()->nodeType() == ANT::BinOp) {
                 auto newChild = (BinOpNode*)child->RHS();
                 if(child->getPriority() == newChild->getPriority()) {
                     //Rotate tree to the left if it is the same operator

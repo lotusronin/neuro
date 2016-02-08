@@ -11,7 +11,7 @@ class AssignNode : public AstNode {
         AssignNode();
         ~AssignNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;

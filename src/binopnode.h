@@ -12,7 +12,7 @@ class BinOpNode : public AstNode {
         BinOpNode();
         ~BinOpNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         void setOp(std::string& op);

@@ -20,7 +20,7 @@ void BinOpNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType BinOpNode::type() {
+AstNodeType BinOpNode::nodeType() {
     return AstNodeType::BinOp;
 }
 

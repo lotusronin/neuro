@@ -20,7 +20,7 @@ void ConstantNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType ConstantNode::type() {
+AstNodeType ConstantNode::nodeType() {
     return AstNodeType::Const;
 }
 

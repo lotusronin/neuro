@@ -10,7 +10,7 @@ class ReturnNode : public AstNode {
         ReturnNode();
         ~ReturnNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;

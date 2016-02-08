@@ -20,7 +20,7 @@ void AssignNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType AssignNode::type() {
+AstNodeType AssignNode::nodeType() {
     return AstNodeType::Assign;
 }
 

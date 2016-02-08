@@ -21,7 +21,7 @@ void ParamsNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType ParamsNode::type() {
+AstNodeType ParamsNode::nodeType() {
     return AstNodeType::Params;
 }
 

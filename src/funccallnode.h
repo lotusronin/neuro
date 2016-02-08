@@ -11,7 +11,7 @@ class FuncCallNode : public AstNode {
         FuncCallNode();
         ~FuncCallNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addArgs(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);

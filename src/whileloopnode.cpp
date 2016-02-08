@@ -20,7 +20,7 @@ void WhileLoopNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType WhileLoopNode::type() {
+AstNodeType WhileLoopNode::nodeType() {
     return AstNodeType::WhileLoop;
 }
 

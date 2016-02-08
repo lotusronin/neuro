@@ -11,7 +11,7 @@ class LoopStmtNode : public AstNode {
         LoopStmtNode();
         ~LoopStmtNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         void setBreak(bool b);
         std::vector<AstNode*>* getChildren();

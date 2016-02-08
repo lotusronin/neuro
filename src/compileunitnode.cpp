@@ -21,7 +21,7 @@ void CompileUnitNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType CompileUnitNode::type() {
+AstNodeType CompileUnitNode::nodeType() {
     return AstNodeType::CompileUnit;
 }
 

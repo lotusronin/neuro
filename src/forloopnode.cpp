@@ -20,7 +20,7 @@ void ForLoopNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType ForLoopNode::type() {
+AstNodeType ForLoopNode::nodeType() {
     return AstNodeType::ForLoop;
 }
 

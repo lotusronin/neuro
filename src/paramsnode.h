@@ -11,7 +11,7 @@ class ParamsNode : public AstNode {
         ParamsNode();
         ~ParamsNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         void addParamName(std::string name);
         std::vector<AstNode*>* getChildren();

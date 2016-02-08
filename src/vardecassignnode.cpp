@@ -20,7 +20,7 @@ void VarDecAssignNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType VarDecAssignNode::type() {
+AstNodeType VarDecAssignNode::nodeType() {
     return AstNodeType::VarDecAssign;
 }
 

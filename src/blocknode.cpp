@@ -20,7 +20,7 @@ void BlockNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType BlockNode::type() {
+AstNodeType BlockNode::nodeType() {
     return AstNodeType::Block;
 }
 

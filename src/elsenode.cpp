@@ -20,7 +20,7 @@ void ElseNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType ElseNode::type() {
+AstNodeType ElseNode::nodeType() {
     return AstNodeType::ElseStmt;
 }
 

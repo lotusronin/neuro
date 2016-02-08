@@ -11,7 +11,7 @@ class VarNode : public AstNode {
         VarNode();
         ~VarNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         void addVarName(std::string name);
         std::vector<AstNode*>* getChildren();

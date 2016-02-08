@@ -20,7 +20,7 @@ void ReturnNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType ReturnNode::type() {
+AstNodeType ReturnNode::nodeType() {
     return AstNodeType::RetStmnt;
 }
 

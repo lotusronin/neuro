@@ -17,7 +17,7 @@ void TypeNode::makeGraph(std::ofstream& outfile) {
     outfile << "type"<<id<<"[label=\""<<mname<<"\"];\n";
 }
 
-AstNodeType TypeNode::type() {
+AstNodeType TypeNode::nodeType() {
     return AstNodeType::Type;
 }
 

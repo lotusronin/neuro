@@ -9,7 +9,7 @@ class ArgsNode : public AstNode {
         ArgsNode();
         ~ArgsNode();
         void makeGraph();
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;

@@ -21,7 +21,7 @@ void PrototypeNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType PrototypeNode::type() {
+AstNodeType PrototypeNode::nodeType() {
     return AstNodeType::Prototype;
 }
 

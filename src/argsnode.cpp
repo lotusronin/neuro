@@ -11,7 +11,7 @@ void ArgsNode::makeGraph() {
     //implement this
 }
 
-AstNodeType ArgsNode::type() {
+AstNodeType ArgsNode::nodeType() {
     return AstNodeType::Args;
 }
 

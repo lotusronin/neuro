@@ -21,7 +21,7 @@ void FuncCallNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType FuncCallNode::type() {
+AstNodeType FuncCallNode::nodeType() {
     return AstNodeType::FuncCall;
 }
 

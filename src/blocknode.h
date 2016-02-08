@@ -11,7 +11,7 @@ class BlockNode : public AstNode {
         BlockNode();
         ~BlockNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         AstNode* lastChild();
         std::vector<AstNode*>* getChildren();

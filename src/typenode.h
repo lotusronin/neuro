@@ -11,7 +11,7 @@ class TypeNode : public AstNode {
         TypeNode();
         ~TypeNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         void setTypeName(std::string tname);
         std::vector<AstNode*>* getChildren();

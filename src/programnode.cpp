@@ -17,7 +17,7 @@ void ProgramNode::makeGraph(std::ofstream& outfile) {
     outfile << "}";
 }
 
-AstNodeType ProgramNode::type() {
+AstNodeType ProgramNode::nodeType() {
     return AstNodeType::Program;
 }
 

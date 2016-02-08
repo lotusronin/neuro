@@ -11,7 +11,7 @@ class FuncDefNode : public AstNode {
         FuncDefNode();
         ~FuncDefNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addParams(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);

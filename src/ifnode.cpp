@@ -20,7 +20,7 @@ void IfNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType IfNode::type() {
+AstNodeType IfNode::nodeType() {
     return AstNodeType::IfStmt;
 }
 

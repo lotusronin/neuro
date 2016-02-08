@@ -9,7 +9,7 @@ class ProgramNode : public AstNode {
         ProgramNode();
         ~ProgramNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;

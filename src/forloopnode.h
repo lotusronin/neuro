@@ -11,7 +11,7 @@ class ForLoopNode : public AstNode {
         ForLoopNode();
         ~ForLoopNode();
         void makeGraph(std::ofstream& outfile);
-        AstNodeType type();
+        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mstatements;

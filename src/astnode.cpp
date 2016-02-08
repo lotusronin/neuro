@@ -7,7 +7,7 @@ AstNode::AstNode() {
 AstNode::~AstNode() {
 }
 
-AstNodeType AstNode::type() {
+AstNodeType AstNode::nodeType() {
     return AstNodeType::Default;
 }
 

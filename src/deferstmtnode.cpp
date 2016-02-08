@@ -21,7 +21,7 @@ void DeferStmtNode::makeGraph(std::ofstream& outfile) {
     }
 }
 
-AstNodeType DeferStmtNode::type() {
+AstNodeType DeferStmtNode::nodeType() {
     return AstNodeType::DeferStmt;
 }
 
