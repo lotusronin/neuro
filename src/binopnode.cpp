@@ -13,7 +13,7 @@ BinOpNode::~BinOpNode() {
 
 void BinOpNode::makeGraph(std::ofstream& outfile) {
     outfile << "binop" << id << ";\n";
-    outfile << "binop" << id << "[label=\"" << mop << "\"];\n";
+    outfile << "binop" << id << "[label=\"" << mop << "\ntype: " << mstype << "\"];\n";
     for (auto child : mchildren) {
         outfile << "binop" << id << " -> ";
         child->makeGraph(outfile);
@@ -77,4 +77,21 @@ int BinOpNode::getPriority() {
 void BinOpNode::setToken(Token& t) {
     mtoken = t;
     setOp(t.token);
+}
+
+SemanticType BinOpNode::getType() {
+    if(mpriority == 3) {
+        mstype = mchildren[0]->getType();
+    } else {
+        auto lhs_type = LHS()->getType();
+        auto rhs_type = RHS()->getType();
+
+        if(lhs_type == rhs_type) {
+            mstype = lhs_type;
+        } else {
+            mstype = rhs_type;
+        }
+    }
+
+    return mstype;
 }

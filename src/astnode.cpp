@@ -11,6 +11,10 @@ AstNodeType AstNode::nodeType() {
     return AstNodeType::Default;
 }
 
+SemanticType AstNode::getType() {
+    return mstype;
+}
+
 void AstNode::makeGraph(std::ofstream& outfile) {
     std::cout << "makeGraph not called on subclass\n";
 }
@@ -31,4 +35,36 @@ std::vector<AstNode*>* AstNode::getChildren() {
 
 void AstNode::setToken(Token& t) {
     mtoken = t;
+}
+
+std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
+    const char* out;
+    switch(obj) {
+        case SemanticType::Bool:
+            out = "bool";
+            break;
+        case SemanticType::Int:
+            out = "int";
+            break;
+        case SemanticType::Void:
+            out = "void";
+            break;
+        case SemanticType::Char:
+            out = "char";
+            break;
+        case SemanticType::Double:
+            out = "double";
+            break;
+        case SemanticType::Float:
+            out = "float";
+            break;
+        case SemanticType::Typeless:
+            out = "";
+            break;
+        default:
+            out = "Unrecognized value!";
+            break;
+    }
+    os << out;
+    return os;
 }

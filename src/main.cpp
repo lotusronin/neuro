@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
             collapseExpressionChains(ast);
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
+            decorateAst(ast);
             if(debug_parser) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);

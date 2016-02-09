@@ -1,4 +1,5 @@
 #include "funcdefnode.h"
+#include "astnodetypes.h"
 #include <iostream>
 
 int FuncDefNode::count = 0;
@@ -14,7 +15,7 @@ FuncDefNode::~FuncDefNode() {
 void FuncDefNode::makeGraph(std::ofstream& outfile) {
     //implement this
     outfile << "funcDef" << id << ";\n";
-    outfile << "funcDef" << id << "[label=\"fn "<<mfuncname<<"\"];\n";
+    outfile << "funcDef" << id << "[label=\"fn "<<mfuncname<<"\ntype: "<<mstype<<"\"];\n";
     for (auto param : mparams) {
         outfile << "funcDef" << id << " -> ";
         param->makeGraph(outfile);
@@ -39,4 +40,11 @@ void FuncDefNode::addFuncName(std::string funcname) {
 
 std::vector<AstNode*>* FuncDefNode::getChildren() {
     return &mparams;
+}
+
+SemanticType FuncDefNode::getType() {
+    //TODO(marcus): should not hard-code node locations
+    AstNode* tn = mparams[mparams.size()-2];
+    mstype = tn->getType();
+    return mstype;
 }

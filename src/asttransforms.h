@@ -5,5 +5,6 @@
 void collapseExpressionChains(AstNode* ast);
 void checkContinueBreak(AstNode* ast, int loopDepth);
 void fixOperatorAssociativity(AstNode* ast);
+void decorateAst(AstNode* ast);
 
 #endif

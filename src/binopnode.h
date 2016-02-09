@@ -23,6 +23,7 @@ class BinOpNode : public AstNode {
         void setRHS(AstNode* ast);
         int getPriority();
         void setToken(Token& t);
+        SemanticType getType();
         std::vector<AstNode*> mchildren;
     private:
         int id;

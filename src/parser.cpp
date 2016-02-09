@@ -364,7 +364,7 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     //type -> int | char | float | double | bool | id
     TypeNode* tnode = new TypeNode();
     Token tok = lexer->peek();
-    tnode->setTypeName(tok.token);
+    tnode->setToken(tok);
     if(tok.type == TokenType::tint) {
         //consume int
         lexer->lex();
@@ -869,6 +869,7 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
     // const -> ilit | flit | charlit
     //Consume token
     ConstantNode* constnode = new ConstantNode();
+    constnode->setToken(lexer->peek());
     parent->addChild(constnode);
     std::string op = lexer->peek().token;
     constnode->setVal(op);

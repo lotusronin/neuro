@@ -64,17 +64,31 @@ enum class AstNodeType {
     Default
 };
 
+enum class SemanticType {
+    Bool,
+    Int,
+    Void,
+    Char,
+    Double,
+    Float,
+    Typeless
+};
+
+std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
+
 class AstNode {
     public:
         AstNode();
         virtual ~AstNode();
         virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType nodeType();
+        virtual SemanticType getType();
         virtual void addChild(AstNode* child);
         virtual AstNode* lastChild();
         virtual void setToken(Token& t);
         virtual std::vector<AstNode*>* getChildren();
         Token mtoken;
+        SemanticType mstype = SemanticType::Typeless;
 };
 
 

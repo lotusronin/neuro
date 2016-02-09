@@ -91,3 +91,41 @@ void fixOperatorAssociativity(AstNode* ast) {
         fixOperatorAssociativity(c);
     }
 }
+
+void decorateAst(AstNode* ast) {
+    for(auto c : (*(ast->getChildren()))) {
+        decorateAst(c);
+        c->getType();
+    }
+}
+/*
+enum class AstNodeType {
+    Program,
+    CompileUnit,
+    TLStmnt,
+    ImportStmnt,
+    Prototype,
+    Params,
+    Type,
+    Var,
+    VarDec,
+    VarDecAssign,
+    FuncDef,
+    Block,
+    Stmt,
+    IfStmt,
+    ElseStmt,
+    ForLoop,
+    DeferStmt,
+    WhileLoop,
+    RetStmnt,
+    Expression,
+    BinOp,
+    FuncCall,
+    Const,
+    Args,
+    LoopStmt,
+    Assign,
+    Default
+};
+*/
