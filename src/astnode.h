@@ -71,7 +71,8 @@ enum class SemanticType {
     Char,
     Double,
     Float,
-    Typeless
+    Typeless,
+    Infer
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);

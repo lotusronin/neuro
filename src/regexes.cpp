@@ -9,6 +9,7 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("bool"),TokenType::tbool),
     std::make_pair(std::regex("float"),TokenType::tfloat),
     std::make_pair(std::regex("double"),TokenType::tdouble),
+    std::make_pair(std::regex("void"),TokenType::tvoid),
     std::make_pair(std::regex("if"),TokenType::sif),
     std::make_pair(std::regex("for"),TokenType::sfor),
     std::make_pair(std::regex("while"),TokenType::swhile),

@@ -12,6 +12,7 @@ class CompileUnitNode : public AstNode {
         ~CompileUnitNode();
         void makeGraph(std::ofstream& outfile);
         void setFileName(std::string name);
+        std::string getFileName();
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();

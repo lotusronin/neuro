@@ -15,6 +15,7 @@ class BlockNode : public AstNode {
         void addChild(AstNode* node);
         AstNode* lastChild();
         std::vector<AstNode*>* getChildren();
+        int getId();
         std::vector<AstNode*> mstatements;
     private:
         int id;

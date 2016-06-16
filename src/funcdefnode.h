@@ -17,6 +17,7 @@ class FuncDefNode : public AstNode {
         void addFuncName(std::string funcname);
         SemanticType getType();
         std::vector<AstNode*>* getChildren();
+        std::vector<AstNode*>* getParameters();
         std::vector<AstNode*> mparams;
         std::string mfuncname;
     private:

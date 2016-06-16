@@ -35,3 +35,7 @@ AstNode* BlockNode::lastChild() {
 std::vector<AstNode*>* BlockNode::getChildren() {
     return &mstatements;
 }
+
+int BlockNode::getId() {
+    return id;
+}

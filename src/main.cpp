@@ -55,6 +55,9 @@ int main(int argc, char** argv) {
             collapseExpressionChains(ast);
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
+            populateSymbolTableFunctions(ast);
+            variableUseCheck(ast);
+            //printSymbolTable();
             decorateAst(ast);
             if(debug_parser) {
                 //Generate Dot file for debugging

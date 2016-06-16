@@ -40,3 +40,12 @@ void PrototypeNode::addFuncName(std::string funcname) {
 std::vector<AstNode*>* PrototypeNode::getChildren() {
     return &mparams;
 }
+
+std::vector<AstNode*>* PrototypeNode::getParameters() {
+    std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-1);
+    return params;
+}
+
+SemanticType PrototypeNode::getType() {
+    return mparams[mparams.size()-1]->getType();
+}

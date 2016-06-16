@@ -52,6 +52,9 @@ void TypeNode::setToken(const Token& t) {
         case TokenType::tdouble:
             mstype = SemanticType::Double;
             break;
+        case TokenType::tvoid:
+            mstype = SemanticType::Void;
+            break;
         default:
             mstype = SemanticType::Typeless;
             break;

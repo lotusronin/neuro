@@ -48,3 +48,8 @@ SemanticType FuncDefNode::getType() {
     mstype = tn->getType();
     return mstype;
 }
+
+std::vector<AstNode*>* FuncDefNode::getParameters() {
+    std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-2);
+    return params;
+}

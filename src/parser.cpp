@@ -380,6 +380,9 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     } else if(tok.type == TokenType::tdouble) {
         //consume double
         lexer->lex();
+    } else if(tok.type == TokenType::tvoid) {
+        //consume void
+        lexer->lex();
     } else if(tok.type == TokenType::id) {
         //consume id
         lexer->lex();

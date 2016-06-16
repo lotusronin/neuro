@@ -33,6 +33,10 @@ void CompileUnitNode::setFileName(std::string name) {
     mname = name;
 }
 
+std::string CompileUnitNode::getFileName() {
+    return mname;
+}
+
 std::vector<AstNode*>* CompileUnitNode::getChildren() {
     return &mchildren;
 }

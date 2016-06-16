@@ -33,6 +33,10 @@ void VarNode::addVarName(std::string name) {
     mname = name;
 }
 
+std::string VarNode::getVarName() {
+    return mname;
+}
+
 std::vector<AstNode*>* VarNode::getChildren() {
     return &mchildren;
 }

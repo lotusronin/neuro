@@ -12,6 +12,7 @@ enum class TokenType {
     tbool,
     tfloat,
     tdouble,
+    tvoid,
     sif,
     sfor,
     swhile,
