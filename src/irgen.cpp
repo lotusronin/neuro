@@ -5,6 +5,7 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/IR/BasicBlock.h>
 #include <iostream>
 #include "astnode.h"
 #include "astnodetypes.h"
@@ -76,6 +77,43 @@ Function* prototypeCodegen(AstNode* n) {
     return F;
 }
 
+Function* functionCodgen(AstNode* n) {
+    FuncDefNode* funcnode = (FuncDefNode*) n;
+    Function* F = module->getFunction(funcnode->mfuncname);
+    if(!F) {
+        std::vector<AstNode*>* vec = funcnode->getParameters();
+        std::vector<Type*> parameterTypes;
+        parameterTypes.reserve(vec->size());
+       
+
+        //TODO(marcus): handle user types for return/parameters
+        for(auto c : (*vec)) {
+            Type* t = getIRType(c->getType());
+            parameterTypes.push_back(t);
+        }
+        
+        Type* retType = getIRType(funcnode->getType());
+        
+        FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
+        F = Function::Create(FT, Function::ExternalLinkage, funcnode->mfuncname, module);
+
+        unsigned int idx = 0;
+        for(auto &Arg : F->args()) {
+            std::string name = ((ParamsNode*) (*vec)[idx])->mname;
+            Arg.setName(name);
+            ++idx;
+        }
+        delete vec;
+    }
+
+    //TODO(marcus): what is entry, can it be used for every function?
+    BasicBlock* BB = BasicBlock::Create(context, "entry", F);
+    Builder.SetInsertPoint(BB);
+    //FIXME(marcus): remove void return once expression codegen works
+    Builder.CreateRetVoid();
+    return F;
+}
+
 #define ANT AstNodeType
 void generateIR_llvm(AstNode* ast) {
     
@@ -87,8 +125,16 @@ void generateIR_llvm(AstNode* ast) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-            Function* f = prototypeCodegen(ast);
-            //f->dump();
+                Function* f = prototypeCodegen(ast);
+                //f->dump();
+                return;
+            }
+            break;
+        case ANT::FuncDef:
+            {
+                Function* F = functionCodgen(ast);
+                //TODO(marcus): codegen function body
+                return;
             }
             break;
         default:
