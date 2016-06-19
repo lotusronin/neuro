@@ -6,6 +6,7 @@
 #include "parser.h"
 #include "astnode.h"
 #include "asttransforms.h"
+#include "irgen.h"
 
 bool debug_lexer;
 bool debug_parser;
@@ -68,6 +69,11 @@ int main(int argc, char** argv) {
                 std::cout << "Running command: " << cmd << "\n";
                 system(cmd.c_str());
             }
+
+            //Generate IR code
+            generateIR(ast);
+            std::cout << "IR output:\n";
+            dumpIR();
 
 
             /*
