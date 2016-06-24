@@ -114,6 +114,24 @@ Function* functionCodgen(AstNode* n) {
     return F;
 }
 
+Value* funcCallCodegen(AstNode* n) {
+    FuncCallNode* callnode = (FuncCallNode*) n;
+    Function* F = module->getFunction(callnode->mfuncname);
+    if(!F) {
+        std::cout << "Function lookup not found!\n";
+        return nullptr;
+    }
+
+    std::vector<Value*> args;
+    std::vector<AstNode*>* vec = callnode->getChildren();
+    for(auto c : (*vec)) {
+        //TODO(marcus): generate code properly for expressions
+        args.push_back(ConstantInt::get(context, APInt()));
+    }
+
+    return Builder.CreateCall(F, args, "calltemp");
+}
+
 #define ANT AstNodeType
 void generateIR_llvm(AstNode* ast) {
     
@@ -134,9 +152,14 @@ void generateIR_llvm(AstNode* ast) {
             {
                 Function* F = functionCodgen(ast);
                 //TODO(marcus): codegen function body
-                return;
             }
             break;
+        case ANT::FuncCall:
+            {
+                std::cout << "generating function call\n";
+                funcCallCodegen(ast);
+                return;
+            }
         default:
             break;
     }
