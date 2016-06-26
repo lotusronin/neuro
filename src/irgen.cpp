@@ -49,6 +49,8 @@ Type* getIRType(ST t, std::string ident = "") {
 #undef ST
 
 
+Value* expressionCodegen(AstNode* n);
+
 Function* prototypeCodegen(AstNode* n) {
     PrototypeNode* protonode = (PrototypeNode*) n;
     std::vector<AstNode*>* vec = protonode->getParameters();
@@ -132,6 +134,25 @@ Value* funcCallCodegen(AstNode* n) {
     return Builder.CreateCall(F, args, "calltemp");
 }
 
+Value* retCodegen(AstNode* n) {
+    ReturnNode* retnode = (ReturnNode*) n;
+    auto pchildren = retnode->getChildren();
+    Value* ret = nullptr;
+    if(pchildren->size() > 0) {
+        Value* retval = expressionCodegen((*retnode->getChildren())[0]);
+        ret = Builder.CreateRet(retval);
+    } else {
+        ret = Builder.CreateRetVoid();
+    }
+    return ret;
+}
+
+Value* expressionCodegen(AstNode* n) {
+    //TODO(marcus): actually fill this in.
+    Value* val = ConstantInt::get(context, APInt());
+    return val;
+}
+
 #define ANT AstNodeType
 void generateIR_llvm(AstNode* ast) {
     
@@ -158,6 +179,12 @@ void generateIR_llvm(AstNode* ast) {
             {
                 std::cout << "generating function call\n";
                 funcCallCodegen(ast);
+                return;
+            }
+        case ANT::RetStmnt:
+            {
+                std::cout << "generating return!\n";
+                retCodegen(ast);
                 return;
             }
         default:
