@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
                 system(cmd.c_str());
             }
 
+            std::cout << "Generating IR code\n";
             //Generate IR code
             generateIR(ast);
             std::cout << "IR output:\n";

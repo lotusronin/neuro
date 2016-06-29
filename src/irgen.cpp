@@ -1,4 +1,5 @@
 #include "irgen.h"
+#include "llvmirgen.h"
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Function.h>
@@ -7,6 +8,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
 #include <iostream>
+#include <string>
 #include "astnode.h"
 #include "astnodetypes.h"
 
@@ -48,8 +50,6 @@ Type* getIRType(ST t, std::string ident = "") {
 }
 #undef ST
 
-
-Value* expressionCodegen(AstNode* n);
 
 Function* prototypeCodegen(AstNode* n) {
     PrototypeNode* protonode = (PrototypeNode*) n;
@@ -120,7 +120,7 @@ Value* funcCallCodegen(AstNode* n) {
     FuncCallNode* callnode = (FuncCallNode*) n;
     Function* F = module->getFunction(callnode->mfuncname);
     if(!F) {
-        std::cout << "Function lookup not found!\n";
+        std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";
         return nullptr;
     }
 

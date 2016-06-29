@@ -3,6 +3,7 @@
 #include "astnode.h"
 #include "symboltable.h"
 #include <iostream>
+#include <string>
 #include <utility>
 
 #define ANT AstNodeType
@@ -203,7 +204,8 @@ void variableUseAndTypeCheck(AstNode* ast) {
 void variableUseCheck(AstNode* ast) {
     std::cout << "beginning variable use check!\n";
     for(auto c : (*(ast->getChildren()))) {
-        variableUseCheck(c,&progSymTab);
+        auto sc = progSymTab.children.at(((CompileUnitNode*)c)->getFileName());
+        variableUseCheck(c,sc);
     }
 }
 
@@ -271,9 +273,12 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncCall:
                 {
                     std::string name = ((FuncCallNode*)c)->mfuncname;
+                    std::cout << "Looking in symboltable for function " << name << "\n"; 
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
                         std::cout << "Function " << name << " called before it was defined.\n";
+                    } else {
+                        std::cout << "Function found\n";
                     }
                     //TODO(marcus): check function params
                 }
