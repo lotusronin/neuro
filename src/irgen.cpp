@@ -149,11 +149,59 @@ Value* retCodegen(AstNode* n) {
 
 Value* expressionCodegen(AstNode* n) {
     //TODO(marcus): actually fill this in.
-    Value* val = ConstantInt::get(context, APInt());
+    Value* val = ConstantInt::get(context, APInt(32,0));
     return val;
 }
 
+void blockCodegen(AstNode* n) {
+    std::vector<AstNode*>* vec = n->getChildren();
+    for(auto c : (*vec)) {
+        statementCodegen(c);
+    }
+}
+
+//TODO(marcus): see if this code needs to be merged into one function later
+void vardecCodegen(AstNode* n) {
+    auto vardecn = (VarDecNode*) n;
+    auto varn = (VarNode*)vardecn->mchildren.at(0);
+    //FIXME(marcus): get the type of the node once type checking works
+    //TODO(marcus): fix how you access the name of the variable
+    Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    return;
+}
+
+void vardecassignCodegen(AstNode* n) {
+    auto vardecan = (VarDecAssignNode*) n;
+    auto varn = (VarNode*)vardecan->mchildren.at(0);
+    //FIXME(marcus): get the type of the node once type checking works
+    //TODO(marcus): fix how you access the name of the variable
+    AllocaInst* alloca = Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    //TODO(marcus): don't hardcode child accesses
+    Value* val = expressionCodegen(vardecan->mchildren.at(1));
+    Builder.CreateStore(val,alloca);
+    return;
+}
+
 #define ANT AstNodeType
+void statementCodegen(AstNode* n) {
+    switch(n->nodeType()) {
+        case ANT::RetStmnt:
+                retCodegen(n);
+                break;
+        case ANT::Block:
+                blockCodegen(n);
+                break;
+        case ANT::VarDec:
+                vardecCodegen(n);
+                break;
+        case ANT::VarDecAssign:
+                vardecassignCodegen(n);
+                break;
+        default:
+            break;
+    }
+}
+
 void generateIR_llvm(AstNode* ast) {
     
     //check for null
@@ -173,6 +221,8 @@ void generateIR_llvm(AstNode* ast) {
             {
                 Function* F = functionCodgen(ast);
                 //TODO(marcus): codegen function body
+               statementCodegen(((FuncDefNode*)ast)->getFunctionBody());
+               return;
             }
             break;
         case ANT::FuncCall:
@@ -185,6 +235,15 @@ void generateIR_llvm(AstNode* ast) {
             {
                 std::cout << "generating return!\n";
                 retCodegen(ast);
+                return;
+            }
+        case ANT::CompileUnit:
+        case ANT::Program:
+            {
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    generateIR_llvm(c);
+                }
                 return;
             }
         default:

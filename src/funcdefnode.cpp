@@ -53,3 +53,7 @@ std::vector<AstNode*>* FuncDefNode::getParameters() {
     std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-2);
     return params;
 }
+
+AstNode* FuncDefNode::getFunctionBody() {
+    return mparams.back();
+}
