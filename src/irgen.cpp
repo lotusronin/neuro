@@ -18,6 +18,9 @@ LLVMContext context;
 IRBuilder<> Builder(context);
 Module* module;
 
+//TODO(marcus): make this a tree of mapped values.
+std::map<std::string, AllocaInst*> varTable;
+
 #define ST SemanticType
 Type* getIRType(ST t, std::string ident = "") {
     Type* ret;
@@ -112,7 +115,7 @@ Function* functionCodgen(AstNode* n) {
     BasicBlock* BB = BasicBlock::Create(context, "entry", F);
     Builder.SetInsertPoint(BB);
     //FIXME(marcus): remove void return once expression codegen works
-    Builder.CreateRetVoid();
+    //Builder.CreateRetVoid();
     return F;
 }
 
@@ -166,7 +169,8 @@ void vardecCodegen(AstNode* n) {
     auto varn = (VarNode*)vardecn->mchildren.at(0);
     //FIXME(marcus): get the type of the node once type checking works
     //TODO(marcus): fix how you access the name of the variable
-    Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    auto alloc = Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    varTable[varn->getVarName()] = alloc;
     return;
 }
 
@@ -176,9 +180,23 @@ void vardecassignCodegen(AstNode* n) {
     //FIXME(marcus): get the type of the node once type checking works
     //TODO(marcus): fix how you access the name of the variable
     AllocaInst* alloca = Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    varTable[varn->getVarName()] = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1));
     Builder.CreateStore(val,alloca);
+    return;
+}
+
+void assignCodegen(AstNode* n) {
+    std::cout << "Generating assingment\n";
+    //TODO(marcus): don't hardcode child access
+    auto assignn = (AssignNode*)n;
+    auto varn = (VarNode*) assignn->mchildren.at(0);
+    auto rhs = assignn->mchildren.at(1);
+    //TODO(marcus): make left hand side work for expressions that yield an address
+    Value* var = varTable[varn->getVarName()];
+    Value* val = expressionCodegen(rhs);
+    Builder.CreateStore(val,var);
     return;
 }
 
@@ -196,6 +214,9 @@ void statementCodegen(AstNode* n) {
                 break;
         case ANT::VarDecAssign:
                 vardecassignCodegen(n);
+                break;
+        case ANT::Assign:
+                assignCodegen(n);
                 break;
         default:
             break;

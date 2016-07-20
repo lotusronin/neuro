@@ -19,6 +19,7 @@ llvm::Value* retCodegen(AstNode* n);
 void blockCodegen(AstNode* n);
 void vardecCodegen(AstNode* n);
 void vardecassignCodegen(AstNode* n);
+void assignCodegen(AstNode* n);
 void statementCodegen(AstNode* n);
 void generateIR_llvm(AstNode* ast);
 
