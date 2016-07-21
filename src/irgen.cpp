@@ -200,6 +200,45 @@ void assignCodegen(AstNode* n) {
     return;
 }
 
+void ifelseCodegen(AstNode* n) {
+    auto ifn = (IfNode*) n;
+    //TODO(marcus): need custom labels for basic blocks?
+    auto enclosingscope = Builder.GetInsertBlock()->getParent();
+    BasicBlock* elseBB = nullptr;
+    BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
+    //TODO(marcus): don't hardcode size values for else check
+    if(ifn->mstatements.size() == 3) {
+        elseBB = BasicBlock::Create(context, "else");
+    }
+    BasicBlock* mergeBB = BasicBlock::Create(context, "merge");
+    //TODO(marcus): actually generate conditional expression
+    auto condv = ConstantInt::get(context, APInt());
+    //TODO(marcus): is passing nullptr okay here?
+    Builder.CreateCondBr(condv,thenBB,elseBB);
+
+    Builder.SetInsertPoint(thenBB);
+    //TODO(marcus): don't hardcode child access
+    statementCodegen(ifn->mstatements.at(1));
+
+    Builder.CreateBr(mergeBB);
+
+    if(ifn->mstatements.size() == 3) {
+        enclosingscope->getBasicBlockList().push_back(elseBB);
+        Builder.SetInsertPoint(elseBB);
+        auto elsen = (ElseNode*) ifn->mstatements.at(2);
+        statementCodegen(elsen->mstatements.at(0));
+        Builder.CreateBr(mergeBB);
+    }
+    enclosingscope->getBasicBlockList().push_back(mergeBB);
+    Builder.SetInsertPoint(mergeBB);
+    return;
+}
+
+void whileloopCodegen(AstNode* n) {
+    auto whilen = (WhileLoopNode*) n;
+    auto enclosingscope = Builder.GetInsertBlock()->getParent();
+}
+
 #define ANT AstNodeType
 void statementCodegen(AstNode* n) {
     switch(n->nodeType()) {
@@ -217,6 +256,12 @@ void statementCodegen(AstNode* n) {
                 break;
         case ANT::Assign:
                 assignCodegen(n);
+                break;
+        case ANT::IfStmt:
+                ifelseCodegen(n);
+                break;
+        case ANT::WhileLoop:
+                whileloopCodegen(n);
                 break;
         default:
             break;
