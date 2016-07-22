@@ -202,18 +202,13 @@ void assignCodegen(AstNode* n) {
 
 void ifelseCodegen(AstNode* n) {
     auto ifn = (IfNode*) n;
-    //TODO(marcus): need custom labels for basic blocks?
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
-    BasicBlock* elseBB = nullptr;
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
-    //TODO(marcus): don't hardcode size values for else check
-    if(ifn->mstatements.size() == 3) {
-        elseBB = BasicBlock::Create(context, "else");
-    }
+    BasicBlock* elseBB = BasicBlock::Create(context, "else");
     BasicBlock* mergeBB = BasicBlock::Create(context, "merge");
     //TODO(marcus): actually generate conditional expression
     auto condv = ConstantInt::get(context, APInt());
-    //TODO(marcus): is passing nullptr okay here?
+    
     Builder.CreateCondBr(condv,thenBB,elseBB);
 
     Builder.SetInsertPoint(thenBB);
@@ -221,14 +216,14 @@ void ifelseCodegen(AstNode* n) {
     statementCodegen(ifn->mstatements.at(1));
 
     Builder.CreateBr(mergeBB);
-
+    enclosingscope->getBasicBlockList().push_back(elseBB);
+    Builder.SetInsertPoint(elseBB);
     if(ifn->mstatements.size() == 3) {
-        enclosingscope->getBasicBlockList().push_back(elseBB);
-        Builder.SetInsertPoint(elseBB);
+        //TODO(marcus): don't hardcode child access
         auto elsen = (ElseNode*) ifn->mstatements.at(2);
         statementCodegen(elsen->mstatements.at(0));
-        Builder.CreateBr(mergeBB);
     }
+    Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(mergeBB);
     Builder.SetInsertPoint(mergeBB);
     return;
