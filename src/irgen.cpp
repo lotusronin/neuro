@@ -237,6 +237,24 @@ void ifelseCodegen(AstNode* n) {
 void whileloopCodegen(AstNode* n) {
     auto whilen = (WhileLoopNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
+    BasicBlock* whileBB = BasicBlock::Create(context,"while",enclosingscope);
+    BasicBlock* beginBB = BasicBlock::Create(context,"whilebegin",enclosingscope);
+    BasicBlock* endBB = BasicBlock::Create(context,"whileend",enclosingscope);
+
+    Builder.CreateBr(whileBB);
+    Builder.SetInsertPoint(whileBB);
+
+    //TODO(marcus): actually generate the conditional
+    auto condv = ConstantInt::get(context, APInt());
+    Builder.CreateCondBr(condv,beginBB,endBB);
+    Builder.SetInsertPoint(beginBB);
+
+    //TODO(marcus): generate whole while loop body
+    statementCodegen(whilen->mstatements.back());
+    
+    Builder.CreateBr(whileBB);
+    Builder.SetInsertPoint(endBB);
+    return;
 }
 
 #define ANT AstNodeType
@@ -262,6 +280,9 @@ void statementCodegen(AstNode* n) {
                 break;
         case ANT::WhileLoop:
                 whileloopCodegen(n);
+                break;
+        case ANT::FuncCall:
+                funcCallCodegen(n);
                 break;
         default:
             break;
