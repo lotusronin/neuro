@@ -683,20 +683,9 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
     } else {
         parse_error(PET::Unknown, tok);
     }
-    tok = lexer->peek();
-    if(tok.type != TokenType::lbrace) {
-        parse_error(PET::Unknown, tok);
-    }
-    //consume {
-    lexer->lex();
-    parseStatementList(lexer, parent->lastChild());
-    std::cout << "Statement list for loop finished\n";
-    tok = lexer->peek();
-    if(tok.type != TokenType::rbrace) {
-        parse_error(PET::Unknown, tok);
-    }
-    //consume }
-    lexer->lex();
+
+    std::cout << "Parsing loop body\n";
+    parseStatement(lexer, parent->lastChild());
 }
 
 void parseForLoop(LexerTarget* lexer, AstNode* parent) {
