@@ -36,6 +36,10 @@ void ConstantNode::setVal(std::string& val) {
     mval = val;
 }
 
+std::string ConstantNode::getVal() {
+    return mval;
+}
+
 void ConstantNode::setToken(const Token& t) {
     mtoken = t;
     if(t.type == TokenType::intlit) {

@@ -150,13 +150,79 @@ Value* retCodegen(AstNode* n) {
     return ret;
 }
 
+#define ANT AstNodeType
 Value* expressionCodegen(AstNode* n) {
     //TODO(marcus): actually fill this in.
     Value* val = ConstantInt::get(context, APInt(32,0));
+    if(n == nullptr) {
+        std::cout << "passed in nullptr\n";
+        return val;
+    }
+
+    //TODO(marcus): support unary ops
+    //TODO(marcus): support signed div
+    //TODO(marcus): support floats
+    //TODO(marcus): support type specific overloads
+    //TODO(marcus): support function calls
+    //TODO(marcus): support not unsigned int constants
+    //TODO(marcus): support different sizes
+    //TODO(marcus): support different types
+    switch(n->nodeType()) {
+        case ANT::BinOp:
+            {
+            auto binop = (BinOpNode*)n;
+            auto op = binop->getOp();
+            if(op.compare("( )") == 0) {
+                auto child = binop->LHS();
+                return expressionCodegen(child);
+            }
+            auto lhs = binop->LHS();
+            auto rhs = binop->RHS();
+            auto lhsv = expressionCodegen(lhs);
+            auto rhsv = expressionCodegen(rhs);
+            if(op.compare("+") == 0) {
+                std::cout << "generating add\n";
+                return Builder.CreateAdd(lhsv,rhsv,"addtemp");
+            } else if(op.compare("-") == 0) {
+                return Builder.CreateSub(lhsv,rhsv,"subtemp");
+            } else if(op.compare("*") == 0) {
+                return Builder.CreateMul(lhsv,rhsv,"multtemp");
+            } else if(op.compare("/") == 0) {
+                return Builder.CreateUDiv(lhsv,rhsv,"divtemp");
+            } else {
+                std::cout << "Unknown binary expression" << op << "\n";
+                return val;
+            }
+            }
+            break;
+        case ANT::Const:
+            {
+                std::cout << "generating constant!\n";
+                auto constn = (ConstantNode*)n;
+                auto strval = constn->getVal();
+                int constval = std::stoi(strval);
+                val = ConstantInt::get(context, APInt(32,constval));
+            }
+            break;
+        case ANT::Var:
+            {
+                std::cout << "generating varload!\n";
+                auto varn = (VarNode*)n;
+                auto varloc = varTable[varn->getVarName()];
+                auto varv = Builder.CreateLoad(varloc);
+                val = varv;
+            }
+            break;
+        default:
+            std::cout << "default case for expression generation\n";
+            break;
+    }
     return val;
 }
+#undef ANT
 
 void blockCodegen(AstNode* n) {
+    std::cout << "generating block\n";
     std::vector<AstNode*>* vec = n->getChildren();
     for(auto c : (*vec)) {
         statementCodegen(c);
@@ -175,6 +241,7 @@ void vardecCodegen(AstNode* n) {
 }
 
 void vardecassignCodegen(AstNode* n) {
+    std::cout << "Generating vardec assign\n";
     auto vardecan = (VarDecAssignNode*) n;
     auto varn = (VarNode*)vardecan->mchildren.at(0);
     //FIXME(marcus): get the type of the node once type checking works
@@ -183,6 +250,7 @@ void vardecassignCodegen(AstNode* n) {
     varTable[varn->getVarName()] = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1));
+    std::cout << "generating store for assignment\n";
     Builder.CreateStore(val,alloca);
     return;
 }
@@ -252,6 +320,36 @@ void whileloopCodegen(AstNode* n) {
     return;
 }
 
+void forloopCodegen(AstNode* n) {
+    auto forn = (ForLoopNode*) n;
+    auto children = forn->mstatements;
+    //TODO(marcus): don't hardcode child access.
+    auto inits = children.at(0);
+    auto condition = children.at(1);
+    auto update = children.at(2);
+    auto loopbody = children.at(3);
+    auto enclosingscope = Builder.GetInsertBlock()->getParent();
+    BasicBlock* forBB = BasicBlock::Create(context,"for",enclosingscope);
+    BasicBlock* beginBB = BasicBlock::Create(context,"forbegin",enclosingscope);
+    BasicBlock* bodyBB = BasicBlock::Create(context,"forbody",enclosingscope);
+    BasicBlock* endBB = BasicBlock::Create(context,"forend",enclosingscope);
+    
+    Builder.CreateBr(forBB);
+    Builder.SetInsertPoint(forBB);
+    statementCodegen(inits);
+    Builder.CreateBr(beginBB);
+    Builder.SetInsertPoint(beginBB);
+    //TODO(marcus): actually generate conditional
+    auto condv = ConstantInt::get(context, APInt());
+    Builder.CreateCondBr(condv,bodyBB,endBB);
+    Builder.SetInsertPoint(bodyBB);
+    statementCodegen(loopbody);
+    statementCodegen(update);
+    Builder.CreateBr(beginBB);
+    Builder.SetInsertPoint(endBB);
+
+}
+
 #define ANT AstNodeType
 void statementCodegen(AstNode* n) {
     switch(n->nodeType()) {
@@ -279,7 +377,11 @@ void statementCodegen(AstNode* n) {
         case ANT::FuncCall:
                 funcCallCodegen(n);
                 break;
+        case ANT::ForLoop:
+                forloopCodegen(n);
+                break;
         default:
+            std::cout << "Unknown node type\n";
             break;
     }
 }
