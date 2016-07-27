@@ -18,5 +18,5 @@ set(MY_SOURCES main.cpp lexer.cpp regexes.cpp parser.cpp astnode.cpp compileunit
 
 add_executable(Neuro ${MY_SOURCES})
 
-llvm_map_components_to_libnames(llvm_libs core)
+llvm_map_components_to_libnames(llvm_libs core native)
 target_link_libraries(Neuro ${llvm_libs})

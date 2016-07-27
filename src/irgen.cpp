@@ -7,6 +7,13 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
+#include <llvm/Analysis/Passes.h>
+#include <llvm/IR/LegacyPassManager.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
 #include <iostream>
 #include <string>
 #include "astnode.h"
@@ -449,4 +456,52 @@ void dumpIR() {
 void generateIR(AstNode* ast) {
     module = new Module("Neuro Program", context);
     generateIR_llvm(ast);
+}
+
+void writeObj(std::string o) {
+    std::string out = o + ".o";
+  
+    InitializeNativeTarget();
+    InitializeNativeTargetAsmParser();
+    InitializeNativeTargetAsmPrinter();
+
+    //TODO(marcus): allow custom targets/options!
+    auto TargetTriple = sys::getDefaultTargetTriple();
+    module->setTargetTriple(TargetTriple);
+    std::string error;
+    auto Target = TargetRegistry::lookupTarget(TargetTriple,error);
+    if(!Target) {
+        std::cout << error << "\n";
+        return;
+    }
+
+    auto CPU = "generic";
+    auto Features = "";
+
+    TargetOptions opt;
+    auto RM = Reloc::Model();
+    auto TheTargetMachine = Target->createTargetMachine(TargetTriple,CPU,Features,opt,RM);
+
+    module->setDataLayout(TheTargetMachine->createDataLayout());
+
+    std::error_code EC;
+    raw_fd_ostream dest(out,EC,sys::fs::F_None);
+    if(EC) {
+        errs() << "Could not open file : " << EC.message();
+        return;
+    }
+
+    legacy::PassManager pass;
+    auto FileType = TargetMachine::CGFT_ObjectFile;
+
+    if(TheTargetMachine->addPassesToEmitFile(pass, dest, FileType)) {
+        errs() << "TheTargetMachine can't emit file!\n";
+        return;
+    }
+
+    pass.run(*module);
+    dest.flush();
+
+    outs() << "Wrote " << out << "\n";
+    return;
 }
