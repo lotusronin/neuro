@@ -14,6 +14,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
+#include <llvm/Bitcode/ReaderWriter.h>
 #include <iostream>
 #include <string>
 #include "astnode.h"
@@ -451,6 +452,15 @@ void generateIR_llvm(AstNode* ast) {
 void dumpIR() {
     module->dump();
     return;
+}
+
+void writeIR(std::string o) {
+    std::string out = o + ".ll";
+    std::error_code EC;
+    raw_fd_ostream dest(out,EC,sys::fs::F_None);
+    module->print(dest,nullptr,false,true);
+    WriteBitcodeToFile(module, dest);
+    dest.flush();
 }
 
 void generateIR(AstNode* ast) {

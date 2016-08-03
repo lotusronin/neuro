@@ -76,7 +76,8 @@ int main(int argc, char** argv) {
             std::cout << "IR output:\n";
             dumpIR();
 
-            writeObj(target1.targetName());
+            //writeObj(target1.targetName());
+            writeIR(target1.targetName());
 
 
             /*

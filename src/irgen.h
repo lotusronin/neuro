@@ -7,5 +7,6 @@
 void generateIR(AstNode* ast);
 void dumpIR();
 void writeObj(std::string o);
+void writeIR(std::string o);
 
 #endif
