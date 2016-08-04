@@ -184,6 +184,7 @@ Value* expressionCodegen(AstNode* n) {
                 auto child = binop->LHS();
                 return expressionCodegen(child);
             }
+            std::cout << "generating binop\n";
             auto lhs = binop->LHS();
             auto rhs = binop->RHS();
             auto lhsv = expressionCodegen(lhs);
@@ -197,6 +198,18 @@ Value* expressionCodegen(AstNode* n) {
                 return Builder.CreateMul(lhsv,rhsv,"multtemp");
             } else if(op.compare("/") == 0) {
                 return Builder.CreateUDiv(lhsv,rhsv,"divtemp");
+            } else if(op.compare(">") == 0) {
+                return Builder.CreateICmpUGT(lhsv,rhsv,"gttemp");
+            } else if(op.compare("<") == 0) {
+                return Builder.CreateICmpULT(lhsv,rhsv,"lttemp");
+            } else if(op.compare(">=") == 0) {
+                return Builder.CreateICmpUGE(lhsv,rhsv,"getemp");
+            } else if(op.compare("<=") == 0) {
+                return Builder.CreateICmpULE(lhsv,rhsv,"letemp");
+            } else if(op.compare("==") == 0) {
+                return Builder.CreateICmpEQ(lhsv,rhsv,"eqtemp");
+            } else if(op.compare("!=") == 0) {
+                return Builder.CreateICmpNE(lhsv,rhsv,"neqtemp");
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
                 return val;
@@ -217,6 +230,7 @@ Value* expressionCodegen(AstNode* n) {
                 std::cout << "generating varload!\n";
                 auto varn = (VarNode*)n;
                 auto varloc = varTable[varn->getVarName()];
+                if(varloc == nullptr) std::cout << "NULLPTR!!!\n";
                 auto varv = Builder.CreateLoad(varloc);
                 val = varv;
             }
@@ -277,13 +291,15 @@ void assignCodegen(AstNode* n) {
 }
 
 void ifelseCodegen(AstNode* n) {
+    std::cout << "Generating if statement\n";
     auto ifn = (IfNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
     BasicBlock* elseBB = BasicBlock::Create(context, "else");
     BasicBlock* mergeBB = BasicBlock::Create(context, "merge");
     //TODO(marcus): actually generate conditional expression
-    auto condv = ConstantInt::get(context, APInt());
+    //auto condv = ConstantInt::get(context, APInt());
+    auto condv = expressionCodegen(ifn->mstatements.at(0));
     
     Builder.CreateCondBr(condv,thenBB,elseBB);
 
@@ -457,9 +473,8 @@ void dumpIR() {
 void writeIR(std::string o) {
     std::string out = o + ".ll";
     std::error_code EC;
-    raw_fd_ostream dest(out,EC,sys::fs::F_None);
+    raw_fd_ostream dest(out,EC,sys::fs::F_Text);
     module->print(dest,nullptr,false,true);
-    WriteBitcodeToFile(module, dest);
     dest.flush();
 }
 

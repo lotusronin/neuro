@@ -37,6 +37,8 @@ void parseDeferBlock(LexerTarget* lexer, AstNode* parent);
 void parseWhileLoop(LexerTarget* lexer, AstNode* parent);
 void parseReturnStatement(LexerTarget* lexer, AstNode* parent);
 void parseExpression(LexerTarget* lexer, AstNode* parent);
+void parseGLTE(LexerTarget* lexer, AstNode* parent);
+void parsePlusmin(LexerTarget* lexer, AstNode* parent);
 void parseMultdiv(LexerTarget* lexer, AstNode* parent);
 void parseParenexp(LexerTarget* lexer, AstNode* parent);
 void parseConst(LexerTarget* lexer, AstNode* parent);
@@ -781,14 +783,51 @@ void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
 
 void parseExpression(LexerTarget* lexer, AstNode* parent) {
 /* 
- * expr -> multdiv plusmin expr  | multdiv
+ * expr -> exprglte eqneq expr  | exprglte
  */
-    /*
-     * TODO(marcus): expressions are right associative currently
-     */
     std::cout << "Parsing Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("expression");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    parseGLTE(lexer, opnode);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::equality || tok.type == TokenType::nequality) {
+        opnode->setToken(tok);
+        //consume == or !=
+        lexer->lex();
+        parseExpression(lexer, opnode);
+    }
+    return;
+}
+
+void parseGLTE(LexerTarget* lexer, AstNode* parent) {
+/* 
+ * expr -> exprplusmin gtelte expr  | exprplusmin
+ */
+    std::cout << "Parsing GTELTE Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("gtelteexpr");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    parsePlusmin(lexer, opnode);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::ltequal || tok.type == TokenType::gtequal || tok.type == TokenType::greaterthan || tok.type == TokenType::lessthan) {
+        opnode->setToken(tok);
+        //consume < or > or <= or >=
+        lexer->lex();
+        parseGLTE(lexer, opnode);
+    }
+    return;
+}
+
+void parsePlusmin(LexerTarget* lexer, AstNode* parent) {
+/* 
+ * exprplusmin -> multdiv plusmin exprplusmin  | multdiv
+ */
+    std::cout << "Parsing PlusMin Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("plusminexpr");
     opnode->setOp(s);
     parent->addChild(opnode);
     parseMultdiv(lexer, opnode);
@@ -797,7 +836,7 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
         opnode->setToken(tok);
         //consume + or -
         lexer->lex();
-        parseExpression(lexer, opnode);
+        parsePlusmin(lexer, opnode);
     }
     return;
 }

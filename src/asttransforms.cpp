@@ -12,6 +12,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 
 void collapseExpressionChains(AstNode* ast) {
+    //TODO(marcus): clean this up.
     std::vector<AstNode*>* vec = ast->getChildren();
     for(unsigned int i = 0; i < vec->size(); i++) {
         AstNode* child = (*vec)[i];
@@ -38,6 +39,16 @@ void collapseExpressionChains(AstNode* ast) {
                     (*vec)[i] = node->mchildren[0];
                     delete node;
                     child = (*vec)[i];
+                } else if(op.compare("plusminexpr") == 0) {
+                    std::cout << "Deleting child!!!\n";
+                    (*vec)[i] = node->mchildren[0];
+                    child = (*vec)[i];
+                    delete node;
+                } else if(op.compare("gtelteexpr") == 0) {
+                    std::cout << "Deleting child!!!\n";
+                    (*vec)[i] = node->mchildren[0];
+                    child = (*vec)[i];
+                    delete node;
                 } else {
                     break;
                 }
