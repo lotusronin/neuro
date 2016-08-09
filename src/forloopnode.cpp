@@ -31,3 +31,19 @@ void ForLoopNode::addChild(AstNode* node) {
 std::vector<AstNode*>* ForLoopNode::getChildren() {
     return &mstatements;
 }
+
+AstNode* ForLoopNode::getInit() {
+    return mstatements.at(0);
+}
+
+AstNode* ForLoopNode::getConditional() {
+    return mstatements.at(1);
+}
+
+AstNode* ForLoopNode::getUpdate() {
+    return mstatements.at(2);
+}
+
+AstNode* ForLoopNode::getBody() {
+    return mstatements.at(3);
+}

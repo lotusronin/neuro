@@ -71,7 +71,9 @@ Function* prototypeCodegen(AstNode* n) {
 
     //TODO(marcus): handle user types for return/parameters
     for(auto c : (*vec)) {
-        Type* t = getIRType(c->getType());
+        //TODO(marcus): support other types
+        //Type* t = getIRType(c->getType());
+        Type* t = getIRType(SemanticType::Int);
         parameterTypes.push_back(t);
     }
     
@@ -92,16 +94,19 @@ Function* prototypeCodegen(AstNode* n) {
 
 Function* functionCodgen(AstNode* n) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
+    std::cout << "Generating function " << funcnode->mfuncname << "\n";
     Function* F = module->getFunction(funcnode->mfuncname);
+    std::vector<AstNode*>* vec = funcnode->getParameters();
     if(!F) {
-        std::vector<AstNode*>* vec = funcnode->getParameters();
         std::vector<Type*> parameterTypes;
         parameterTypes.reserve(vec->size());
        
 
         //TODO(marcus): handle user types for return/parameters
         for(auto c : (*vec)) {
-            Type* t = getIRType(c->getType());
+            //Type* t = getIRType(c->getType());
+            //TODO(marcus): support other types!
+            Type* t = getIRType(SemanticType::Int);
             parameterTypes.push_back(t);
         }
         
@@ -116,14 +121,23 @@ Function* functionCodgen(AstNode* n) {
             Arg.setName(name);
             ++idx;
         }
-        delete vec;
     }
 
     //TODO(marcus): what is entry, can it be used for every function?
+    //entry is a label for the basic block, llvm makes sure actual label is unique
+    //by appending an number to the end
     BasicBlock* BB = BasicBlock::Create(context, "entry", F);
     Builder.SetInsertPoint(BB);
-    //FIXME(marcus): remove void return once expression codegen works
-    //Builder.CreateRetVoid();
+
+    for(auto &Arg : F->args()) {
+        //TODO(marcus): support other types
+        //std::cout << "Arg name: " << Arg.getName() << "\n";
+        AllocaInst *alloca = Builder.CreateAlloca(Type::getInt32Ty(context),0,Arg.getName());
+        Builder.CreateStore(&Arg, alloca);
+        //TODO(marcus): make sure to add these to the ir symbol table
+        varTable[Arg.getName()] = alloca;
+    }
+    delete vec;
     return F;
 }
 
@@ -138,14 +152,22 @@ Value* funcCallCodegen(AstNode* n) {
     std::vector<Value*> args;
     std::vector<AstNode*>* vec = callnode->getChildren();
     for(auto c : (*vec)) {
-        //TODO(marcus): generate code properly for expressions
-        args.push_back(ConstantInt::get(context, APInt()));
+        //TODO(marcus): support multiple types
+        auto exprval = expressionCodegen(c);
+        args.push_back(exprval);
     }
 
-    return Builder.CreateCall(F, args, "calltemp");
+    Value* val;
+    if(F->getReturnType() == Type::getVoidTy(context)) {
+        val = Builder.CreateCall(F, args);
+    } else {
+        val = Builder.CreateCall(F, args, "calltemp");
+    }
+    return val;
 }
 
 Value* retCodegen(AstNode* n) {
+    std::cout << "Generating return statement\n";
     ReturnNode* retnode = (ReturnNode*) n;
     auto pchildren = retnode->getChildren();
     Value* ret = nullptr;
@@ -160,7 +182,6 @@ Value* retCodegen(AstNode* n) {
 
 #define ANT AstNodeType
 Value* expressionCodegen(AstNode* n) {
-    //TODO(marcus): actually fill this in.
     Value* val = ConstantInt::get(context, APInt(32,0));
     if(n == nullptr) {
         std::cout << "passed in nullptr\n";
@@ -231,8 +252,13 @@ Value* expressionCodegen(AstNode* n) {
                 auto varn = (VarNode*)n;
                 auto varloc = varTable[varn->getVarName()];
                 if(varloc == nullptr) std::cout << "NULLPTR!!!\n";
-                auto varv = Builder.CreateLoad(varloc);
+                auto varv = Builder.CreateLoad(varloc,varn->getVarName());
                 val = varv;
+            }
+            break;
+        case ANT::FuncCall:
+            {
+                val = funcCallCodegen(n);
             }
             break;
         default:
@@ -297,15 +323,12 @@ void ifelseCodegen(AstNode* n) {
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
     BasicBlock* elseBB = BasicBlock::Create(context, "else");
     BasicBlock* mergeBB = BasicBlock::Create(context, "merge");
-    //TODO(marcus): actually generate conditional expression
-    //auto condv = ConstantInt::get(context, APInt());
-    auto condv = expressionCodegen(ifn->mstatements.at(0));
+    auto condv = conditionalCodegen(ifn->getConditional());
     
     Builder.CreateCondBr(condv,thenBB,elseBB);
 
     Builder.SetInsertPoint(thenBB);
-    //TODO(marcus): don't hardcode child access
-    statementCodegen(ifn->mstatements.at(1));
+    statementCodegen(ifn->getThen());
 
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(elseBB);
@@ -331,13 +354,11 @@ void whileloopCodegen(AstNode* n) {
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(whileBB);
 
-    //TODO(marcus): actually generate the conditional
-    auto condv = ConstantInt::get(context, APInt());
+    auto condv = conditionalCodegen(whilen->getConditional());
     Builder.CreateCondBr(condv,beginBB,endBB);
     Builder.SetInsertPoint(beginBB);
 
-    //TODO(marcus): generate whole while loop body
-    statementCodegen(whilen->mstatements.back());
+    statementCodegen(whilen->getBody());
     
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(endBB);
@@ -346,12 +367,10 @@ void whileloopCodegen(AstNode* n) {
 
 void forloopCodegen(AstNode* n) {
     auto forn = (ForLoopNode*) n;
-    auto children = forn->mstatements;
-    //TODO(marcus): don't hardcode child access.
-    auto inits = children.at(0);
-    auto condition = children.at(1);
-    auto update = children.at(2);
-    auto loopbody = children.at(3);
+    auto inits = forn->getInit();
+    auto condition = forn->getConditional();
+    auto update = forn->getUpdate();
+    auto loopbody = forn->getBody();
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* forBB = BasicBlock::Create(context,"for",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"forbegin",enclosingscope);
@@ -363,8 +382,7 @@ void forloopCodegen(AstNode* n) {
     statementCodegen(inits);
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(beginBB);
-    //TODO(marcus): actually generate conditional
-    auto condv = ConstantInt::get(context, APInt());
+    auto condv = conditionalCodegen(condition);
     Builder.CreateCondBr(condv,bodyBB,endBB);
     Builder.SetInsertPoint(bodyBB);
     statementCodegen(loopbody);
@@ -372,6 +390,17 @@ void forloopCodegen(AstNode* n) {
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(endBB);
 
+}
+
+Value* conditionalCodegen(AstNode* n) {
+    //TODO(marcus): support other types
+    auto temp_condv = expressionCodegen(n);
+    auto condv = temp_condv;
+    if(!temp_condv->getType()->isIntegerTy(1)) {
+        Value* zero = ConstantInt::get(temp_condv->getType(),0);
+        condv = Builder.CreateICmpNE(temp_condv,zero,"condv");
+    }
+    return condv;
 }
 
 #define ANT AstNodeType

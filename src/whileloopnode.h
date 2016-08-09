@@ -15,6 +15,8 @@ class WhileLoopNode : public AstNode {
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mstatements;
+        AstNode* getConditional();
+        AstNode* getBody();
     private:
         int id;
 };

@@ -31,3 +31,11 @@ void IfNode::addChild(AstNode* node) {
 std::vector<AstNode*>* IfNode::getChildren() {
     return &mstatements;
 }
+
+AstNode* IfNode::getConditional() {
+    return mstatements.at(0);
+}
+
+AstNode* IfNode::getThen() {
+    return mstatements.at(1);
+}

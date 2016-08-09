@@ -31,3 +31,11 @@ void WhileLoopNode::addChild(AstNode* node) {
 std::vector<AstNode*>* WhileLoopNode::getChildren() {
     return &mstatements;
 }
+
+AstNode* WhileLoopNode::getConditional() {
+    return mstatements.at(0);
+}
+
+AstNode* WhileLoopNode::getBody() {
+    return mstatements.at(1);
+}

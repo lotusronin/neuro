@@ -16,6 +16,7 @@ llvm::Function* prototypeCodegen(AstNode* n);
 llvm::Function* functionCodgen(AstNode* n);
 llvm::Value* funcCallCodegen(AstNode* n);
 llvm::Value* retCodegen(AstNode* n);
+llvm::Value* conditionalCodegen(AstNode* n);
 void blockCodegen(AstNode* n);
 void vardecCodegen(AstNode* n);
 void vardecassignCodegen(AstNode* n);
