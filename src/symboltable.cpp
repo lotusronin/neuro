@@ -5,10 +5,12 @@
 
 SymbolTable* addNewScope(SymbolTable* s, std::string name) {
     if(s->children.find(name) == s->children.end()) {
+        std::cout << "Adding new scope for " << name << "\n";
         auto scope = new SymbolTable;
         s->children.insert(std::make_pair(name, scope));
         scope->parent = s;
         scope->scope = s->scope+1;
+        scope->name = name;
         return scope;
     } else {
         return s->children.find(name)->second;
@@ -21,6 +23,14 @@ void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n) {
     entry->type = t;
     std::string name = ((VarNode*)n)->getVarName();
     s->table.insert(std::make_pair(name,entry));
+}
+
+void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name) {
+    std::cout << "updating var entry!\n";
+    auto entry = s->table.find(name);
+    if(entry != s->table.end()) {
+        entry->second->type = t;
+    }
 }
 
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p) {
@@ -66,11 +76,22 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name)
     return ret;
 }
 
+SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name) {
+    //std::cout << "Looking up entry with name " << name << " in current scope " << s->name << "...\n";
+    SymbolTableEntry* res = nullptr;
+    auto exists = s->table.find(name);
+    if(exists != s->table.end()) {
+        res = exists->second;
+    }
+    //printTable(s);
+    return res;
+}
+
 void printTable(SymbolTable* s) {
     if(s == nullptr) {
         return;
     }
-    std::cout << "SymbolTable (scope " << s->scope << ")\nentries:\n";
+    std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
     for(auto& e : s->table) {
         std::cout << e.first << ": " << e.second->type << "\n";
     }

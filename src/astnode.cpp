@@ -61,6 +61,9 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
         case SemanticType::Typeless:
             out = "";
             break;
+        case SemanticType::Infer:
+            out = "Inferred";
+            break;
         default:
             out = "Unrecognized value!";
             break;

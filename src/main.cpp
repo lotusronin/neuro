@@ -58,8 +58,10 @@ int main(int argc, char** argv) {
             fixOperatorAssociativity(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
+            printSymbolTable();
+            typeCheckPass(ast);
             //printSymbolTable();
-            decorateAst(ast);
+            //decorateAst(ast);
             if(debug_parser) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);

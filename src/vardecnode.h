@@ -15,6 +15,8 @@ class VarDecNode : public AstNode {
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
+        AstNode* getLHS();
+        AstNode* getRHS();
     private:
         int id;
 };

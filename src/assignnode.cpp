@@ -31,3 +31,11 @@ void AssignNode::addChild(AstNode* node) {
 std::vector<AstNode*>* AssignNode::getChildren() {
     return &mchildren;
 }
+
+AstNode* AssignNode::getLHS() {
+    return mchildren.at(0);
+}
+
+AstNode* AssignNode::getRHS() {
+    return mchildren.at(1);
+}

@@ -31,3 +31,11 @@ void VarDecNode::addChild(AstNode* node) {
 std::vector<AstNode*>* VarDecNode::getChildren() {
     return &mchildren;
 }
+
+AstNode* VarDecNode::getLHS() {
+    return mchildren.at(0);
+}
+
+AstNode* VarDecNode::getRHS() {
+    return mchildren.at(1);
+}

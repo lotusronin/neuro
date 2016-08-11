@@ -2,6 +2,7 @@
 #include "astnodetypes.h"
 #include "astnode.h"
 #include "symboltable.h"
+#include "coloroutput.h"
 #include <iostream>
 #include <string>
 #include <utility>
@@ -174,12 +175,12 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
 }
 
 void typeCheckPass(AstNode* ast) {
-
+    std::cout << "Type Checking Pass\n";
     for(auto c : (*(ast->getChildren()))) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
                 {
-                auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)ast)->getFileName());
+                auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
                 typeCheckPass(c, scope);
                 }
                 break;
@@ -198,8 +199,76 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 std::cout << "ast node is prototype, adding to symbol table\n";
                 break;
             case ANT::FuncDef:
-                std::cout << "ast node is function, adding to symbol table\n";
+                {
+                    std::cout << "ast node is function, adding to symbol table\n";
+                    auto scope = addNewScope(symTab, ((FuncDefNode*)c)->mfuncname);
+                    typeCheckPass(c,scope);
+                }
                 break;
+            case ANT::Assign:
+                {
+                    std::cout << "Assign type check...\n";
+                    auto assignnode = (AssignNode*)c;
+                    auto lhs = (VarNode*)assignnode->getLHS();
+                    auto rhs = assignnode->getRHS();
+
+                    SymbolTableEntry* e = getEntryCurrentScope(symTab,lhs->getVarName());
+                    if(e == nullptr) { std::cout << "SymbolTableEntry isn't valid\n";}
+                    else {
+                    SemanticType lt = e->type;
+                    SemanticType rt = rhs->getType();
+
+                    if(lt != rt) {
+                        std::cout << ANSI_RED << "Type error! Cannot assign " << rt << " to a variable of type " << lt << "\n";
+                        std::cout << ANSI_CLEAR;
+                    } else {
+                        std::cout << "VarDecAssign Types matched: l,r " << lt << ", " << rt << "\n"; 
+                    }
+                    }
+
+                }
+                break;
+            case ANT::VarDec:
+                {
+                    auto vdecn = (VarDecNode*)c;
+                    auto lhs = (VarNode*)vdecn->getLHS();
+                    auto rhs = vdecn->getRHS(); //type node
+                    SemanticType st = rhs->getType();
+                    lhs->mstype = st;
+                    updateVarEntry(symTab,st,lhs->getVarName());
+                }
+                break;
+            case ANT::VarDecAssign:
+                {
+                    std::cout << "VarDecAssign type check...\n";
+                    auto vdan = (VarDecAssignNode*)c;
+                    auto lhs = (VarNode*) vdan->getLHS();
+                    auto rhs = vdan->getRHS();
+                    SemanticType ltype;
+                    SemanticType rtype = rhs->getType();
+                    
+                    if(lhs->mchildren.size() == 0) {
+                        //Inferring type
+                        ltype = rtype;
+                    } else {
+                        ltype = lhs->mchildren.at(0)->getType();
+                    }
+                    updateVarEntry(symTab,ltype,lhs->getVarName());
+                    if(ltype != rtype) {
+                        std::cout << ANSI_RED << "Type error! Cannot assign " << rtype << " to a variable of type " << ltype << "\n";
+                        std::cout << ANSI_CLEAR;
+                    } else {
+                        std::cout << "VarDecAssign Types matched: l,r " << ltype << ", " << rtype << "\n"; 
+                    }
+
+                }
+                break;
+            case ANT::Block:
+                {
+                    auto scope = addNewScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
+                    std::cout << "Entering into scope " << scope->name << "\n";
+                    typeCheckPass(c,scope);
+                }
             default:
                 std::cout << "unknown ast node type!\n";
                 break;
@@ -232,7 +301,8 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::Block:
                 {
-                    auto scope = addNewScope(symTab, std::to_string(((BlockNode*)c)->getId()));
+                    auto scope = addNewScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
+                    std::cout << "Entering into scope " << scope->name << "\n";
                     variableUseCheck(c,scope);
                 }
                 break;
@@ -246,6 +316,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::VarDec:
                 {
                     std::cout << "Var Dec!!!\n";
+                    std::cout << "SymbolTable " << symTab->name << "\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() != 0) {
