@@ -965,6 +965,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
 }
 
 void parseOptargs(LexerTarget* lexer, AstNode* parent) {
+    std::cout << "parsing optargs!\n";
     //opt_args -> null | id . | id . , opt_args2
     Token tok = lexer->peek();
     if(tok.type == TokenType::rparen) {
@@ -985,8 +986,7 @@ void parseOptargs2(LexerTarget* lexer, AstNode* parent) {
     //opt_args2 -> . id | . id , opt_args2
     Token tok = lexer->peek();
     parseExpression(lexer, parent);
-    //consume id
-    tok = lexer->lex();
+    tok = lexer->peek();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
