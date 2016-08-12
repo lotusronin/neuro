@@ -12,4 +12,13 @@ void variableUseAndTypeCheck(AstNode* ast);
 void variableUseCheck(AstNode* ast);
 void printSymbolTable();
 
+enum class SemanticErrorType{
+    MissmatchAssign,
+    MissmatchVarDecAssign,
+    MissmatchBinop,
+    MissmatchFunctionParams,
+    MissmatchReturnType,
+    Unknown
+};
+
 #endif

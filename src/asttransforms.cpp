@@ -11,6 +11,48 @@
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
+static SemanticType getType(AstNode* ast, SymbolTable* symTab);
+static void typeCheckExpression(AstNode* ast, SymbolTable* symTab);
+
+static void semanticError(SemanticErrorType err, SemanticType lt, SemanticType rt) {
+    std::cout << "Semantic Error!!!\n";
+    switch(err) {
+    case SemanticErrorType::MissmatchAssign:
+        {
+            ERROR("Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
+        }
+        break;
+    case SemanticErrorType::MissmatchVarDecAssign:
+        {
+            ERROR("Variable Decl and Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
+        }
+        break;
+    case SemanticErrorType::MissmatchBinop:
+        {
+            ERROR("Binary Operator had conflicting types: " << lt << " binop " << rt << '\n');
+        }
+        break;
+    case SemanticErrorType::MissmatchFunctionParams:
+        {
+            ERROR("Function parameter expected " << rt << " but was given " << lt << '\n');
+        }
+        break;
+    case SemanticErrorType::MissmatchReturnType:
+        {
+            ERROR("Return value of type " << lt << " does not match function type " << rt << '\n');
+        }
+        break;
+    case SemanticErrorType::Unknown:
+        {
+        }
+        break;
+    default:
+        //Let's hope we never get here or something is terribly wrong... :)
+        std::cout << "UNKNOWN SEMANTIC ERROR!\n";
+        break;
+    }
+    return;
+}
 
 void collapseExpressionChains(AstNode* ast) {
     //TODO(marcus): clean this up.
@@ -21,35 +63,14 @@ void collapseExpressionChains(AstNode* ast) {
             while(child->nodeType() == ANT::BinOp) {
                 BinOpNode* node = (BinOpNode*)child;
                 std::string op = node->getOp();
-                if(op.compare("expression") == 0) {
+                bool nonop = (op.compare("expression") == 0) || (op.compare("multdivexpr") == 0) || (op.compare("parenexpr") == 0) || (op.compare("plusminexpr") == 0) || (op.compare("gtelteexpr") == 0);
+                if(nonop) {
                     if(node->mchildren.size() == 1) {
                         std::cout << "Deleting child!!!\n";
                         (*vec)[i] = node->mchildren[0];
                         delete node;
                         child = (*vec)[i];
                     }
-                } else if(op.compare("multdivexpr") == 0) {
-                    if(node->mchildren.size() == 1) {
-                        std::cout << "Deleting child!!!\n";
-                        (*vec)[i] = node->mchildren[0];
-                        delete node;
-                        child = (*vec)[i];
-                    }
-                } else if(op.compare("parenexpr") == 0) {
-                    std::cout << "Deleting child!!!\n";
-                    (*vec)[i] = node->mchildren[0];
-                    delete node;
-                    child = (*vec)[i];
-                } else if(op.compare("plusminexpr") == 0) {
-                    std::cout << "Deleting child!!!\n";
-                    (*vec)[i] = node->mchildren[0];
-                    child = (*vec)[i];
-                    delete node;
-                } else if(op.compare("gtelteexpr") == 0) {
-                    std::cout << "Deleting child!!!\n";
-                    (*vec)[i] = node->mchildren[0];
-                    child = (*vec)[i];
-                    delete node;
                 } else {
                     break;
                 }
@@ -192,6 +213,7 @@ void typeCheckPass(AstNode* ast) {
 
 }
 
+AstNode* currentFunc = nullptr;
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*(ast->getChildren()))) {
         switch(c->nodeType()) {
@@ -202,7 +224,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 {
                     std::cout << "ast node is function, adding to symbol table\n";
                     auto scope = addNewScope(symTab, ((FuncDefNode*)c)->mfuncname);
+                    currentFunc = c;
                     typeCheckPass(c,scope);
+                    currentFunc = nullptr;
                 }
                 break;
             case ANT::Assign:
@@ -213,17 +237,15 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto rhs = assignnode->getRHS();
 
                     SymbolTableEntry* e = getEntryCurrentScope(symTab,lhs->getVarName());
-                    if(e == nullptr) { std::cout << "SymbolTableEntry isn't valid\n";}
-                    else {
+                    if(e == nullptr) { std::cout << "SymbolTableEntry isn't valid\n"; break;}
                     SemanticType lt = e->type;
-                    SemanticType rt = rhs->getType();
+                    typeCheckExpression(rhs,symTab);
+                    SemanticType rt = getType(rhs, symTab);
 
                     if(lt != rt) {
-                        std::cout << ANSI_RED << "Type error! Cannot assign " << rt << " to a variable of type " << lt << "\n";
-                        std::cout << ANSI_CLEAR;
+                        semanticError(SemanticErrorType::MissmatchAssign,lt,rt);
                     } else {
-                        std::cout << "VarDecAssign Types matched: l,r " << lt << ", " << rt << "\n"; 
-                    }
+                        std::cout << "Assign Types matched: l,r " << lt << ", " << rt << "\n"; 
                     }
 
                 }
@@ -245,18 +267,19 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto lhs = (VarNode*) vdan->getLHS();
                     auto rhs = vdan->getRHS();
                     SemanticType ltype;
-                    SemanticType rtype = rhs->getType();
+                    typeCheckExpression(rhs,symTab);
+                    SemanticType rtype = getType(rhs,symTab);
                     
                     if(lhs->mchildren.size() == 0) {
                         //Inferring type
+                        std::cout << "inferring type!\n";
                         ltype = rtype;
                     } else {
                         ltype = lhs->mchildren.at(0)->getType();
                     }
                     updateVarEntry(symTab,ltype,lhs->getVarName());
                     if(ltype != rtype) {
-                        std::cout << ANSI_RED << "Type error! Cannot assign " << rtype << " to a variable of type " << ltype << "\n";
-                        std::cout << ANSI_CLEAR;
+                        semanticError(SemanticErrorType::MissmatchVarDecAssign,ltype,rtype);
                     } else {
                         std::cout << "VarDecAssign Types matched: l,r " << ltype << ", " << rtype << "\n"; 
                     }
@@ -269,12 +292,146 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     std::cout << "Entering into scope " << scope->name << "\n";
                     typeCheckPass(c,scope);
                 }
+            case ANT::FuncCall:
+                typeCheckExpression(c,symTab);
+                break;
+            case ANT::RetStmnt:
+                {
+                    auto retn = (ReturnNode*)c;
+                    auto expr = retn->mchildren.at(0);
+                    typeCheckExpression(expr,symTab);
+                    SemanticType rett = getType(expr,symTab);
+                    SemanticType funcrett = currentFunc->getType();
+                    if(rett != funcrett) {
+                        semanticError(SemanticErrorType::MissmatchReturnType,rett,funcrett);
+                    } else {
+                        std::cout << "return type and function type matched!\n";
+                    }
+                }
+                break;
             default:
                 std::cout << "unknown ast node type!\n";
                 break;
         }
     }
 
+}
+
+static void typeCheckExpression(AstNode* ast, SymbolTable* symTab) {
+    AstNodeType nt = ast->nodeType();
+    switch(nt) {
+        case ANT::BinOp:
+            {
+                std::cout << "Type checking BinOp\n";
+                auto node = (BinOpNode*)ast;
+                if(node->getPriority() == 3) {
+                    //if node is (), just check child
+                    typeCheckExpression(node->LHS(),symTab);
+                    return;
+                }
+
+                auto lhs = node->LHS();
+                auto rhs = node->RHS();
+                typeCheckExpression(lhs,symTab);
+                auto lt = getType(lhs,symTab);
+                typeCheckExpression(rhs,symTab);
+                auto rt = getType(rhs,symTab);
+
+                if(lt != rt) {
+                    semanticError(SemanticErrorType::MissmatchBinop,lt,rt);
+                } else {
+                    std::cout << "Binary Op Types matched: l,r " << lt << ", " << rt << "\n"; 
+                }
+            }
+            break;
+        case ANT::FuncCall:
+            {
+                auto funccall = (FuncCallNode*)ast;
+                auto entries = getEntry(symTab,funccall->mfuncname);
+                std::cout << "Type checking function call " << funccall->mfuncname << "\n";
+                if(entries.size() == 0) {
+                    std::cout << "Function has no entry in the symbol table!\n";
+                } else {
+                    SymbolTableEntry* e = entries.at(0);
+                    auto funcparams = e->funcParams;
+                    if(funcparams.size() != funccall->margs.size()) {
+                        std::cout << "Different number of arguments and function parameters!\n";
+                    } else {
+                        for(unsigned int i = 0; i < funcparams.size(); i++) {
+                            auto n = funccall->margs.at(i);
+                            typeCheckExpression(n,symTab);
+                            SemanticType type1 = getType(n,symTab);
+                            SemanticType type2 = funcparams.at(i).first;
+                            if(type1 != type2) {
+                                semanticError(SemanticErrorType::MissmatchFunctionParams,type1,type2);
+                            } else {
+                                std::cout << "Function parameter matched!\n";
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+static SemanticType getType(AstNode* ast, SymbolTable* symTab) {
+    AstNodeType nt = ast->nodeType();
+    SemanticType res = SemanticType::Typeless;
+    switch(nt) {
+        case ANT::BinOp:
+            {
+                auto binopn = (BinOpNode*)ast;
+                if(binopn->getPriority() == 3) {
+                    //we have () node, just get child.
+                    res = getType(binopn->LHS(),symTab);
+                } else {
+                    SemanticType lt = getType(binopn->LHS(),symTab);
+                    SemanticType rt = getType(binopn->RHS(),symTab);
+                    //TODO(marcus): support implicit casting!
+                    //TODO(marcus): check priority of types!
+                    res = lt;
+                }
+            }
+            break;
+        case ANT::Const:
+            {
+                res = ast->getType();
+            }
+            break;
+        case ANT::FuncCall:
+            {
+                std::string name = ((FuncCallNode*)ast)->mfuncname;
+                auto entries = getEntry(symTab,name);
+                if(entries.size() == 0) {
+                    std::cout << "Function " << name << " Not Found!!!\n";
+                } else if(entries.size() > 1) {
+                    std::cout << "Function " << name << " Had Multiple Matches!!!\n";
+                } else {
+                    SymbolTableEntry* e = entries.at(0);
+                    res = e->type;
+                }
+            }
+            break;
+        case ANT::Var:
+            {
+                std::string name = ((VarNode*)ast)->getVarName();
+                //TODO(marcus): Traverse Symbol tables but only get first matching entry!
+                auto entries = getEntry(symTab,name);
+                if(entries.size() == 0) {
+                    std::cout << "Var " << name << " Not Found!!!\n";
+                } else {
+                    SymbolTableEntry* e = entries.at(0);
+                    res = e->type;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return res;
 }
 
 void variableUseAndTypeCheck(AstNode* ast) {
