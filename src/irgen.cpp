@@ -19,12 +19,15 @@
 #include <string>
 #include "astnode.h"
 #include "astnodetypes.h"
+#include "symboltable.h"
 
 using namespace llvm;
 
 LLVMContext context;
 IRBuilder<> Builder(context);
 Module* module;
+
+extern SymbolTable progSymTab;
 
 //TODO(marcus): make this a tree of mapped values.
 std::map<std::string, AllocaInst*> varTable;

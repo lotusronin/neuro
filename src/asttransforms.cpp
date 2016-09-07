@@ -7,6 +7,8 @@
 #include <string>
 #include <utility>
 
+extern bool semantic_error;
+
 #define ANT AstNodeType
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
@@ -51,6 +53,7 @@ static void semanticError(SemanticErrorType err, SemanticType lt, SemanticType r
         std::cout << "UNKNOWN SEMANTIC ERROR!\n";
         break;
     }
+    semantic_error = true;
     return;
 }
 

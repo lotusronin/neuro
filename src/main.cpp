@@ -10,6 +10,7 @@
 
 bool debug_lexer;
 bool debug_parser;
+bool semantic_error = false;
 
 void badargspass() {
     std::cout << "Usage:\n  Neuro <inputfiles>\n";
@@ -72,15 +73,16 @@ int main(int argc, char** argv) {
                 system(cmd.c_str());
             }
 
-            std::cout << "Generating IR code\n";
-            //Generate IR code
-            generateIR(ast);
-            std::cout << "IR output:\n";
-            dumpIR();
+            if(!semantic_error) {
+                std::cout << "Generating IR code\n";
+                //Generate IR code
+                generateIR(ast);
+                std::cout << "IR output:\n";
+                dumpIR();
 
-            //writeObj(target1.targetName());
-            writeIR(target1.targetName());
-
+                //writeObj(target1.targetName());
+                writeIR(target1.targetName());
+            }
 
             /*
             Token tok;
