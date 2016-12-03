@@ -104,3 +104,17 @@ void printTable(SymbolTable* s) {
         printTable(c.second);
     }
 }
+
+const std::vector<SymbolTableEntry*> getFunctionEntries(SymbolTable* s) {
+    //TODO(marcus): Currently a hack, should actually look up exported functions
+    //currently this only looks in global scope of one file 
+    std::vector<SymbolTableEntry*> ret;
+    for(auto& str_entry : s->table) {
+        auto entry = str_entry.second;
+        if(entry->node->nodeType() == AstNodeType::FuncDef) {
+            ret.push_back(entry);
+        }
+    }
+
+    return ret;
+}

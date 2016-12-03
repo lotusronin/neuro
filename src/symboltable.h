@@ -29,5 +29,6 @@ void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name);
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p);
 std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name);
 SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name);
+const std::vector<SymbolTableEntry*> getFunctionEntries(SymbolTable* s);
 void printTable(SymbolTable* s);
 #endif

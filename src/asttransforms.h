@@ -1,6 +1,7 @@
 #ifndef ASTTRANSFORMS_H
 #define ASTTRANSFORMS_H
 #include "astnode.h"
+#include "symboltable.h"
 
 void collapseExpressionChains(AstNode* ast);
 void checkContinueBreak(AstNode* ast, int loopDepth);
@@ -11,6 +12,7 @@ void populateSymbolTableFunctions(AstNode* ast);
 void variableUseAndTypeCheck(AstNode* ast);
 void variableUseCheck(AstNode* ast);
 void printSymbolTable();
+SymbolTable* getSymtab(std::string& file);
 
 enum class SemanticErrorType{
     MissmatchAssign,

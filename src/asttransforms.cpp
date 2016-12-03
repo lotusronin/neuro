@@ -160,6 +160,10 @@ void populateSymbolTableFunctions(AstNode* ast) {
     }
 }
 
+SymbolTable* getSymtab(std::string& file) {
+    return progSymTab.children.find(file)->second;
+}
+
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*(ast->getChildren()))) {
         std::vector<std::pair<SemanticType,AstNode*>> p;

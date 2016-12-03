@@ -7,6 +7,7 @@
 #include "astnode.h"
 #include "asttransforms.h"
 #include "irgen.h"
+#include "ccodegen.h"
 
 bool debug_lexer;
 bool debug_parser;
@@ -83,6 +84,10 @@ int main(int argc, char** argv) {
                 //writeObj(target1.targetName());
                 writeIR(target1.targetName());
             }
+
+            SymbolTable* s = getSymtab(f);
+            const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
+            genCFile(f,symtab_entries);
 
             /*
             Token tok;
