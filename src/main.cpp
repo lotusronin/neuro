@@ -85,9 +85,11 @@ int main(int argc, char** argv) {
                 writeIR(target1.targetName());
             }
 
-            SymbolTable* s = getSymtab(f);
-            const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
-            genCFile(f,symtab_entries);
+            if(false) {
+                SymbolTable* s = getSymtab(f);
+                const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
+                genCFile(f,symtab_entries);
+            }
 
             /*
             Token tok;
