@@ -18,6 +18,7 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("else"),TokenType::selse),
     std::make_pair(std::regex("break"),TokenType::sbreak),
     std::make_pair(std::regex("continue"),TokenType::scontinue),
+    std::make_pair(std::regex("struct"),TokenType::tstruct),
     std::make_pair(std::regex("/\\*"),TokenType::comment),
     std::make_pair(std::regex("//.*"),TokenType::comment),
     std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id),

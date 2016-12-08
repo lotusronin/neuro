@@ -17,6 +17,8 @@ std::unordered_map<std::string, CompileUnitNode*> importedFiles;
 void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent);
 void parseImportStatement(LexerTarget* lexer, AstNode* parent);
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent);
+void parseStructDef(LexerTarget* lexer, AstNode* parent);
+void parseStructDefBody(LexerTarget* lexer, AstNode* parent);
 void parseOptparams(LexerTarget* lexer, AstNode* parent);
 void parseOptparams2(LexerTarget* lexer, AstNode* parent);
 void parseType(LexerTarget* lexer, AstNode* parent);
@@ -210,6 +212,7 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
     //tl_statements -> imports tl_statements 
     //tl_statements -> prototypes tl_statements
     //tl_statements -> functiondefs tl_statements 
+    //tl_statements -> structdefs tl_statements 
     //tl_statements -> null
     Token tok = lexer->peek();
     if(tok.type == TokenType::import) {
@@ -224,6 +227,8 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "extern token, beginning to match prototype...\n";
         parsePrototype(lexer, (CompileUnitNode*)parent);
         //std::cout << "prototype matched\n";
+    } else if(tok.type == TokenType::tstruct) {
+        parseStructDef(lexer, parent);
     } else if(tok.type == TokenType::eof) {
         std::cout << "File is parsed, no errors detected!\n\n";
         return;
@@ -1017,5 +1022,66 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
     std::cout << "parseLoopStmt finished, no problem\n";
     lexer->lex();
     parent->addChild(brkcntnode);
+    return;
+}
+
+void parseStructDef(LexerTarget* lexer, AstNode* parent) {
+    //structdef -> . struct id { element list }
+    StructDefNode* structdef = new StructDefNode();
+    
+    //consume struct
+    Token tok = lexer->lex();
+    if(tok.type != TokenType::id) {
+        //No identifier for struct definition
+        parse_error(PET::Unknown, tok);
+    }
+    structdef->setToken(tok);
+    structdef->ident = tok.token;
+    
+    //consume id
+    tok = lexer->lex();
+    if(tok.type != TokenType::lbrace) {
+        parse_error(PET::Unknown,tok);
+    }
+    //consume {
+    lexer->lex();
+
+    parseStructDefBody(lexer, structdef);
+    tok = lexer->peek();
+    if(tok.type != TokenType::rbrace) {
+        //not a valid struct definition
+        parse_error(PET::Unknown,tok);
+    }
+    //consume }
+    lexer->lex();
+    parent->addChild(structdef);
+    return;
+}
+
+void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
+    //elementlist -> vardec; elementlist
+    //elementlist -> null
+    
+    while(lexer->peek().type != TokenType::rbrace) {
+        std::cout << "parsing member of struct\n";
+        Token tokid = lexer->peek();
+        //consume id
+        lexer->lex();
+        //consume :
+        Token tok = lexer->lex();
+        // it : . type
+        
+        std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
+        
+        //we have a declaration
+        VarDecNode* vdecnode = new VarDecNode();
+        VarNode* vnode = new VarNode();
+        vnode->addVarName(tokid.token);
+        vdecnode->addChild(vnode);
+        parseType(lexer, vdecnode);
+        //consume ;
+        lexer->lex();
+        parent->addChild(vdecnode);
+    }
     return;
 }

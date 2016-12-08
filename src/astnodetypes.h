@@ -27,5 +27,6 @@
 #include "binopnode.h"
 #include "constantnode.h"
 #include "assignnode.h"
+#include "structdefnode.h"
 
 #endif

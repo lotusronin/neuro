@@ -46,6 +46,7 @@ enum class AstNodeType {
     VarDec,
     VarDecAssign,
     FuncDef,
+    StructDef,
     Block,
     Stmt,
     IfStmt,
@@ -72,7 +73,8 @@ enum class SemanticType {
     Double,
     Float,
     Typeless,
-    Infer
+    Infer,
+    User
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
