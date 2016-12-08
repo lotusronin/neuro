@@ -1,2 +1,3 @@
-extern fn myfunc() : void;
-extern fn myfunc() : void;
+extern fn myfunc(input : char) : void;
+extern fn myfunc2(input : int) : void;
+extern fn myfunc3(input : int, input2 : char) : int;
