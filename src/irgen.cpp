@@ -2,6 +2,7 @@
 #include "llvmirgen.h"
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Type.h>
+#include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -32,6 +33,17 @@ extern SymbolTable progSymTab;
 //TODO(marcus): make this a tree of mapped values.
 std::map<std::string, AllocaInst*> varTable;
 
+//TODO(marcus): need a map of struct name to struct members
+//We need to know the index of a struct member for member access
+//TODO(marcus): need a map of struct name to ir type
+//In llvm 3.0, identified structs are not uniqued, so we have to keep track ourselves
+//Currently type definitions are global to a project, but we may want to swap to
+//local definitions? This would let us define two different types with the same name
+//in two different files, maybe useful? But then we'd have to handle collisions if both
+//those types are imported into a file...
+std::map<std::string,StructType*> irTypeMap;
+
+
 #define ST SemanticType
 Type* getIRType(ST t, std::string ident = "") {
     Type* ret;
@@ -54,6 +66,10 @@ Type* getIRType(ST t, std::string ident = "") {
         case ST::Bool:
             ret = Type::getInt1Ty(context);
             break;
+        case ST::User:
+            ret = getStructIRType(ident);
+            //ret = StructType::create(context, ident);
+            break;
         default:
             std::cout << "Type not supported, defaulting to void\n";
             ret = Type::getVoidTy(context);
@@ -62,7 +78,61 @@ Type* getIRType(ST t, std::string ident = "") {
 
     return ret;
 }
+
+//TODO(marcus): should probably share this prototype in a header...
+bool isPrimitiveType(ST type);
 #undef ST
+
+Type* generateTypeCodegen(AstNode* n) {
+    std::cout << "Generating User Defined Type!\n";
+    StructDefNode* sdnode = (StructDefNode*)n;
+    std::cout << "Type: " << sdnode->ident << "\n";
+    //Check to see if we already have an opaque struct defined
+    StructType* ret = getStructIRType(sdnode->ident);
+    if(ret == nullptr) {
+        ret = StructType::create(context,sdnode->ident);
+        irTypeMap.insert(std::pair<std::string,StructType*>(sdnode->ident,ret));
+    }
+
+    //If struct isn't opaque, report multiple definition, otherwise define body
+    if(!ret->isOpaque()) {
+        std::cout << "Error! multiple definitions of type " << sdnode->ident << " exists!\n";
+        return ret;
+    }
+
+    //Get members of the type and construct it!
+    std::vector<Type*> memberTypes;
+
+    for(auto c : *(n->getChildren())) {
+        auto var = (VarDecNode*)c;
+        SemanticType stype = var->getRHS()->getType();
+        if(isPrimitiveType(stype)) {
+            memberTypes.push_back(getIRType(stype));
+        } else {
+            auto typenode = (TypeNode*) var->getRHS();
+            std::string usertypename = typenode->mtoken.token;
+            auto userdeftype = getStructIRType(usertypename);
+            if(userdeftype == nullptr) {
+                userdeftype = StructType::create(context,usertypename);
+                irTypeMap.insert(std::pair<std::string,StructType*>(usertypename,userdeftype));
+            }
+            memberTypes.push_back(userdeftype);
+        }
+    }
+
+    ret->setBody(memberTypes);
+    
+    return ret;
+}
+
+StructType* getStructIRType(std::string ident) {
+    StructType* ret = nullptr;
+    auto iter = irTypeMap.find(ident);
+    if(iter != irTypeMap.end()) {
+        ret = iter->second;
+    }
+    return ret;
+}
 
 
 Function* prototypeCodegen(AstNode* n) {
@@ -71,16 +141,18 @@ Function* prototypeCodegen(AstNode* n) {
     std::vector<Type*> parameterTypes;
     parameterTypes.reserve(vec->size());
    
-
-    //TODO(marcus): handle user types for return/parameters
     for(auto c : (*vec)) {
-        //TODO(marcus): support other types
-        //Type* t = getIRType(c->getType());
-        Type* t = getIRType(SemanticType::Int);
+        //TODO(marcus): Make sure params pull type from their child
+        auto typenode = c->getChildren()->at(0);
+        auto node_semantic_type = typenode->getType();
+        std::string type_string = typenode->mtoken.token;
+        Type* t = getIRType(node_semantic_type, type_string);
+        //Type* t = getIRType(SemanticType::Int);
         parameterTypes.push_back(t);
     }
     
-    Type* retType = getIRType(protonode->getType());
+    //TODO(marcus): find a better way to get type name...
+    Type* retType = getIRType(protonode->getType(), protonode->getChildren()->back()->mtoken.token);
     
     FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, protonode->mfuncname, module);
@@ -105,15 +177,17 @@ Function* functionCodgen(AstNode* n) {
         parameterTypes.reserve(vec->size());
        
 
-        //TODO(marcus): handle user types for return/parameters
         for(auto c : (*vec)) {
-            //Type* t = getIRType(c->getType());
-            //TODO(marcus): support other types!
-            Type* t = getIRType(SemanticType::Int);
+            //TODO(marcus): don't hardcode child accesses
+            ParamsNode* param_node = (ParamsNode*)c;
+            TypeNode* param_type = (TypeNode*) param_node->mchildren.at(0);
+            //TODO(marcus): get a better way to get type name
+            Type* t = getIRType(param_type->getType(), param_type->mtoken.token);
             parameterTypes.push_back(t);
         }
         
-        Type* retType = getIRType(funcnode->getType());
+        //TODO(marcus): find a better way to get type name...
+        Type* retType = getIRType(funcnode->getType(), funcnode->getChildren()->back()->mtoken.token);
         
         FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
         F = Function::Create(FT, Function::ExternalLinkage, funcnode->mfuncname, module);
@@ -133,9 +207,8 @@ Function* functionCodgen(AstNode* n) {
     Builder.SetInsertPoint(BB);
 
     for(auto &Arg : F->args()) {
-        //TODO(marcus): support other types
         //std::cout << "Arg name: " << Arg.getName() << "\n";
-        AllocaInst *alloca = Builder.CreateAlloca(Type::getInt32Ty(context),0,Arg.getName());
+        AllocaInst *alloca = Builder.CreateAlloca(Arg.getType(),0,Arg.getName());
         Builder.CreateStore(&Arg, alloca);
         //TODO(marcus): make sure to add these to the ir symbol table
         varTable[Arg.getName()] = alloca;
@@ -185,6 +258,8 @@ Value* retCodegen(AstNode* n) {
 
 #define ANT AstNodeType
 Value* expressionCodegen(AstNode* n) {
+    //TODO(marcus): Returning 0 isn't a great idea in the long run
+    //if we fail to generate an expression we should report an error
     Value* val = ConstantInt::get(context, APInt(32,0));
     if(n == nullptr) {
         std::cout << "passed in nullptr\n";
@@ -284,9 +359,9 @@ void blockCodegen(AstNode* n) {
 void vardecCodegen(AstNode* n) {
     auto vardecn = (VarDecNode*) n;
     auto varn = (VarNode*)vardecn->mchildren.at(0);
-    //FIXME(marcus): get the type of the node once type checking works
+    auto type_node = (TypeNode*)vardecn->getRHS();
     //TODO(marcus): fix how you access the name of the variable
-    auto alloc = Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    auto alloc = Builder.CreateAlloca(getIRType(type_node->getType(),type_node->mtoken.token),0,varn->getVarName());
     varTable[varn->getVarName()] = alloc;
     return;
 }
@@ -471,12 +546,14 @@ void generateIR_llvm(AstNode* ast) {
                 funcCallCodegen(ast);
                 return;
             }
+            break;
         case ANT::RetStmnt:
             {
                 std::cout << "generating return!\n";
                 retCodegen(ast);
                 return;
             }
+            break;
         case ANT::CompileUnit:
         case ANT::Program:
             {
@@ -486,6 +563,13 @@ void generateIR_llvm(AstNode* ast) {
                 }
                 return;
             }
+            break;
+        case ANT::StructDef:
+            {
+                generateTypeCodegen(ast);
+                return;
+            }
+            break;
         default:
             break;
     }

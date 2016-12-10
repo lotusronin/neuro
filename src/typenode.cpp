@@ -57,6 +57,7 @@ void TypeNode::setToken(const Token& t) {
             break;
         case TokenType::id:
             mstype = SemanticType::User;
+            std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
             break;
         default:
             mstype = SemanticType::Typeless;

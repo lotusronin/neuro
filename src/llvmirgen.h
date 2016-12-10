@@ -11,6 +11,7 @@
 #include <llvm/IR/BasicBlock.h>
 
 llvm::Type* getIRType(SemanticType t, std::string ident);
+llvm::StructType* getStructIRType(std::string ident);
 llvm::Value* expressionCodegen(AstNode* n);
 llvm::Function* prototypeCodegen(AstNode* n);
 llvm::Function* functionCodgen(AstNode* n);
