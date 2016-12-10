@@ -28,17 +28,32 @@ The following are ideas that are planned or I am considering for the language:
   - For-each Loops
   - UFCS
   - Type Introspection
+  - ADTs
 * Potential
   - Until loops
   - Owned memory
-  - ADTs
 
 ## Progress
 
 - [x] Lexer
 - [ ] Parser
+  - [x] Loops
+  - [x] Primitive Types
+  - [x] Structs
+  - [ ] Struct member Access
+  - [ ] Pointer types
+  - [ ] Bitwise operators
+  - [ ] Arrays
 - [ ] Semantic Checking
+  - [ ] Type Inferencing
+  - [ ] Type Checking
 - [ ] IR Code Generation
+  - [x] Function definitions
+  - [x] Prototypes
+  - [x] Struct Types
+  - [ ] Expressions
+- [ ] Build System
+- [ ] Standard Library
 
 The current plan is to support a limited set of language features and get that working. Once that
 is working I will add more complex features to the language like templates and lambdas.
