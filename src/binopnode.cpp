@@ -31,6 +31,7 @@ void BinOpNode::addChild(AstNode* node) {
 void BinOpNode::setOp(std::string& op) {
     mop = op;
     //TODO(marcus): Not sure I like using constants here, maybe make them enums?
+    //FIXME(marcus): I really don't like using constants here. Definitely make them enums.
     if(op.compare("==") == 0 || op.compare("!=") == 0) {
         mpriority = -2;
     } else if(op.compare("<") == 0 || op.compare(">") == 0 || op.compare("<=") == 0 || op.compare(">=") == 0) {
@@ -39,6 +40,8 @@ void BinOpNode::setOp(std::string& op) {
         mpriority = 1;
     } else if(op.compare("*") == 0 || op.compare("/") == 0) {
         mpriority = 2;
+    } else if(op.compare(".") == 0) {
+        mpriority = 4;
     } else {
         mpriority = 3;
     }
@@ -84,6 +87,10 @@ void BinOpNode::setToken(Token& t) {
 }
 
 SemanticType BinOpNode::getType() {
+    //FIXME(marcus): This is utterly broken.
+    //The . and -> operators don't care about lhs type
+    //also this breaks for math operators since it always
+    //promotes to the rhs type, instead of largest
     if(mpriority == 3) {
         mstype = mchildren[0]->getType();
     } else {

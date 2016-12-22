@@ -9,6 +9,7 @@ void fixOperatorAssociativity(AstNode* ast);
 void decorateAst(AstNode* ast);
 void typeCheckPass(AstNode* ast);
 void populateSymbolTableFunctions(AstNode* ast);
+void populateTypeList(AstNode* ast);
 void variableUseAndTypeCheck(AstNode* ast);
 void variableUseCheck(AstNode* ast);
 void printSymbolTable();

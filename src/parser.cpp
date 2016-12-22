@@ -42,6 +42,7 @@ void parseExpression(LexerTarget* lexer, AstNode* parent);
 void parseGLTE(LexerTarget* lexer, AstNode* parent);
 void parsePlusmin(LexerTarget* lexer, AstNode* parent);
 void parseMultdiv(LexerTarget* lexer, AstNode* parent);
+void parseMemberAccess(LexerTarget* lexer, AstNode* parent);
 void parseParenexp(LexerTarget* lexer, AstNode* parent);
 void parseConst(LexerTarget* lexer, AstNode* parent);
 void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent);
@@ -848,20 +849,40 @@ void parsePlusmin(LexerTarget* lexer, AstNode* parent) {
 
 void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
  /* 
-  * multdiv -> parenexp starslash multdiv | parenexp
+  * multdiv -> memberaccess starslash multdiv | memberaccess
   */
     std::cout << "Parsing MultDiv Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("multdivexpr");
     opnode->setOp(s);
     parent->addChild(opnode);
-    parseParenexp(lexer, opnode);
+    parseMemberAccess(lexer, opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
         //consume token
         opnode->setToken(tok);
         lexer->lex();
         parseMultdiv(lexer, opnode);
+    }
+    return;
+}
+
+void parseMemberAccess(LexerTarget* lexer, AstNode* parent) {
+    /*
+     * memberaccess -> parenexp dotarrow memberaccess | parenexp
+     */
+    std::cout << "Parsing MemberAccess Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("memberaccess");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    parseParenexp(lexer,opnode);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::dot) {
+        //consume token
+        opnode->setToken(tok);
+        lexer->lex();
+        parseMemberAccess(lexer,opnode);
     }
     return;
 }
@@ -931,6 +952,7 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
             //unneeded check? do we already know its an id?
             parse_error(PET::BadVarName, tok);
         }
+        //TODO(marcus): Do we need to give the token to the node?
         VarNode* varnode = new VarNode();
         varnode->addVarName(tok.token);
         if(parent != nullptr) {

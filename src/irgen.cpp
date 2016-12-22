@@ -29,6 +29,7 @@ IRBuilder<> Builder(context);
 Module* module;
 
 extern SymbolTable progSymTab;
+extern std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
 
 //TODO(marcus): make this a tree of mapped values.
 std::map<std::string, AllocaInst*> varTable;
@@ -211,7 +212,7 @@ Function* functionCodgen(AstNode* n) {
         AllocaInst *alloca = Builder.CreateAlloca(Arg.getType(),0,Arg.getName());
         Builder.CreateStore(&Arg, alloca);
         //TODO(marcus): make sure to add these to the ir symbol table
-        varTable[Arg.getName()] = alloca;
+        varTable[Arg.getName().str()] = alloca;
     }
     delete vec;
     return F;
@@ -285,9 +286,17 @@ Value* expressionCodegen(AstNode* n) {
             }
             std::cout << "generating binop\n";
             auto lhs = binop->LHS();
+            if(lhs->nodeType() == AstNodeType::Var) {
+                std::cout << "child node is of type var!\n";
+            }
             auto rhs = binop->RHS();
-            auto lhsv = expressionCodegen(lhs);
-            auto rhsv = expressionCodegen(rhs);
+            Value* lhsv;
+            Value* rhsv;
+            if(op.compare(".")) {
+                //don't generate if the op is a member access
+                lhsv = expressionCodegen(lhs);
+                rhsv = expressionCodegen(rhs);
+            }
             if(op.compare("+") == 0) {
                 std::cout << "generating add\n";
                 return Builder.CreateAdd(lhsv,rhsv,"addtemp");
@@ -309,6 +318,49 @@ Value* expressionCodegen(AstNode* n) {
                 return Builder.CreateICmpEQ(lhsv,rhsv,"eqtemp");
             } else if(op.compare("!=") == 0) {
                 return Builder.CreateICmpNE(lhsv,rhsv,"neqtemp");
+            } else if(op.compare(".") == 0) {
+                std::cout << "Generating member access!\n";
+                std::cout << "Var name " << lhs->mtoken.token << "\n";
+                std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
+                auto structname = ((VarNode*)lhs)->getVarName();
+                auto lhsv = varTable[structname];
+                //FIXME(marcus): need a cleaner way to get address of variables
+                //should use the symbol table instead.
+                //Currently it generates a load of the lefthand side variable
+                //so we can get the type!
+                //NOTE(marcus): only way for something to have an address is if we alloca it?
+                //Then we may need to alloca temp variables if part of an expression
+                //generates a struct that we will do address of or member access on.
+                auto structtype = expressionCodegen(lhs)->getType();
+                //auto structtype = lhsv->getType();
+                if(structtype->isPointerTy()) {
+                    std::cout << "struct is actually a pointer type!\n";
+                } else {
+                    std::cout << "struct is not a pointer type\n";
+                }
+                //auto structmembername = rhs->mtoken.token;
+                auto structmembername = ((VarNode*)rhs)->getVarName();
+                std::cout << "member name is " << structmembername << "\n";
+                auto type_name = structtype->getStructName();
+                auto memberlist = userTypesList.find(type_name.str());
+                if(memberlist != userTypesList.end()) {
+                    auto memberind = memberlist->second->find(structmembername);
+                    if(memberind != memberlist->second->end()) {
+                        unsigned int index = memberind->second;
+                        //auto indexval = ConstantInt::get(context,APInt(32,index));
+                        std::cout << "Success, getting element index " << index << "\n";
+                        //return Builder.CreateGEP(structtype,lhsv,indexval,structmembername);
+                        auto memberptr = Builder.CreateStructGEP(structtype,lhsv,index,"ptr_"+structmembername);
+                        return Builder.CreateLoad(memberptr,structmembername);
+
+                    } else {
+                        std::cout << "Error, member " << structmembername << " isn't a known member of struct " << type_name.str() << "\n";
+                    }
+                } else {
+                    std::cout << "Error, member access on variable with unregistered struct type\n";
+                }
+                return val;
+
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
                 return val;
@@ -512,7 +564,9 @@ void statementCodegen(AstNode* n) {
                 forloopCodegen(n);
                 break;
         default:
-            std::cout << "Unknown node type\n";
+            //std::cout << "Unknown node type\n";
+            std::cout << "defaulting to expression\n";
+                expressionCodegen(n);
             break;
     }
 }

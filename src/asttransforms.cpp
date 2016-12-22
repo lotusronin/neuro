@@ -66,7 +66,10 @@ void collapseExpressionChains(AstNode* ast) {
             while(child->nodeType() == ANT::BinOp) {
                 BinOpNode* node = (BinOpNode*)child;
                 std::string op = node->getOp();
-                bool nonop = (op.compare("expression") == 0) || (op.compare("multdivexpr") == 0) || (op.compare("parenexpr") == 0) || (op.compare("plusminexpr") == 0) || (op.compare("gtelteexpr") == 0);
+                //string op of largest binop node that is meaningful is '( )' with a length of 3
+                //so anything with a length over that is just a node in the chain
+                bool nonop = (op.size() > 3);
+                //bool nonop = (op.compare("expression") == 0) || (op.compare("multdivexpr") == 0) || (op.compare("parenexpr") == 0) || (op.compare("plusminexpr") == 0) || (op.compare("gtelteexpr") == 0);
                 if(nonop) {
                     if(node->mchildren.size() == 1) {
                         std::cout << "Deleting child!!!\n";
@@ -143,6 +146,54 @@ void decorateAst(AstNode* ast) {
 
 //TODO(marcus): should this be global? is there a better way?
 SymbolTable progSymTab;
+
+//TODO(marcus): Currently this is global. Is there a better way to do this? Maybed a list of types
+//per file?
+//a list of user defined types with a mapping of member name to member index
+std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
+
+static void registerTypeDef(StructDefNode* n) {
+    auto type_name = n->ident;
+    if(userTypesList.find(type_name) != userTypesList.end()) {
+        //TODO(marcus): We already have the type registered
+        //should we error?
+        return;
+    }
+    std::unordered_map<std::string,int>* member_map = new std::unordered_map<std::string,int>();
+    int index = 0;
+    for(auto c : n->mchildren) {
+        //TODO(marcus): Might want to check that we have a vardec node if we
+        //allow other things in function body definitions.
+        auto vdec = (VarDecNode*) c;
+        auto v = (VarNode*) vdec->getLHS();
+        std::string member_name = v->getVarName();
+        member_map->insert(std::make_pair(member_name,index));
+        ++index;
+    }
+
+    userTypesList.insert(std::make_pair(type_name,member_map));
+}
+
+void populateTypeList(AstNode* ast) {
+    //We only need to go through the list of top level statements
+    //of each program as we won't ever have struct definitions occur in
+    //function definitions, prototypes, etc, so we can skip any of these 
+    //kinds of nodes.
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::CompileUnit:
+                populateTypeList(c);
+                break;
+            case ANT::StructDef:
+                //parse definition!
+                registerTypeDef((StructDefNode*)c);
+                break;
+            default:
+                continue;
+                break;
+        }
+    }
+}
 
 void populateSymbolTableFunctions(AstNode* ast) {
     for(auto c : (*(ast->getChildren()))) {

@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
             collapseExpressionChains(ast);
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
+            populateTypeList(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();
