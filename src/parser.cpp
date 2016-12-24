@@ -3,6 +3,7 @@
 #include <string>
 #include <utility>
 #include <unordered_map>
+#include <assert.h>
 #include "parser.h"
 #include "tokens.h"
 #include "astnodetypes.h"
@@ -370,8 +371,20 @@ void parseOptparams2(LexerTarget* lexer, AstNode* parent) {
 
 void parseType(LexerTarget* lexer, AstNode* parent) {
     //type -> int | char | float | double | bool | id
+    //optional *'s infront of each type name
     TypeNode* tnode = new TypeNode();
     Token tok = lexer->peek();
+
+    //Handle pointer types
+    int indirection = 0;
+    while(tok.type == TokenType::star) {
+        indirection++;
+        //consume *
+        lexer->lex();
+        tok = lexer->peek();
+    }
+    tnode->mindirection = indirection;
+
     tnode->setToken(tok);
     if(tok.type == TokenType::tint) {
         //consume int
@@ -423,8 +436,11 @@ void parseVar(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+//TODO(marcus): Uncalled, should we use it
+//or just get rid of it?
 void parseVarDec(LexerTarget* lexer, AstNode* parent) {
     //vardec -> var : type
+    assert(false);
     parseVar(lexer, nullptr);
     Token tok = lexer->peek();
     if(tok.type != TokenType::colon) {
@@ -436,8 +452,11 @@ void parseVarDec(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+//TODO(marcus): Uncalled, should we use it
+//or just get rid of it?
 void parseVarDecAssign(LexerTarget* lexer, AstNode* parent) {
     //vardecassign -> vardec = expression
+    assert(false);
     parseVarDec(lexer, nullptr);
     Token tok = lexer->peek();
     if(tok.type != TokenType::assignment) {
@@ -478,6 +497,11 @@ bool tokenTypeIsAType(TokenType t) {
         case TokenType::tfloat:
         case TokenType::tdouble:
         case TokenType::id:
+            return true;
+            break;
+        case TokenType::star:
+            //TODO(marcus): this could also be a syntax error.
+            //Or it could be a pointer.
             return true;
             break;
         default:

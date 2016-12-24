@@ -10,7 +10,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
 
-llvm::Type* getIRType(SemanticType t, std::string ident);
+llvm::Type* getIRType(SemanticType t, std::string ident, int indirection);
 llvm::StructType* getStructIRType(std::string ident);
 llvm::Value* expressionCodegen(AstNode* n);
 llvm::Function* prototypeCodegen(AstNode* n);

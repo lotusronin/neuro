@@ -14,9 +14,11 @@ class TypeNode : public AstNode {
         AstNodeType nodeType();
         void addChild(AstNode* node);
         void setTypeName(std::string tname);
+        bool isPointerType();
         void setToken(const Token& t);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
+        int mindirection;
     private:
         int id;
         std::string mname;

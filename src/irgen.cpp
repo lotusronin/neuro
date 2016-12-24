@@ -45,8 +45,17 @@ std::map<std::string, AllocaInst*> varTable;
 std::map<std::string,StructType*> irTypeMap;
 
 
+Type* getIRPtrType(Type* t, int indirection) {
+    Type* ret = t;
+    while(indirection > 0) {
+        ret = PointerType::getUnqual(ret);
+        indirection--;
+    }
+    return ret;
+}
+
 #define ST SemanticType
-Type* getIRType(ST t, std::string ident = "") {
+Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
     Type* ret;
     switch(t) {
         case ST::Void:
@@ -75,6 +84,11 @@ Type* getIRType(ST t, std::string ident = "") {
             std::cout << "Type not supported, defaulting to void\n";
             ret = Type::getVoidTy(context);
             break;
+    }
+    
+    if(indirection > 0) {
+        //Handle pointers
+        ret = getIRPtrType(ret, indirection);
     }
 
     return ret;
@@ -107,12 +121,14 @@ Type* generateTypeCodegen(AstNode* n) {
     for(auto c : *(n->getChildren())) {
         auto var = (VarDecNode*)c;
         SemanticType stype = var->getRHS()->getType();
+        int indirection = ((TypeNode*)var->getRHS())->mindirection;
         if(isPrimitiveType(stype)) {
-            memberTypes.push_back(getIRType(stype));
+            memberTypes.push_back(getIRType(stype,"",indirection));
         } else {
             auto typenode = (TypeNode*) var->getRHS();
             std::string usertypename = typenode->mtoken.token;
             auto userdeftype = getStructIRType(usertypename);
+            userdeftype = (StructType*) getIRPtrType((Type*)userdeftype,indirection);
             if(userdeftype == nullptr) {
                 userdeftype = StructType::create(context,usertypename);
                 irTypeMap.insert(std::pair<std::string,StructType*>(usertypename,userdeftype));
@@ -147,13 +163,14 @@ Function* prototypeCodegen(AstNode* n) {
         auto typenode = c->getChildren()->at(0);
         auto node_semantic_type = typenode->getType();
         std::string type_string = typenode->mtoken.token;
-        Type* t = getIRType(node_semantic_type, type_string);
+        Type* t = getIRType(node_semantic_type, type_string,((TypeNode*)typenode)->mindirection);
         //Type* t = getIRType(SemanticType::Int);
         parameterTypes.push_back(t);
     }
     
     //TODO(marcus): find a better way to get type name...
-    Type* retType = getIRType(protonode->getType(), protonode->getChildren()->back()->mtoken.token);
+    TypeNode* ret_type_node = (TypeNode*) protonode->getChildren()->back();
+    Type* retType = getIRType(protonode->getType(), ret_type_node->mtoken.token, ret_type_node->mindirection);
     
     FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, protonode->mfuncname, module);
@@ -183,12 +200,13 @@ Function* functionCodgen(AstNode* n) {
             ParamsNode* param_node = (ParamsNode*)c;
             TypeNode* param_type = (TypeNode*) param_node->mchildren.at(0);
             //TODO(marcus): get a better way to get type name
-            Type* t = getIRType(param_type->getType(), param_type->mtoken.token);
+            Type* t = getIRType(param_type->getType(), param_type->mtoken.token, param_type->mindirection);
             parameterTypes.push_back(t);
         }
         
         //TODO(marcus): find a better way to get type name...
-        Type* retType = getIRType(funcnode->getType(), funcnode->getChildren()->back()->mtoken.token);
+        TypeNode* ret_type_node = (TypeNode*) funcnode->getChildren()->back();
+        Type* retType = getIRType(funcnode->getType(), ret_type_node->mtoken.token, ret_type_node->mindirection);
         
         FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
         F = Function::Create(FT, Function::ExternalLinkage, funcnode->mfuncname, module);
@@ -413,7 +431,7 @@ void vardecCodegen(AstNode* n) {
     auto varn = (VarNode*)vardecn->mchildren.at(0);
     auto type_node = (TypeNode*)vardecn->getRHS();
     //TODO(marcus): fix how you access the name of the variable
-    auto alloc = Builder.CreateAlloca(getIRType(type_node->getType(),type_node->mtoken.token),0,varn->getVarName());
+    auto alloc = Builder.CreateAlloca(getIRType(type_node->getType(),type_node->mtoken.token, type_node->mindirection),0,varn->getVarName());
     varTable[varn->getVarName()] = alloc;
     return;
 }
