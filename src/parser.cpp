@@ -369,6 +369,25 @@ void parseOptparams2(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+static bool isTokenAType(TokenType t) {
+    //Get rid of the if-else-if flow in parseType
+    //TODO(marcus): may want to combine this with tokenTypeIsAType()
+    switch(t) {
+        case TokenType::tint:
+        case TokenType::tuint:
+        case TokenType::tchar:
+        case TokenType::tuchar:
+        case TokenType::tfloat:
+        case TokenType::tdouble:
+        case TokenType::tbool:
+        case TokenType::id:
+        case TokenType::tvoid:
+            return true;
+        default:
+            return false;
+    }
+}
+
 void parseType(LexerTarget* lexer, AstNode* parent) {
     //type -> int | char | float | double | bool | id
     //optional *'s infront of each type name
@@ -386,26 +405,8 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     tnode->mindirection = indirection;
 
     tnode->setToken(tok);
-    if(tok.type == TokenType::tint) {
-        //consume int
-        lexer->lex();
-    } else if(tok.type == TokenType::tchar) {
-        //consume char
-        lexer->lex();
-    } else if(tok.type == TokenType::tbool) {
-        //consume bool
-        lexer->lex();
-    } else if(tok.type == TokenType::tfloat) {
-        //consume float
-        lexer->lex();
-    } else if(tok.type == TokenType::tdouble) {
-        //consume double
-        lexer->lex();
-    } else if(tok.type == TokenType::tvoid) {
-        //consume void
-        lexer->lex();
-    } else if(tok.type == TokenType::id) {
-        //consume id
+    if(isTokenAType(tok.type)) {
+        //consume int/char/bool/float/double/void/id
         lexer->lex();
     } else {
         parse_error(PET::BadTypeIdentifier, tok);
@@ -492,7 +493,9 @@ void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
 bool tokenTypeIsAType(TokenType t) {
     switch (t) {
         case TokenType::tint:
+        case TokenType::tuint:
         case TokenType::tchar:
+        case TokenType::tuchar:
         case TokenType::tbool:
         case TokenType::tfloat:
         case TokenType::tdouble:
