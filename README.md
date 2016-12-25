@@ -40,18 +40,25 @@ The following are ideas that are planned or I am considering for the language:
   - [x] Loops
   - [x] Primitive Types
   - [x] Structs
-  - [ ] Struct member Access
-  - [ ] Pointer types
+  - [x] Struct member Access
+  - [x] Pointer types
   - [ ] Bitwise operators
   - [ ] Arrays
+  - [ ] Casting
+  - [ ] Unary operators
+  - [ ] Logical operators
+  - [ ] Strings
 - [ ] Semantic Checking
   - [ ] Type Inferencing
   - [ ] Type Checking
-- [ ] IR Code Generation
+  - [x] Break and Continue used only within loops
+- [ ] Semantic Features/IR Code Generation
   - [x] Function definitions
   - [x] Prototypes
   - [x] Struct Types
   - [ ] Expressions
+    - [ ] Pointer arithmetic
+    - [ ] Implicit casting
 - [ ] Build System
 - [ ] Standard Library
 
