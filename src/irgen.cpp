@@ -379,6 +379,11 @@ Value* expressionCodegen(AstNode* n) {
                 }
                 return val;
 
+            } else if(op.compare("@") == 0) {
+                //TODO(marcus): we are assuming the expression underneath will be just a variable of
+                //some pointer type
+                auto childvar = expressionCodegen(lhs);
+                return Builder.CreateLoad(childvar,"deref");
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
                 return val;
@@ -417,11 +422,11 @@ Value* expressionCodegen(AstNode* n) {
 }
 #undef ANT
 
-void blockCodegen(AstNode* n) {
+void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     std::cout << "generating block\n";
     std::vector<AstNode*>* vec = n->getChildren();
     for(auto c : (*vec)) {
-        statementCodegen(c);
+        statementCodegen(c, continueto, breakto);
     }
 }
 
@@ -464,7 +469,7 @@ void assignCodegen(AstNode* n) {
     return;
 }
 
-void ifelseCodegen(AstNode* n) {
+void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     std::cout << "Generating if statement\n";
     auto ifn = (IfNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
@@ -476,7 +481,7 @@ void ifelseCodegen(AstNode* n) {
     Builder.CreateCondBr(condv,thenBB,elseBB);
 
     Builder.SetInsertPoint(thenBB);
-    statementCodegen(ifn->getThen());
+    statementCodegen(ifn->getThen(), continueto, breakto);
 
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(elseBB);
@@ -484,7 +489,7 @@ void ifelseCodegen(AstNode* n) {
     if(ifn->mstatements.size() == 3) {
         //TODO(marcus): don't hardcode child access
         auto elsen = (ElseNode*) ifn->mstatements.at(2);
-        statementCodegen(elsen->mstatements.at(0));
+        statementCodegen(elsen->mstatements.at(0), continueto, breakto);
     }
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(mergeBB);
@@ -506,7 +511,7 @@ void whileloopCodegen(AstNode* n) {
     Builder.CreateCondBr(condv,beginBB,endBB);
     Builder.SetInsertPoint(beginBB);
 
-    statementCodegen(whilen->getBody());
+    statementCodegen(whilen->getBody(), whileBB, endBB);
     
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(endBB);
@@ -523,18 +528,21 @@ void forloopCodegen(AstNode* n) {
     BasicBlock* forBB = BasicBlock::Create(context,"for",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"forbegin",enclosingscope);
     BasicBlock* bodyBB = BasicBlock::Create(context,"forbody",enclosingscope);
+    BasicBlock* updateBB = BasicBlock::Create(context,"forupdate",enclosingscope);
     BasicBlock* endBB = BasicBlock::Create(context,"forend",enclosingscope);
     
     Builder.CreateBr(forBB);
     Builder.SetInsertPoint(forBB);
-    statementCodegen(inits);
+    statementCodegen(inits, updateBB, endBB);
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(beginBB);
     auto condv = conditionalCodegen(condition);
     Builder.CreateCondBr(condv,bodyBB,endBB);
     Builder.SetInsertPoint(bodyBB);
-    statementCodegen(loopbody);
-    statementCodegen(update);
+    statementCodegen(loopbody, updateBB, endBB);
+    Builder.CreateBr(updateBB);
+    Builder.SetInsertPoint(updateBB);
+    statementCodegen(update, updateBB, endBB);
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(endBB);
 
@@ -551,14 +559,31 @@ Value* conditionalCodegen(AstNode* n) {
     return condv;
 }
 
+void loopstmtCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
+    BasicBlock* loc;
+    if(n->mtoken.token.compare("break") == 0) {
+        std::cout << "Generating break! LOOP STATEMENT!\n";
+        loc = breakto;
+    } else {
+        std::cout << "Generating continue! LOOP STATEMENT\n";
+        loc = continueto;
+    }
+    std::cout << n->mtoken.token << "\n";
+
+    if(loc != nullptr) {
+        Builder.CreateBr(loc);
+    }
+    return;
+}
+
 #define ANT AstNodeType
-void statementCodegen(AstNode* n) {
+void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nullptr) {
     switch(n->nodeType()) {
         case ANT::RetStmnt:
                 retCodegen(n);
                 break;
         case ANT::Block:
-                blockCodegen(n);
+                blockCodegen(n, begin, end);
                 break;
         case ANT::VarDec:
                 vardecCodegen(n);
@@ -570,7 +595,7 @@ void statementCodegen(AstNode* n) {
                 assignCodegen(n);
                 break;
         case ANT::IfStmt:
-                ifelseCodegen(n);
+                ifelseCodegen(n, begin, end);
                 break;
         case ANT::WhileLoop:
                 whileloopCodegen(n);
@@ -580,6 +605,9 @@ void statementCodegen(AstNode* n) {
                 break;
         case ANT::ForLoop:
                 forloopCodegen(n);
+                break;
+        case ANT::LoopStmt:
+                loopstmtCodegen(n,begin,end);
                 break;
         default:
             //std::cout << "Unknown node type\n";
@@ -607,7 +635,6 @@ void generateIR_llvm(AstNode* ast) {
         case ANT::FuncDef:
             {
                 Function* F = functionCodgen(ast);
-                //TODO(marcus): codegen function body
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody());
                return;
             }

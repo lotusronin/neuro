@@ -18,14 +18,15 @@ llvm::Function* functionCodgen(AstNode* n);
 llvm::Value* funcCallCodegen(AstNode* n);
 llvm::Value* retCodegen(AstNode* n);
 llvm::Value* conditionalCodegen(AstNode* n);
-void blockCodegen(AstNode* n);
+void blockCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
 void vardecCodegen(AstNode* n);
 void vardecassignCodegen(AstNode* n);
 void assignCodegen(AstNode* n);
-void ifelseCodegen(AstNode* n);
+void ifelseCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
 void whileloopCodegen(AstNode* n);
 void forloopCodegen(AstNode* n);
-void statementCodegen(AstNode* n);
+void loopstmtCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
+void statementCodegen(AstNode* n, llvm::BasicBlock* begin, llvm::BasicBlock* end);
 void generateIR_llvm(AstNode* ast);
 
 

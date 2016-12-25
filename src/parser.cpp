@@ -1081,6 +1081,7 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
     } else {
         brkcntnode->setBreak(false);
     }
+    brkcntnode->mtoken = lexer->peek();
     Token tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
         //consume ;
