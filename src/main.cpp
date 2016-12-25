@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();
-            typeCheckPass(ast);
+            //typeCheckPass(ast); //FIXME(marcus): fix this!
             //printSymbolTable();
             //decorateAst(ast);
             if(debug_parser) {

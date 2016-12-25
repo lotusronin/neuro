@@ -49,6 +49,11 @@ enum class TokenType {
     exclaim,
     comment,
     question,
+    ampersand,
+    dblampersand,
+    bar,
+    dblbar,
+    dereference,
     eof
 };
 

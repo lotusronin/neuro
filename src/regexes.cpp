@@ -50,7 +50,12 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex(";"),TokenType::semicolon),
     std::make_pair(std::regex(":"),TokenType::colon),
     std::make_pair(std::regex("!"),TokenType::exclaim),
-    std::make_pair(std::regex("\\?"),TokenType::question)
+    std::make_pair(std::regex("\\?"),TokenType::question),
+    std::make_pair(std::regex("&"),TokenType::ampersand),
+    std::make_pair(std::regex("&&"),TokenType::dblampersand),
+    std::make_pair(std::regex("\\|"),TokenType::bar),
+    std::make_pair(std::regex("\\|\\|"),TokenType::dblbar),
+    std::make_pair(std::regex("@"),TokenType::dereference)
 };
 
 unsigned int num_regexes = sizeof(regexes)/sizeof(std::pair<std::regex,TokenType>);

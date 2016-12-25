@@ -43,6 +43,7 @@ void parseExpression(LexerTarget* lexer, AstNode* parent);
 void parseGLTE(LexerTarget* lexer, AstNode* parent);
 void parsePlusmin(LexerTarget* lexer, AstNode* parent);
 void parseMultdiv(LexerTarget* lexer, AstNode* parent);
+void parseAddrOfIndir(LexerTarget* lexer, AstNode* parent);
 void parseMemberAccess(LexerTarget* lexer, AstNode* parent);
 void parseParenexp(LexerTarget* lexer, AstNode* parent);
 void parseConst(LexerTarget* lexer, AstNode* parent);
@@ -876,14 +877,14 @@ void parsePlusmin(LexerTarget* lexer, AstNode* parent) {
 
 void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
  /* 
-  * multdiv -> memberaccess starslash multdiv | memberaccess
+  * multdiv -> addrofindir starslash multdiv | addrofindir
   */
     std::cout << "Parsing MultDiv Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("multdivexpr");
     opnode->setOp(s);
     parent->addChild(opnode);
-    parseMemberAccess(lexer, opnode);
+    parseAddrOfIndir(lexer, opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash) {
         //consume token
@@ -892,6 +893,24 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
         parseMultdiv(lexer, opnode);
     }
     return;
+}
+
+void parseAddrOfIndir(LexerTarget* lexer, AstNode* parent) {
+ /* 
+  * addrof-indir -> &memberaccess | *memberaccess | memberaccess
+  */    
+    std::cout << "Parsing AddrOfIndir Expression!\n";
+    BinOpNode* opnode = new BinOpNode();
+    auto s = std::string("addrofindirexpr");
+    opnode->setOp(s);
+    parent->addChild(opnode);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand) {
+        //consume token (@ or &)
+        opnode->setToken(tok);
+        lexer->lex();
+    }
+     parseMemberAccess(lexer,opnode);
 }
 
 void parseMemberAccess(LexerTarget* lexer, AstNode* parent) {

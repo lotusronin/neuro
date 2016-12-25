@@ -112,8 +112,9 @@ void fixOperatorAssociativity(AstNode* ast) {
         if(type == ANT::BinOp) {
             auto child = (BinOpNode*)(*children)[i];
             //TODO(marcus): should replace this constant with an enum or macro
-            if(child->getPriority() == 3) {
+            if(child->getPriority() == 3 || child->getPriority() == 5) {
                 //skip () nodes since they only have 1 child
+                //skip &/@ addr-of and deref since they only have 1 child
                 continue;
             }
             while(child->RHS()->nodeType() == ANT::BinOp) {
