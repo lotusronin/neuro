@@ -13,6 +13,7 @@ void populateTypeList(AstNode* ast);
 void variableUseAndTypeCheck(AstNode* ast);
 void variableUseCheck(AstNode* ast);
 void printSymbolTable();
+void deferPass(AstNode* ast);
 SymbolTable* getSymtab(std::string& file);
 
 enum class SemanticErrorType{

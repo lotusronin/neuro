@@ -619,3 +619,95 @@ void printSymbolTable() {
     Assign,
     Default
 };*/
+
+std::vector<std::vector<AstNode*>> deferStacks;
+void printDeferStacks() {
+    std::cout << "deferStacks.size = " << deferStacks.size() << "\n";
+    std::cout << "Sizes: ";
+    for(auto& s : deferStacks) {
+        std::cout << s.size() << " ";
+    }
+    std::cout << "\n";
+}
+void deferPass(AstNode* ast) {
+    auto children = ast->getChildren();
+    for(auto i = children->begin(); i != children->end(); i++) {
+        AstNode* c = *i;
+        AstNodeType nodetype = c->nodeType();
+        if(nodetype == AstNodeType::FuncDef) {
+            deferPass(c);
+        } else if(nodetype == AstNodeType::Block) {
+            std::cout << "Block Encountered, adding new stack\n";
+            deferStacks.push_back(std::vector<AstNode*>());
+            deferPass(c);
+        } else if(nodetype == AstNodeType::DeferStmt) {
+            std::cout << "Defer Statement! adding to stack!\n";
+            deferStacks.back().push_back(c);
+            printDeferStacks();
+            deferPass(c);
+            //remove defer from list of children
+            i = children->erase(i);
+            i--;
+            //if(i != children->end()) {
+            //    i--;
+            //}
+        } else if(nodetype == AstNodeType::LoopStmt) {
+            //end of loop scope, iterate through all defer statements in last stack
+            if(deferStacks.size() > 0) {
+                auto defers = deferStacks.back();
+                for(auto deferstmt = defers.rbegin(); deferstmt != defers.rend(); deferstmt++) {
+                    auto defer_node = (DeferStmtNode*)*deferstmt;
+                    //TODO(marcus): don't hardcode child access
+                    auto to_insert = defer_node->mchildren.back();
+                    i = children->insert(i,to_insert);
+                    i++;
+                }
+            }
+        } else if(nodetype == AstNodeType::RetStmnt) {
+            std::cout << "deferPass: Return Statement Found\n";
+            printDeferStacks();
+            //iterate thru all defer stacks, last to first
+            for(auto stack_iter = deferStacks.rbegin(); stack_iter != deferStacks.rend(); stack_iter++) {
+                auto def_stack = stack_iter;
+                for(auto deferstmt = def_stack->rbegin(); deferstmt != def_stack->rend(); deferstmt++) {
+                    auto defer_node = (DeferStmtNode*)*deferstmt;
+                    if(defer_node == nullptr) { std::cout << "ERROR!!! NULLPTR!!!\n"; }
+                    //TODO(marcus): don't hardcode child access
+                    //std::cout << defer_node->mchildren.size() << "IS THE SIZE\n";
+                    auto to_insert = defer_node->mchildren.back();
+                    i = children->insert(i,to_insert);
+                    i++;
+
+                }
+            }
+        } else if(nodetype == AstNodeType::CompileUnit) {
+            deferPass(c);
+        } else {
+            continue;
+        }
+    }
+    if(ast->nodeType() == AstNodeType::Block) {
+        std::cout << "deferPass: End of Block is here!\n";
+        printDeferStacks();
+        //end of block scope, iterate through all defer statements in last stack
+        if(deferStacks.size() > 0) {
+            auto defers = deferStacks.back();
+            for(auto deferstmt = defers.rbegin(); deferstmt != defers.rend(); deferstmt++) {
+                auto defer_node = (DeferStmtNode*)*deferstmt;
+                //TODO(marcus): don't hardcode child access
+                auto to_insert = defer_node->mchildren.back();
+                auto last_iter = children->end()--;
+                children->insert(last_iter,to_insert);
+            }
+            //remove last list
+            //TODO(marcus): we have a memory leak here of all the defer nodes.
+            //we can fix this using a custom allocator for defer nodes.
+            auto last_stack = deferStacks.end()--;
+            std::cout << "erasing last stack\n";
+            deferStacks.erase(last_stack);
+            printDeferStacks();
+        }
+        
+    }
+    return;
+}

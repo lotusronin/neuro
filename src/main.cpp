@@ -65,6 +65,7 @@ int main(int argc, char** argv) {
             //typeCheckPass(ast); //FIXME(marcus): fix this!
             //printSymbolTable();
             //decorateAst(ast);
+            deferPass(ast);
             if(debug_parser) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);
