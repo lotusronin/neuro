@@ -538,19 +538,20 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         parseExpression(lexer, vdecassignnode);
     } else if(tokenTypeIsAType(tok.type)) {
-        if(nextTok.type == TokenType::assignment) {
+        VarNode* vnode = new VarNode();
+        vnode->addVarName(tokid.token);
+        //TODO(marcus): parse type, then find if you're an assignment or declaration
+        parseType(lexer, vnode);
+        if(lexer->peek().type == TokenType::assignment) {
             std::cout << "var declaration is assignment, type given.\n";
-            std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
+            std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
             //we have a declaration and assignment
             VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
-            VarNode* vnode = new VarNode();
-            vnode->addVarName(tokid.token);
             vdecassignnode->addChild(vnode);
             parent->addChild(vdecassignnode);
-            parseType(lexer, vnode);
             //consume =
             lexer->lex();
-            std::cout << "after parseType call\n";
+            std::cout << "after parseType call and =\n";
             std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
             parseExpression(lexer, vdecassignnode);
         } else {
@@ -558,11 +559,12 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
             //we have a declaration
             VarDecNode* vdecnode = new VarDecNode();
-            VarNode* vnode = new VarNode();
-            vnode->addVarName(tokid.token);
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
-            parseType(lexer, vdecnode);
+            //TODO(marcus): clean this up
+            auto typenode = vnode->mchildren.back();
+            vnode->mchildren.erase(--(vnode->mchildren.cend()));
+            vdecnode->addChild(typenode);
         }
     } else {
         parse_error(PET::MissVardecColon, tok);

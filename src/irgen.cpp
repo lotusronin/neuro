@@ -458,9 +458,12 @@ void vardecassignCodegen(AstNode* n) {
     std::cout << "Generating vardec assign\n";
     auto vardecan = (VarDecAssignNode*) n;
     auto varn = (VarNode*)vardecan->mchildren.at(0);
+    //FIXME(marcus): this will break if the var is type inferenced
+    auto type_node = (TypeNode*)varn->mchildren.at(0);
     //FIXME(marcus): get the type of the node once type checking works
     //TODO(marcus): fix how you access the name of the variable
-    AllocaInst* alloca = Builder.CreateAlloca(Type::getInt32Ty(context),0,varn->getVarName());
+    auto ir_type = getIRType(type_node->getType(),type_node->mtoken.token, type_node->mindirection);
+    AllocaInst* alloca = Builder.CreateAlloca(ir_type,0,varn->getVarName());
     varTable[varn->getVarName()] = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1));
