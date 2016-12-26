@@ -384,6 +384,19 @@ Value* expressionCodegen(AstNode* n) {
                 //some pointer type
                 auto childvar = expressionCodegen(lhs);
                 return Builder.CreateLoad(childvar,"deref");
+            } else if(op.compare("&") == 0) {
+                std::cout << "Generating address of\n";
+                //TODO(marcus): we are assuming the expression underneath will be some variable
+                //which has been allocated on the stack.
+                if(lhs->nodeType() == AstNodeType::Var) {
+                    std::cout << "We have a var to take the address of!\n";
+                    auto varname = ((VarNode*)lhs)->getVarName();
+                    return varTable[varname];
+                }
+                //TODO(marcus): this is wrong but will need to fix storing of variables for IR
+                //generation first. Maybe its own symbol table?
+                auto childvar = expressionCodegen(lhs);
+                return childvar;
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
                 return val;
