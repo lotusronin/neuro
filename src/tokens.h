@@ -54,6 +54,9 @@ enum class TokenType {
     bar,
     dblbar,
     dereference,
+    carrot,
+    tilda,
+    mod,
     eof
 };
 
