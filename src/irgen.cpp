@@ -324,6 +324,9 @@ Value* expressionCodegen(AstNode* n) {
                 return Builder.CreateMul(lhsv,rhsv,"multtemp");
             } else if(op.compare("/") == 0) {
                 return Builder.CreateUDiv(lhsv,rhsv,"divtemp");
+            } else if(op.compare("%") == 0) {
+                //TODO(marcus): support signed and floating remainder
+                return Builder.CreateURem(lhsv,rhsv,"modtemp");
             } else if(op.compare(">") == 0) {
                 return Builder.CreateICmpUGT(lhsv,rhsv,"gttemp");
             } else if(op.compare("<") == 0) {
@@ -336,6 +339,46 @@ Value* expressionCodegen(AstNode* n) {
                 return Builder.CreateICmpEQ(lhsv,rhsv,"eqtemp");
             } else if(op.compare("!=") == 0) {
                 return Builder.CreateICmpNE(lhsv,rhsv,"neqtemp");
+            } else if(op.compare("|") == 0) {
+                return Builder.CreateOr(lhsv,rhsv,"bitortemp");
+            } else if(op.compare("^") == 0) {
+                return Builder.CreateXor(lhsv,rhsv,"bitxortemp");
+            } else if(op.compare("||") == 0) {
+                //TODO(marcus): make this work for other sizes of integers
+                auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"or_res.addr"); 
+                auto zero_val = ConstantInt::get(context, APInt(32,0));
+                auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
+                Builder.CreateStore(firstval,res);
+                auto enclosingscope = Builder.GetInsertBlock()->getParent();
+                BasicBlock* secBB = BasicBlock::Create(context, "orsecond");
+                enclosingscope->getBasicBlockList().push_back(secBB);
+                BasicBlock* endBB = BasicBlock::Create(context, "orend");
+                enclosingscope->getBasicBlockList().push_back(endBB);
+                Builder.CreateCondBr(firstval,endBB,secBB);
+                Builder.SetInsertPoint(secBB);
+                auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
+                Builder.CreateStore(secondval,res);
+                Builder.CreateBr(endBB);
+                Builder.SetInsertPoint(endBB);
+                return Builder.CreateLoad(res,"or_res");
+            } else if(op.compare("&&") == 0) {
+                //TODO(marcus): make this work for other sizes of integers
+                auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"and_res.addr"); 
+                auto zero_val = ConstantInt::get(context, APInt(32,0));
+                auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
+                Builder.CreateStore(firstval,res);
+                auto enclosingscope = Builder.GetInsertBlock()->getParent();
+                BasicBlock* secBB = BasicBlock::Create(context, "andsecond");
+                enclosingscope->getBasicBlockList().push_back(secBB);
+                BasicBlock* endBB = BasicBlock::Create(context, "andend");
+                enclosingscope->getBasicBlockList().push_back(endBB);
+                Builder.CreateCondBr(firstval,secBB,endBB);
+                Builder.SetInsertPoint(secBB);
+                auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
+                Builder.CreateStore(secondval,res);
+                Builder.CreateBr(endBB);
+                Builder.SetInsertPoint(endBB);
+                return Builder.CreateLoad(res,"and_res");
             } else if(op.compare(".") == 0) {
                 std::cout << "Generating member access!\n";
                 std::cout << "Var name " << lhs->mtoken.token << "\n";

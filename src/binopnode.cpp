@@ -32,13 +32,21 @@ void BinOpNode::setOp(std::string& op) {
     mop = op;
     //TODO(marcus): Not sure I like using constants here, maybe make them enums?
     //FIXME(marcus): I really don't like using constants here. Definitely make them enums.
-    if(op.compare("==") == 0 || op.compare("!=") == 0) {
+    if(op.compare("||") == 0) {
+        mpriority = -7;
+    } else if(op.compare("&&") == 0) {
+        mpriority = -6;
+    } else if(op.compare("|") == 0) {
+        mpriority = -5;
+    } else if(op.compare("^") == 0) {
+        mpriority = -4;
+    } else if(op.compare("==") == 0 || op.compare("!=") == 0) {
         mpriority = -2;
     } else if(op.compare("<") == 0 || op.compare(">") == 0 || op.compare("<=") == 0 || op.compare(">=") == 0) {
         mpriority = -1;
     } else if(op.compare("+") == 0 || op.compare("-") == 0) {
         mpriority = 1;
-    } else if(op.compare("*") == 0 || op.compare("/") == 0) {
+    } else if(op.compare("*") == 0 || op.compare("/") == 0 || op.compare("%")) {
         mpriority = 2;
     } else if(op.compare(".") == 0) {
         mpriority = 4;
