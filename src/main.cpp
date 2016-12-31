@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <stdlib.h>
 #include "lexer.h"
 #include "tokens.h"
 #include "parser.h"
@@ -62,7 +63,7 @@ int main(int argc, char** argv) {
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();
-            //typeCheckPass(ast); //FIXME(marcus): fix this!
+            typeCheckPass(ast);
             //printSymbolTable();
             //decorateAst(ast);
             deferPass(ast);

@@ -11,6 +11,7 @@
 struct SymbolTableEntry {
     AstNode* node;
     SemanticType type;
+    TypeInfo typeinfo;
     std::vector<std::pair<SemanticType,AstNode*>> funcParams;
 };
 
@@ -24,8 +25,12 @@ struct SymbolTable {
 
 
 SymbolTable* addNewScope(SymbolTable* s, std::string name);
+SymbolTable* getScope(SymbolTable* s, std::string name);
+
+void addVarEntry(SymbolTable* s, TypeInfo t, std::string name);
 void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n);
 void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name);
+void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name);
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p);
 std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name);
 SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name);

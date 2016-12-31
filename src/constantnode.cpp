@@ -43,8 +43,9 @@ std::string ConstantNode::getVal() {
 void ConstantNode::setToken(const Token& t) {
     mtoken = t;
     if(t.type == TokenType::intlit) {
-        mstype = SemanticType::Int;
+        mstype = SemanticType::intlit;
     } else if(t.type == TokenType::floatlit) {
-        mstype = SemanticType::Float;
+        mstype = SemanticType::floatlit;
     }
+    mtypeinfo.type = mstype;
 }

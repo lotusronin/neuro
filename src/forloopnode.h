@@ -19,6 +19,7 @@ class ForLoopNode : public AstNode {
         AstNode* getUpdate();
         AstNode* getInit();
         AstNode* getBody();
+        int getId();
     private:
         int id;
 };

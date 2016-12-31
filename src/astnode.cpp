@@ -37,6 +37,10 @@ void AstNode::setToken(Token& t) {
     mtoken = t;
 }
 
+TypeInfo* AstNode::getTypeInfo() {
+    return &mtypeinfo;
+}
+
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
     const char* out;
     switch(obj) {
@@ -69,5 +73,11 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
             break;
     }
     os << out;
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
+    const char* out = " id: ";
+    os << obj.type << out << obj.userid;
     return os;
 }

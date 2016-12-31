@@ -47,3 +47,7 @@ AstNode* ForLoopNode::getUpdate() {
 AstNode* ForLoopNode::getBody() {
     return mstatements.at(3);
 }
+
+int ForLoopNode::getId() {
+    return id;
+}

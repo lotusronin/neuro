@@ -74,10 +74,26 @@ enum class SemanticType {
     Float,
     Typeless,
     Infer,
-    User
+    User,
+    u8,
+    u32,
+    u64,
+    s8,
+    s32,
+    s64,
+    intlit,
+    floatlit
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
+
+struct TypeInfo {
+    SemanticType type = SemanticType::Typeless;
+    std::string userid;
+    int indirection = 0;
+};
+
+std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);
 
 class AstNode {
     public:
@@ -86,12 +102,14 @@ class AstNode {
         virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType nodeType();
         virtual SemanticType getType();
+        TypeInfo* getTypeInfo();
         virtual void addChild(AstNode* child);
         virtual AstNode* lastChild();
         virtual void setToken(Token& t);
         virtual std::vector<AstNode*>* getChildren();
         Token mtoken;
         SemanticType mstype = SemanticType::Typeless;
+        TypeInfo mtypeinfo;
 };
 
 

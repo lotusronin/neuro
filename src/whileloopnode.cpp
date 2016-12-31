@@ -39,3 +39,7 @@ AstNode* WhileLoopNode::getConditional() {
 AstNode* WhileLoopNode::getBody() {
     return mstatements.at(1);
 }
+
+int WhileLoopNode::getId() {
+    return id;
+}

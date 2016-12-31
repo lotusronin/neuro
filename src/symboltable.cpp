@@ -17,11 +17,27 @@ SymbolTable* addNewScope(SymbolTable* s, std::string name) {
     }
 }
 
+SymbolTable* getScope(SymbolTable* s, std::string name) {
+    std::cout << "Getting scope for " << name << '\n';
+    auto res = s->children.find(name);
+    if(res == s->children.end()) {
+        return addNewScope(s,name);
+    } else {
+        return res->second;
+    }
+}
+
 void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n) {
     auto entry = new SymbolTableEntry;
     entry->node = n;
     entry->type = t;
     std::string name = ((VarNode*)n)->getVarName();
+    s->table.insert(std::make_pair(name,entry));
+}
+
+void addVarEntry(SymbolTable* s, TypeInfo t, std::string name) {
+    auto entry = new SymbolTableEntry;
+    entry->typeinfo = t;
     s->table.insert(std::make_pair(name,entry));
 }
 
@@ -33,10 +49,22 @@ void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name) {
     }
 }
 
+void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name) {
+    std::cout << __FUNCTION__ << " : updating var\n";
+    auto entry = s->table.find(name);
+    if(entry != s->table.end()) {
+        entry->second->type = t.type;
+        entry->second->typeinfo = t;
+    } else {
+        std::cout << "Var not updated!!! TO IMPLEMENT!!!!\n";
+    }
+}
+
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p) {
     auto entry = new SymbolTableEntry;
     entry->node = n;
     entry->type = t;
+    entry->typeinfo.type = t;
     entry->funcParams = p;
     std::string funcname;
     if(n->nodeType() == AstNodeType::Prototype) {
@@ -55,6 +83,12 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name)
      */
     //TODO(marcus): should conflicting imported names be an error? Can just report it.
     std::vector<SymbolTableEntry*> ret;
+    std::cout << "Getting Entry for " << name << '\n';
+    std::cout << "Looking in " << s->name << " (scope = " << s->scope << ")\n";
+    if(!s)  {
+        std::cout << "DANGER WILL ROBINSON! SymbolTable is NULL!!\n";
+        return ret;
+    }
     auto exists = s->table.find(name);
     if(exists == s->table.end()) {
         if(s->parent == nullptr) {
