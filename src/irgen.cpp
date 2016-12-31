@@ -343,6 +343,10 @@ Value* expressionCodegen(AstNode* n) {
                 return Builder.CreateOr(lhsv,rhsv,"bitortemp");
             } else if(op.compare("^") == 0) {
                 return Builder.CreateXor(lhsv,rhsv,"bitxortemp");
+            } else if(op.compare("~") == 0) {
+                //NOTE(marcus): bitwise ops in llvm only work for integers or vectors of integers
+                //TODO(marcus): make this work for other sizes of integers
+                return Builder.CreateXor(lhsv,ConstantInt::get(context,APInt(32,-1)));
             } else if(op.compare("||") == 0) {
                 //TODO(marcus): make this work for other sizes of integers
                 auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"or_res.addr"); 
