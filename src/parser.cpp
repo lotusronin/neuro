@@ -983,7 +983,7 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
 
 void parseAddrOfIndir(LexerTarget* lexer, AstNode* parent) {
  /* 
-  * addrof-indir -> &memberaccess | *memberaccess | memberaccess
+  * addrof-indir -> &memberaccess | *memberaccess | !memberaccess | ~memberaccess | memberaccess
   */    
     std::cout << "Parsing AddrOfIndir Expression!\n";
     BinOpNode* opnode = new BinOpNode();
@@ -991,8 +991,8 @@ void parseAddrOfIndir(LexerTarget* lexer, AstNode* parent) {
     opnode->setOp(s);
     parent->addChild(opnode);
     Token tok = lexer->peek();
-    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand) {
-        //consume token (@ or &)
+    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda) {
+        //consume token (@ or & or ! or ~)
         opnode->setToken(tok);
         lexer->lex();
     }
@@ -1099,6 +1099,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     // funcname -> id
     Token tok = lexer->peek();
     FuncCallNode* funcallnode = new FuncCallNode();
+    //TODO(marcus): actually give funccall the token
     funcallnode->addFuncName(tok.token);
     if(parent != nullptr) {
         parent->addChild(funcallnode);
