@@ -78,6 +78,9 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
     const char* out = " id: ";
-    os << obj.type << out << obj.userid;
+    os << obj.type;
+    if(obj.userid.size() > 0) {
+        os << out << obj.userid;
+    }
     return os;
 }

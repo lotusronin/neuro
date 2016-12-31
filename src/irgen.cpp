@@ -18,6 +18,7 @@
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <iostream>
 #include <string>
+#include <assert.h>
 #include "astnode.h"
 #include "astnodetypes.h"
 #include "symboltable.h"
@@ -55,6 +56,10 @@ Type* getIRPtrType(Type* t, int indirection) {
 }
 
 #define ST SemanticType
+Type* getIRType(TypeInfo& info) {
+    return getIRType(info.type,info.userid,info.indirection);
+}
+
 Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
     Type* ret;
     switch(t) {
@@ -62,9 +67,13 @@ Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
             ret = Type::getVoidTy(context);
             break;
         case ST::Int:
+        case ST::intlit:
+            //TODO(marcus): intlit might not be i32
             ret = Type::getInt32Ty(context);
             break;
         case ST::Float:
+        case ST::floatlit:
+            //TODO(marcus): floatlit might not be float (double?)
             ret = Type::getFloatTy(context);
             break;
         case ST::Double:
@@ -82,6 +91,7 @@ Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
             break;
         default:
             std::cout << "Type not supported, defaulting to void\n";
+            if(t == ST::Infer) { std::cout << "Type should have been inferred!!\n";}
             ret = Type::getVoidTy(context);
             break;
     }
@@ -152,7 +162,7 @@ StructType* getStructIRType(std::string ident) {
 }
 
 
-Function* prototypeCodegen(AstNode* n) {
+Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     PrototypeNode* protonode = (PrototypeNode*) n;
     std::vector<AstNode*>* vec = protonode->getParameters();
     std::vector<Type*> parameterTypes;
@@ -164,7 +174,6 @@ Function* prototypeCodegen(AstNode* n) {
         auto node_semantic_type = typenode->getType();
         std::string type_string = typenode->mtoken.token;
         Type* t = getIRType(node_semantic_type, type_string,((TypeNode*)typenode)->mindirection);
-        //Type* t = getIRType(SemanticType::Int);
         parameterTypes.push_back(t);
     }
     
@@ -185,7 +194,7 @@ Function* prototypeCodegen(AstNode* n) {
     return F;
 }
 
-Function* functionCodgen(AstNode* n) {
+Function* functionCodgen(AstNode* n, SymbolTable* sym) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
     std::cout << "Generating function " << funcnode->mfuncname << "\n";
     Function* F = module->getFunction(funcnode->mfuncname);
@@ -196,17 +205,18 @@ Function* functionCodgen(AstNode* n) {
        
 
         for(auto c : (*vec)) {
-            //TODO(marcus): don't hardcode child accesses
             ParamsNode* param_node = (ParamsNode*)c;
-            TypeNode* param_type = (TypeNode*) param_node->mchildren.at(0);
-            //TODO(marcus): get a better way to get type name
-            Type* t = getIRType(param_type->getType(), param_type->mtoken.token, param_type->mindirection);
+            auto sym_entry = getFirstEntry(sym, param_node->mname);
+            assert(sym_entry != nullptr);
+            TypeInfo info = sym_entry->typeinfo;
+            Type* t = getIRType(info);
             parameterTypes.push_back(t);
         }
         
-        //TODO(marcus): find a better way to get type name...
-        TypeNode* ret_type_node = (TypeNode*) funcnode->getChildren()->back();
-        Type* retType = getIRType(funcnode->getType(), ret_type_node->mtoken.token, ret_type_node->mindirection);
+        auto sym_entries = getEntry(sym, funcnode->mfuncname);
+        auto entry = sym_entries.size() ? sym_entries[0] : nullptr;
+        assert(entry != nullptr);
+        Type* retType = getIRType(entry->typeinfo);
         
         FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
         F = Function::Create(FT, Function::ExternalLinkage, funcnode->mfuncname, module);
@@ -236,7 +246,7 @@ Function* functionCodgen(AstNode* n) {
     return F;
 }
 
-Value* funcCallCodegen(AstNode* n) {
+Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
     FuncCallNode* callnode = (FuncCallNode*) n;
     Function* F = module->getFunction(callnode->mfuncname);
     if(!F) {
@@ -248,7 +258,7 @@ Value* funcCallCodegen(AstNode* n) {
     std::vector<AstNode*>* vec = callnode->getChildren();
     for(auto c : (*vec)) {
         //TODO(marcus): support multiple types
-        auto exprval = expressionCodegen(c);
+        auto exprval = expressionCodegen(c, sym);
         args.push_back(exprval);
     }
 
@@ -261,13 +271,13 @@ Value* funcCallCodegen(AstNode* n) {
     return val;
 }
 
-Value* retCodegen(AstNode* n) {
+Value* retCodegen(AstNode* n, SymbolTable* sym) {
     std::cout << "Generating return statement\n";
     ReturnNode* retnode = (ReturnNode*) n;
     auto pchildren = retnode->getChildren();
     Value* ret = nullptr;
     if(pchildren->size() > 0) {
-        Value* retval = expressionCodegen((*retnode->getChildren())[0]);
+        Value* retval = expressionCodegen((*retnode->getChildren())[0], sym);
         ret = Builder.CreateRet(retval);
     } else {
         ret = Builder.CreateRetVoid();
@@ -276,20 +286,20 @@ Value* retCodegen(AstNode* n) {
 }
 
 #define ANT AstNodeType
-Value* expressionCodegen(AstNode* n) {
+Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
     //TODO(marcus): Returning 0 isn't a great idea in the long run
     //if we fail to generate an expression we should report an error
     Value* val = ConstantInt::get(context, APInt(32,0));
-    if(n == nullptr) {
+    assert(n != nullptr);
+    /*if(n == nullptr) {
         std::cout << "passed in nullptr\n";
         return val;
-    }
+    }*/
 
     //TODO(marcus): support unary ops
     //TODO(marcus): support signed div
     //TODO(marcus): support floats
     //TODO(marcus): support type specific overloads
-    //TODO(marcus): support function calls
     //TODO(marcus): support not unsigned int constants
     //TODO(marcus): support different sizes
     //TODO(marcus): support different types
@@ -300,7 +310,7 @@ Value* expressionCodegen(AstNode* n) {
             auto op = binop->getOp();
             if(op.compare("( )") == 0) {
                 auto child = binop->LHS();
-                return expressionCodegen(child);
+                return expressionCodegen(child, sym);
             }
             std::cout << "generating binop\n";
             auto lhs = binop->LHS();
@@ -312,8 +322,8 @@ Value* expressionCodegen(AstNode* n) {
             Value* rhsv;
             if(op.compare(".")) {
                 //don't generate if the op is a member access
-                lhsv = expressionCodegen(lhs);
-                rhsv = expressionCodegen(rhs);
+                lhsv = expressionCodegen(lhs, sym);
+                rhsv = expressionCodegen(rhs, sym);
             }
             if(op.compare("+") == 0) {
                 std::cout << "generating add\n";
@@ -396,7 +406,7 @@ Value* expressionCodegen(AstNode* n) {
                 //NOTE(marcus): only way for something to have an address is if we alloca it?
                 //Then we may need to alloca temp variables if part of an expression
                 //generates a struct that we will do address of or member access on.
-                auto structtype = expressionCodegen(lhs)->getType();
+                auto structtype = expressionCodegen(lhs,sym)->getType();
                 //auto structtype = lhsv->getType();
                 if(structtype->isPointerTy()) {
                     std::cout << "struct is actually a pointer type!\n";
@@ -429,7 +439,7 @@ Value* expressionCodegen(AstNode* n) {
             } else if(op.compare("@") == 0) {
                 //TODO(marcus): we are assuming the expression underneath will be just a variable of
                 //some pointer type
-                auto childvar = expressionCodegen(lhs);
+                auto childvar = expressionCodegen(lhs,sym);
                 return Builder.CreateLoad(childvar,"deref");
             } else if(op.compare("&") == 0) {
                 std::cout << "Generating address of\n";
@@ -442,7 +452,7 @@ Value* expressionCodegen(AstNode* n) {
                 }
                 //TODO(marcus): this is wrong but will need to fix storing of variables for IR
                 //generation first. Maybe its own symbol table?
-                auto childvar = expressionCodegen(lhs);
+                auto childvar = expressionCodegen(lhs,sym);
                 return childvar;
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
@@ -471,7 +481,7 @@ Value* expressionCodegen(AstNode* n) {
             break;
         case ANT::FuncCall:
             {
-                val = funcCallCodegen(n);
+                val = funcCallCodegen(n,sym);
             }
             break;
         default:
@@ -482,69 +492,73 @@ Value* expressionCodegen(AstNode* n) {
 }
 #undef ANT
 
-void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
+void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
     std::cout << "generating block\n";
+    auto scope = getScope(sym, "block"+std::to_string(((BlockNode*)n)->getId()));
     std::vector<AstNode*>* vec = n->getChildren();
     for(auto c : (*vec)) {
-        statementCodegen(c, continueto, breakto);
+        statementCodegen(c, continueto, breakto, scope);
     }
 }
 
 //TODO(marcus): see if this code needs to be merged into one function later
-void vardecCodegen(AstNode* n) {
+void vardecCodegen(AstNode* n, SymbolTable* sym) {
     auto vardecn = (VarDecNode*) n;
     auto varn = (VarNode*)vardecn->mchildren.at(0);
-    auto type_node = (TypeNode*)vardecn->getRHS();
+    auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
+    auto typeinfo = symbol_table_entry->typeinfo;
     //TODO(marcus): fix how you access the name of the variable
-    auto alloc = Builder.CreateAlloca(getIRType(type_node->getType(),type_node->mtoken.token, type_node->mindirection),0,varn->getVarName());
+    auto irtype = getIRType(typeinfo);
+    auto alloc = Builder.CreateAlloca(irtype,0,varn->getVarName());
     varTable[varn->getVarName()] = alloc;
     return;
 }
 
-void vardecassignCodegen(AstNode* n) {
+void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     std::cout << "Generating vardec assign\n";
     auto vardecan = (VarDecAssignNode*) n;
     auto varn = (VarNode*)vardecan->mchildren.at(0);
-    //FIXME(marcus): this will break if the var is type inferenced
-    auto type_node = (TypeNode*)varn->mchildren.at(0);
-    //FIXME(marcus): get the type of the node once type checking works
+    auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
+    auto typeinfo = symbol_table_entry->typeinfo;
+    std::cout << typeinfo << '\n';
+    auto ir_type = getIRType(typeinfo);
     //TODO(marcus): fix how you access the name of the variable
-    auto ir_type = getIRType(type_node->getType(),type_node->mtoken.token, type_node->mindirection);
     AllocaInst* alloca = Builder.CreateAlloca(ir_type,0,varn->getVarName());
     varTable[varn->getVarName()] = alloca;
     //TODO(marcus): don't hardcode child accesses
-    Value* val = expressionCodegen(vardecan->mchildren.at(1));
+    Value* val = expressionCodegen(vardecan->mchildren.at(1), sym);
     std::cout << "generating store for assignment\n";
     Builder.CreateStore(val,alloca);
     return;
 }
 
-void assignCodegen(AstNode* n) {
+void assignCodegen(AstNode* n, SymbolTable* sym) {
     std::cout << "Generating assingment\n";
     //TODO(marcus): don't hardcode child access
     auto assignn = (AssignNode*)n;
     auto varn = (VarNode*) assignn->mchildren.at(0);
     auto rhs = assignn->mchildren.at(1);
-    //TODO(marcus): make left hand side work for expressions that yield an address
+    //TODO(marcus): make left hand side work for expressions that dereference an address
+    //(arrays, *ptrs, member access)
     Value* var = varTable[varn->getVarName()];
-    Value* val = expressionCodegen(rhs);
+    Value* val = expressionCodegen(rhs,sym);
     Builder.CreateStore(val,var);
     return;
 }
 
-void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
+void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
     std::cout << "Generating if statement\n";
     auto ifn = (IfNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
     BasicBlock* elseBB = BasicBlock::Create(context, "else");
     BasicBlock* mergeBB = BasicBlock::Create(context, "merge");
-    auto condv = conditionalCodegen(ifn->getConditional());
+    auto condv = conditionalCodegen(ifn->getConditional(), sym);
     
     Builder.CreateCondBr(condv,thenBB,elseBB);
 
     Builder.SetInsertPoint(thenBB);
-    statementCodegen(ifn->getThen(), continueto, breakto);
+    statementCodegen(ifn->getThen(), continueto, breakto, sym);
 
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(elseBB);
@@ -552,7 +566,7 @@ void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     if(ifn->mstatements.size() == 3) {
         //TODO(marcus): don't hardcode child access
         auto elsen = (ElseNode*) ifn->mstatements.at(2);
-        statementCodegen(elsen->mstatements.at(0), continueto, breakto);
+        statementCodegen(elsen->mstatements.at(0), continueto, breakto, sym);
     }
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(mergeBB);
@@ -560,7 +574,7 @@ void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     return;
 }
 
-void whileloopCodegen(AstNode* n) {
+void whileloopCodegen(AstNode* n, SymbolTable* sym) {
     auto whilen = (WhileLoopNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* whileBB = BasicBlock::Create(context,"while",enclosingscope);
@@ -570,18 +584,18 @@ void whileloopCodegen(AstNode* n) {
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(whileBB);
 
-    auto condv = conditionalCodegen(whilen->getConditional());
+    auto condv = conditionalCodegen(whilen->getConditional(), sym);
     Builder.CreateCondBr(condv,beginBB,endBB);
     Builder.SetInsertPoint(beginBB);
 
-    statementCodegen(whilen->getBody(), whileBB, endBB);
+    statementCodegen(whilen->getBody(), whileBB, endBB, sym);
     
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(endBB);
     return;
 }
 
-void forloopCodegen(AstNode* n) {
+void forloopCodegen(AstNode* n, SymbolTable* sym) {
     auto forn = (ForLoopNode*) n;
     auto inits = forn->getInit();
     auto condition = forn->getConditional();
@@ -596,24 +610,24 @@ void forloopCodegen(AstNode* n) {
     
     Builder.CreateBr(forBB);
     Builder.SetInsertPoint(forBB);
-    statementCodegen(inits, updateBB, endBB);
+    statementCodegen(inits, updateBB, endBB, sym);
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(beginBB);
-    auto condv = conditionalCodegen(condition);
+    auto condv = conditionalCodegen(condition, sym);
     Builder.CreateCondBr(condv,bodyBB,endBB);
     Builder.SetInsertPoint(bodyBB);
-    statementCodegen(loopbody, updateBB, endBB);
+    statementCodegen(loopbody, updateBB, endBB, sym);
     Builder.CreateBr(updateBB);
     Builder.SetInsertPoint(updateBB);
-    statementCodegen(update, updateBB, endBB);
+    statementCodegen(update, updateBB, endBB, sym);
     Builder.CreateBr(beginBB);
     Builder.SetInsertPoint(endBB);
 
 }
 
-Value* conditionalCodegen(AstNode* n) {
+Value* conditionalCodegen(AstNode* n, SymbolTable* sym) {
     //TODO(marcus): support other types
-    auto temp_condv = expressionCodegen(n);
+    auto temp_condv = expressionCodegen(n, sym);
     auto condv = temp_condv;
     if(!temp_condv->getType()->isIntegerTy(1)) {
         Value* zero = ConstantInt::get(temp_condv->getType(),0);
@@ -640,34 +654,34 @@ void loopstmtCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
 }
 
 #define ANT AstNodeType
-void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nullptr) {
+void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nullptr, SymbolTable* sym=nullptr) {
     switch(n->nodeType()) {
         case ANT::RetStmnt:
-                retCodegen(n);
+                retCodegen(n, sym);
                 break;
         case ANT::Block:
-                blockCodegen(n, begin, end);
+                blockCodegen(n, begin, end, sym);
                 break;
         case ANT::VarDec:
-                vardecCodegen(n);
+                vardecCodegen(n, sym);
                 break;
         case ANT::VarDecAssign:
-                vardecassignCodegen(n);
+                vardecassignCodegen(n, sym);
                 break;
         case ANT::Assign:
-                assignCodegen(n);
+                assignCodegen(n, sym);
                 break;
         case ANT::IfStmt:
-                ifelseCodegen(n, begin, end);
+                ifelseCodegen(n, begin, end, sym);
                 break;
         case ANT::WhileLoop:
-                whileloopCodegen(n);
+                whileloopCodegen(n, sym);
                 break;
         case ANT::FuncCall:
-                funcCallCodegen(n);
+                funcCallCodegen(n, sym);
                 break;
         case ANT::ForLoop:
-                forloopCodegen(n);
+                forloopCodegen(n, sym);
                 break;
         case ANT::LoopStmt:
                 loopstmtCodegen(n,begin,end);
@@ -675,12 +689,12 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
         default:
             //std::cout << "Unknown node type\n";
             std::cout << "defaulting to expression\n";
-                expressionCodegen(n);
+                expressionCodegen(n,sym);
             break;
     }
 }
 
-void generateIR_llvm(AstNode* ast) {
+void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
     
     //check for null
     if(!ast)
@@ -690,38 +704,50 @@ void generateIR_llvm(AstNode* ast) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                Function* f = prototypeCodegen(ast);
+                Function* f = prototypeCodegen(ast, sym);
                 //f->dump();
                 return;
             }
             break;
         case ANT::FuncDef:
             {
-                Function* F = functionCodgen(ast);
-               statementCodegen(((FuncDefNode*)ast)->getFunctionBody());
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                Function* F = functionCodgen(ast, scope);
+               statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
                return;
             }
             break;
         case ANT::FuncCall:
             {
+                //TODO(marcus): This is an unused cases.
                 std::cout << "generating function call\n";
-                funcCallCodegen(ast);
+                funcCallCodegen(ast, sym);
                 return;
             }
             break;
         case ANT::RetStmnt:
             {
+                //TODO(marcus): This is an unused cases.
                 std::cout << "generating return!\n";
-                retCodegen(ast);
+                retCodegen(ast, sym);
                 return;
             }
             break;
         case ANT::CompileUnit:
+            {
+                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    generateIR_llvm(c,scope);
+                }
+                return;
+            }
+            break;
         case ANT::Program:
             {
                 std::vector<AstNode*>* vec = ast->getChildren();
                 for(auto c : (*vec)) {
-                    generateIR_llvm(c);
+                    generateIR_llvm(c,sym);
                 }
                 return;
             }
@@ -739,7 +765,7 @@ void generateIR_llvm(AstNode* ast) {
     //recurse
     std::vector<AstNode*>* vec = ast->getChildren();
     for(auto c : (*vec)) {
-        generateIR_llvm(c);
+        generateIR_llvm(c, sym);
     }
 }
 
@@ -758,7 +784,7 @@ void writeIR(std::string o) {
 
 void generateIR(AstNode* ast) {
     module = new Module("Neuro Program", context);
-    generateIR_llvm(ast);
+    generateIR_llvm(ast, &progSymTab);
 }
 
 void writeObj(std::string o) {

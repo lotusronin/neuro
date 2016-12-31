@@ -597,7 +597,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
 
                     if(lhs_typeinfo.type == SemanticType::Infer) {
                         std::cout << "Inferred type!\n";
-                        std::string varname = ((VarNode*)rhs)->getVarName();
+                        //TODO(marcus): don't hardcode child access
+                        std::string varname = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
+                        std::cout << "Inferring type for var " << varname << '\n';
+                        std::cout << rhs_typeinfo << '\n';
                         updateVarEntry(symTab,rhs_typeinfo,varname);
                         break;
                     }

@@ -121,6 +121,16 @@ SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name) {
     return res;
 }
 
+SymbolTableEntry* getFirstEntry(SymbolTable* s, const std::string& name) {
+    SymbolTableEntry* res = nullptr;
+    auto entries = getEntry(s,name);
+    if(entries.size() > 0) {
+        res = entries[0];
+    }
+    return res;
+
+}
+
 void printTable(SymbolTable* s) {
     if(s == nullptr) {
         return;

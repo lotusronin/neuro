@@ -9,25 +9,27 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/BasicBlock.h>
+#include "symboltable.h"
 
+llvm::Type* getIRType(TypeInfo& info);
 llvm::Type* getIRType(SemanticType t, std::string ident, int indirection);
 llvm::StructType* getStructIRType(std::string ident);
-llvm::Value* expressionCodegen(AstNode* n);
-llvm::Function* prototypeCodegen(AstNode* n);
-llvm::Function* functionCodgen(AstNode* n);
-llvm::Value* funcCallCodegen(AstNode* n);
-llvm::Value* retCodegen(AstNode* n);
-llvm::Value* conditionalCodegen(AstNode* n);
-void blockCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
-void vardecCodegen(AstNode* n);
-void vardecassignCodegen(AstNode* n);
-void assignCodegen(AstNode* n);
-void ifelseCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
-void whileloopCodegen(AstNode* n);
-void forloopCodegen(AstNode* n);
+llvm::Value* expressionCodegen(AstNode* n, SymbolTable* sym);
+llvm::Function* prototypeCodegen(AstNode* n, SymbolTable* sym);
+llvm::Function* functionCodgen(AstNode* n, SymbolTable* sym);
+llvm::Value* funcCallCodegen(AstNode* n, SymbolTable* sym);
+llvm::Value* retCodegen(AstNode* n, SymbolTable* sym);
+llvm::Value* conditionalCodegen(AstNode* n, SymbolTable* sym);
+void blockCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto, SymbolTable* sym);
+void vardecCodegen(AstNode* n, SymbolTable* sym);
+void vardecassignCodegen(AstNode* n, SymbolTable* sym);
+void assignCodegen(AstNode* n, SymbolTable* sym);
+void ifelseCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto, SymbolTable* sym);
+void whileloopCodegen(AstNode* n, SymbolTable* sym);
+void forloopCodegen(AstNode* n, SymbolTable* sym);
 void loopstmtCodegen(AstNode* n, llvm::BasicBlock* continueto, llvm::BasicBlock* breakto);
-void statementCodegen(AstNode* n, llvm::BasicBlock* begin, llvm::BasicBlock* end);
-void generateIR_llvm(AstNode* ast);
+void statementCodegen(AstNode* n, llvm::BasicBlock* begin, llvm::BasicBlock* end, SymbolTable* sym);
+void generateIR_llvm(AstNode* ast, SymbolTable* sym);
 
 
 
