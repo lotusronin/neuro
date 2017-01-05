@@ -78,6 +78,13 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
     const char* out = " id: ";
+    if(obj.indirection > 0) {
+        int i = obj.indirection;
+        while(i) {
+            os << '*';
+            --i;
+        }
+    }
     os << obj.type;
     if(obj.userid.size() > 0) {
         os << out << obj.userid;

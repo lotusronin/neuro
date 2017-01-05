@@ -778,6 +778,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         //std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo;
                         typeinfo.type = typenode->getType();
+                        typeinfo.indirection = typenode->mindirection;
                         //TODO(marcus): get struct name if the var dec is a user type
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -800,6 +801,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         //std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo;
                         typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
+                        typeinfo.indirection = typenode ? typenode->mindirection : 0;
                         //TODO(marcus): add userid if type is a struct!
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -867,6 +869,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         //TODO(marcus): don't hard code child access
                         TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
                         param_typeinfo.type = type_node->getType();
+                        param_typeinfo.indirection = type_node->mindirection;
                         //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -888,6 +891,10 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::Prototype:
                 {
                     std::cout << __FILE__ << ':'<< __FUNCTION__ << " Prototype!\n";
+                    std::string name = ((PrototypeNode*)c)->mfuncname;
+                    std::cout << "Entering into scope " << name << "\n";
+                    auto scope = getScope(symTab, name);
+                    variableUseCheck(c,scope);
                 }
                 break;
             case ANT::Type:
