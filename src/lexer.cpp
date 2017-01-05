@@ -11,7 +11,12 @@
 
 #define DEBUGLEX(a) if(debug_out){a}
 
-Token EOFTOKEN { .type = TokenType::eof, .col = 0, .line = 0, .token = "EOF"};
+Token EOFTOKEN {
+	TokenType::eof, //type
+	0, //col
+	0, //line
+	"EOF" //token
+};
 
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
@@ -208,7 +213,12 @@ Token LexerTarget::lex() {
     }
     
     token = ln.substr(colNum,longest_match);
-    Token ret = {.type = longest_match_type, .col = colNum, .line = lineNum, .token = token};
+    Token ret = {
+		longest_match_type, //type
+		colNum, //col
+		lineNum, //line
+		token //token
+	};
     colNum += longest_match;
     updateTokens(ret);
     //currentTok = ret;
