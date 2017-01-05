@@ -1,10 +1,10 @@
-find_package(LLVM)
+find_package(LLVM REQUIRED)
 
-if( NOT LLVM_FOUND )
-    message(FATAL_ERROR "Could not find LLVM.")
-endif()
+#if( NOT LLVM_FOUND )
+#    message(FATAL_ERROR "Could not find LLVM.")
+#endif()
 
-#include_directories(${LLVM_INCLUDE_DIRS})
+include_directories(${LLVM_INCLUDE_DIRS})
 
 
 
