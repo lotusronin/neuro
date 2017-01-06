@@ -993,7 +993,7 @@ void deferPass(AstNode* ast) {
             //remove last list
             //TODO(marcus): we have a memory leak here of all the defer nodes.
             //we can fix this using a custom allocator for defer nodes.
-            auto last_stack = deferStacks.end()--;
+            auto last_stack = --deferStacks.end();
             std::cout << "erasing last stack\n";
             deferStacks.erase(last_stack);
             printDeferStacks();
