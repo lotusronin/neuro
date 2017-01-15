@@ -46,11 +46,11 @@ void BinOpNode::setOp(std::string& op) {
         mpriority = -1;
     } else if(op.compare("+") == 0 || op.compare("-") == 0) {
         mpriority = 1;
-    } else if(op.compare("*") == 0 || op.compare("/") == 0 || op.compare("%")) {
+    } else if(op.compare("*") == 0 || op.compare("/") == 0 || op.compare("%") == 0) {
         mpriority = 2;
     } else if(op.compare(".") == 0) {
         mpriority = 4;
-    } else if(op.compare("@") == 0 || op.compare("&") == 0 || op.compare("!") || op.compare("~")) {
+    } else if(op.compare("@") == 0 || op.compare("&") == 0 || op.compare("!") == 0 || op.compare("~") == 0) {
         //TODO(marcus): bitwise & has a lower priority than address-of!!!
         mpriority = 5;
     } else {

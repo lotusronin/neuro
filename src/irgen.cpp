@@ -323,7 +323,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
             if(op.compare(".")) {
                 //don't generate if the op is a member access
                 lhsv = expressionCodegen(lhs, sym);
-                rhsv = expressionCodegen(rhs, sym);
+                if(rhs) {
+                    rhsv = expressionCodegen(rhs, sym);
+                }
             }
             if(op.compare("+") == 0) {
                 std::cout << "generating add\n";
