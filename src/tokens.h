@@ -27,6 +27,7 @@ enum class TokenType {
     id,
     floatlit,
     intlit,
+    strlit,
     assignment,
     equality,
     nequality,

@@ -1043,19 +1043,20 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
         //consume )
         lexer->lex();
         return;
-    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit) {
+    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit) {
         std::cout << "Parsing Const!\n";
         parseConst(lexer, opnode);
     } else if(tok.type == TokenType::id) {
         parseFunccallOrVar(lexer, opnode);
     } else {
+        assert(false);
         parse_error(PET::Unknown, tok);
     }
     return;
 }
 
 void parseConst(LexerTarget* lexer, AstNode* parent) {
-    // const -> ilit | flit | charlit
+    // const -> ilit | flit | charlit | strlit
     //Consume token
     ConstantNode* constnode = new ConstantNode();
     constnode->setToken(lexer->peek());

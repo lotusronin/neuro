@@ -299,6 +299,14 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
         return false;
     }
 
+    if(t1.indirection == 1 && t2.indirection == 1) {
+        if(t1.type == SemanticType::u8 || t1.type == SemanticType::Char) {
+            if(t2.type == SemanticType::u8 || t2.type == SemanticType::Char) {
+                return true;
+            }
+        }
+    }
+
     if(t1.indirection > 0 || t2.indirection > 0) {
         //can't implicitly convert two diff pointer types
         //TODO(marcus): what about void*?
@@ -389,6 +397,15 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
             default:
                 return false;
                 break;
+        }
+    }
+
+    // *u8 = string literal
+    if(t2.type == ST::Char) {
+        if(t1.type == ST::u8) {
+            if(t1.indirection == 1) {
+                return true;
+            }
         }
     }
 
@@ -621,7 +638,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 typeCheckPass(c,symTab);
                 break;
             case ANT::Prototype:
-                std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
+                {
+                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
+                    auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname);
+                    typeCheckPass(c,scope);
+                }
+                break;
+            case ANT::Params:
+                {
+                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
+                }
                 break;
             case ANT::VarDec:
                 std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
@@ -870,6 +896,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
                         param_typeinfo.type = type_node->getType();
                         param_typeinfo.indirection = type_node->mindirection;
+                        std::cout << "Param type info: " << param_typeinfo << '\n';
                         //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));

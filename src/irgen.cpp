@@ -169,17 +169,18 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     parameterTypes.reserve(vec->size());
    
     for(auto c : (*vec)) {
-        //TODO(marcus): Make sure params pull type from their child
-        auto typenode = c->getChildren()->at(0);
-        auto node_semantic_type = typenode->getType();
-        std::string type_string = typenode->mtoken.token;
-        Type* t = getIRType(node_semantic_type, type_string,((TypeNode*)typenode)->mindirection);
+        ParamsNode* param_node = (ParamsNode*)c;
+        auto sym_entry = getFirstEntry(sym, param_node->mname);
+        assert(sym_entry != nullptr);
+        TypeInfo info = sym_entry->typeinfo;
+        Type* t = getIRType(info);
         parameterTypes.push_back(t);
     }
-    
-    //TODO(marcus): find a better way to get type name...
-    TypeNode* ret_type_node = (TypeNode*) protonode->getChildren()->back();
-    Type* retType = getIRType(protonode->getType(), ret_type_node->mtoken.token, ret_type_node->mindirection);
+
+    auto sym_entires = getEntry(sym, protonode->mfuncname);
+    auto entry = sym_entries.size() ? sym_entires[0] : nullptr;
+    assert(entry != nullptr);
+    Type* retType = getIRType(entry->typeinfo);
     
     FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
     Function* F = Function::Create(FT, Function::ExternalLinkage, protonode->mfuncname, module);
@@ -467,8 +468,12 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 std::cout << "generating constant!\n";
                 auto constn = (ConstantNode*)n;
                 auto strval = constn->getVal();
-                int constval = std::stoi(strval);
-                val = ConstantInt::get(context, APInt(32,constval));
+                if(constn->mstype == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
+                    val = Builder.CreateGlobalStringPtr(strval, "g_str");
+                } else {
+                    int constval = std::stoi(strval);
+                    val = ConstantInt::get(context, APInt(32,constval));
+                }
             }
             break;
         case ANT::Var:
@@ -706,7 +711,8 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                Function* f = prototypeCodegen(ast, sym);
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                Function* f = prototypeCodegen(ast, scope);
                 //f->dump();
                 return;
             }
@@ -798,6 +804,7 @@ void writeObj(std::string o) {
 
     //TODO(marcus): allow custom targets/options!
     auto TargetTriple = sys::getDefaultTargetTriple();
+    std::cout << "Default target triple is... " << TargetTriple << '\n';
     module->setTargetTriple(TargetTriple);
     std::string error;
     auto Target = TargetRegistry::lookupTarget(TargetTriple,error);

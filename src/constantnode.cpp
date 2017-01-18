@@ -46,6 +46,10 @@ void ConstantNode::setToken(const Token& t) {
         mstype = SemanticType::intlit;
     } else if(t.type == TokenType::floatlit) {
         mstype = SemanticType::floatlit;
+    } else if(t.type == TokenType::strlit) {
+        //TODO(marcus): maybe fix this up?
+        mstype = SemanticType::Char;
+        mtypeinfo.indirection = 1;
     }
     mtypeinfo.type = mstype;
 }

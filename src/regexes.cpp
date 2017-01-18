@@ -59,6 +59,7 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("@"),TokenType::dereference)
     ,std::make_pair(std::regex("\\^"),TokenType::carrot)
     ,std::make_pair(std::regex("~"),TokenType::tilda)
+    ,std::make_pair(std::regex("\"[^\"]*\""),TokenType::strlit)
 };
 
 unsigned int num_regexes = sizeof(regexes)/sizeof(std::pair<std::regex,TokenType>);

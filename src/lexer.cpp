@@ -213,6 +213,20 @@ Token LexerTarget::lex() {
     }
     
     token = ln.substr(colNum,longest_match);
+    if(longest_match_type == TokenType::strlit) {
+        std::regex stripped("\"([^\"]*)\"");
+        std::smatch m;
+        if(std::regex_match(token, m, stripped)) {
+            token = m[1].str();
+            size_t index;
+            std::string newlines = "\\n";
+            std::string newlinec = "\n";
+            while( (index = token.find_first_of(newlines)) != std::string::npos) {
+                token.replace(index, newlines.length(), newlinec);
+                index += newlinec.length();
+            }
+        }
+    }
     Token ret = {
 		longest_match_type, //type
 		colNum, //col

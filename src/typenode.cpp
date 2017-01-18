@@ -45,6 +45,7 @@ void TypeNode::setToken(const Token& t) {
     mtoken = t;
     mname = t.token;
     switch(t.type) {
+        case TokenType::tuchar:
         case TokenType::tchar:
             mstype = SemanticType::Char;
             break;
