@@ -177,8 +177,8 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
         parameterTypes.push_back(t);
     }
 
-    auto sym_entires = getEntry(sym, protonode->mfuncname);
-    auto entry = sym_entries.size() ? sym_entires[0] : nullptr;
+    auto sym_entries = getEntry(sym, protonode->mfuncname);
+    auto entry = sym_entries.size() ? sym_entries[0] : nullptr;
     assert(entry != nullptr);
     Type* retType = getIRType(entry->typeinfo);
     
