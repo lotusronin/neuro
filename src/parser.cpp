@@ -197,7 +197,7 @@ AstNode* Parser::parse() {
     program = new ProgramNode();
     CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
-    std::cout << "Beginning parse!\n";
+    //std::cout << "Beginning parse!\n";
     mlexer->lex();
     mlexer->lex();
     parseTopLevelStatements(mlexer, compunit);
@@ -208,7 +208,7 @@ AstNode* Parser::parse() {
     program->makeGraph(dotfileout);
     dotfileout.close();
     std::string cmd = "dot -Tpng "+mlexer->targetName()+".dot -o "+mlexer->targetName()+".png";
-    std::cout << "Running command: " << cmd << "\n";
+    //std::cout << "Running command: " << cmd << "\n";
     system(cmd.c_str());
     */
 
@@ -223,21 +223,21 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
     //tl_statements -> null
     Token tok = lexer->peek();
     if(tok.type == TokenType::import) {
-        //std::cout << "import token, beginning to match import statement...\n";
+        ////std::cout << "import token, beginning to match import statement...\n";
         parseImportStatement(lexer, parent);
-        //std::cout << "import statement matched\n";
+        ////std::cout << "import statement matched\n";
     } else if(tok.type == TokenType::fn) {
-        //std::cout << "Function Definitions Parse\n";
+        ////std::cout << "Function Definitions Parse\n";
         parseFunctionDef(lexer, parent);
-        //std::cout << "Function Definitions matched\n";
+        ////std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
-        //std::cout << "extern token, beginning to match prototype...\n";
+        ////std::cout << "extern token, beginning to match prototype...\n";
         parsePrototype(lexer, (CompileUnitNode*)parent);
-        //std::cout << "prototype matched\n";
+        ////std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::tstruct) {
         parseStructDef(lexer, parent);
     } else if(tok.type == TokenType::eof) {
-        std::cout << "File is parsed, no errors detected!\n\n";
+        //std::cout << "File is parsed, no errors detected!\n\n";
         return;
     }else {
         parse_error(ParseErrorType::BadTopLevelStatement, tok);
@@ -266,11 +266,11 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
         LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
         importlex.lex();
         importlex.lex();
-        std::cout << "\nImporting file: " << newfilename << "\n";
+        //std::cout << "\nImporting file: " << newfilename << "\n";
         parseTopLevelStatements(&importlex, compunit);
         program->addChild(compunit);
     } else {
-        std::cout << "Already imported " << newfilename << "\n";
+        //std::cout << "Already imported " << newfilename << "\n";
     }
     return;
 }
@@ -519,7 +519,7 @@ bool tokenTypeIsAType(TokenType t) {
 }
 
 void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
-    std::cout << "parsing some sort of var declaration.\n";
+    //std::cout << "parsing some sort of var declaration.\n";
     Token tokid = lexer->peek();
     //consume id
     lexer->lex();
@@ -529,8 +529,8 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     // id : . type = expression
     // it : . type
     if(tok.type == TokenType::assignment) {
-        std::cout << "var declaration is assignment, type inferred.\n";
-        std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
+        //std::cout << "var declaration is assignment, type inferred.\n";
+        //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
         // id : . = expression
         //we have type inferenced declaration assignment
         VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
@@ -547,20 +547,20 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         //TODO(marcus): parse type, then find if you're an assignment or declaration
         parseType(lexer, vnode);
         if(lexer->peek().type == TokenType::assignment) {
-            std::cout << "var declaration is assignment, type given.\n";
-            std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
+            //std::cout << "var declaration is assignment, type given.\n";
+            //std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
             //we have a declaration and assignment
             VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
             vdecassignnode->addChild(vnode);
             parent->addChild(vdecassignnode);
             //consume =
             lexer->lex();
-            std::cout << "after parseType call and =\n";
-            std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
+            //std::cout << "after parseType call and =\n";
+            //std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
             parseExpression(lexer, vdecassignnode);
         } else {
-            std::cout << "var declaration only\n";
-            std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
+            //std::cout << "var declaration only\n";
+            //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
             //we have a declaration
             VarDecNode* vdecnode = new VarDecNode();
             vdecnode->addChild(vnode);
@@ -631,7 +631,7 @@ void parseStatementList(LexerTarget* lexer, AstNode* parent) {
     //stmtlist -> stmt stmtlisttail
     //stmtlisttail -> stmtlist | null
     parseStatement(lexer, parent);
-    std::cout << "Statement matched\n";
+    //std::cout << "Statement matched\n";
     Token tok = lexer->peek();
     if(tok.type != TokenType::rbrace) {
         parseStatementList(lexer, parent);
@@ -726,7 +726,7 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
         parse_error(PET::Unknown, tok);
     }
 
-    std::cout << "Parsing loop body\n";
+    //std::cout << "Parsing loop body\n";
     parseStatement(lexer, parent->lastChild());
 }
 
@@ -734,7 +734,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     //forloop -> . for ( vardecassign ; conditional ; expr )
     ForLoopNode* fornode = new ForLoopNode();
     parent->addChild(fornode);
-    std::cout << "Parsing for loop!!\n";
+    //std::cout << "Parsing for loop!!\n";
     //consume for
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -742,7 +742,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume (
     lexer->lex();
-    std::cout << "Parsing for init\n"; 
+    //std::cout << "Parsing for init\n"; 
     parseSomeVarDecStmt(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
@@ -750,7 +750,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume ;
     lexer->lex();
-    std::cout << "Parsing for conditional\n"; 
+    //std::cout << "Parsing for conditional\n"; 
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
@@ -758,7 +758,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     }
     //consume ;
     lexer->lex();
-    std::cout << "Parsing for update\n"; 
+    //std::cout << "Parsing for update\n"; 
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
@@ -772,7 +772,7 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
     //whileloop -> . while ( expression )
     WhileLoopNode* whilenode = new WhileLoopNode();
     parent->addChild(whilenode);
-    std::cout << "Parsing while loop!!\n";
+    //std::cout << "Parsing while loop!!\n";
     //consume while
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -825,7 +825,7 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
 /* 
  * expr -> exprlogicaland dblbar expr  | exprlogicaland
  */
-    std::cout << "Parsing Expression!\n";
+    ////std::cout << "Parsing Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("expression");
     opnode->setOp(s);
@@ -845,7 +845,7 @@ void parseLogicalAnd(LexerTarget* lexer, AstNode* parent) {
 /* 
  * exprand -> exprbitor dblampersand exprlogicaland  | exprbitor
  */
-    std::cout << "Parsing Logical And Expression!\n";
+    ////std::cout << "Parsing Logical And Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("expression");
     opnode->setOp(s);
@@ -865,7 +865,7 @@ void parseBitOr(LexerTarget* lexer, AstNode* parent) {
 /* 
  * exprbitor -> exprxor bar exprbitor  | exprxor
  */
-    std::cout << "Parsing Bitwise Or Expression!\n";
+    ////std::cout << "Parsing Bitwise Or Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("expression");
     opnode->setOp(s);
@@ -885,7 +885,7 @@ void parseBitXor(LexerTarget* lexer, AstNode* parent) {
 /* 
  * exprxor -> expreqneq carrot exprxor  | expreqneq
  */
-    std::cout << "Parsing Bitwise Xor Expression!\n";
+    ////std::cout << "Parsing Bitwise Xor Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("expression");
     opnode->setOp(s);
@@ -905,7 +905,7 @@ void parseEqneq(LexerTarget* lexer, AstNode* parent) {
 /* 
  * expreqneq -> exprglte eqneq expreqneq  | exprglte
  */
-    std::cout << "Parsing EqNeq Expression!\n";
+    ////std::cout << "Parsing EqNeq Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("eqneqexp");
     opnode->setOp(s);
@@ -925,7 +925,7 @@ void parseGLTE(LexerTarget* lexer, AstNode* parent) {
 /* 
  * exprgtle -> exprplusmin gtelte exprgtle  | exprplusmin
  */
-    std::cout << "Parsing GTELTE Expression!\n";
+    ////std::cout << "Parsing GTELTE Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("gtelteexpr");
     opnode->setOp(s);
@@ -945,7 +945,7 @@ void parsePlusmin(LexerTarget* lexer, AstNode* parent) {
 /* 
  * exprplusmin -> multdiv plusmin exprplusmin  | multdiv
  */
-    std::cout << "Parsing PlusMin Expression!\n";
+    ////std::cout << "Parsing PlusMin Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("plusminexpr");
     opnode->setOp(s);
@@ -965,7 +965,7 @@ void parseMultdiv(LexerTarget* lexer, AstNode* parent) {
  /* 
   * multdiv -> addrofindir starslash multdiv | addrofindir
   */
-    std::cout << "Parsing MultDiv Expression!\n";
+    ////std::cout << "Parsing MultDiv Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("multdivexpr");
     opnode->setOp(s);
@@ -985,7 +985,7 @@ void parseAddrOfIndir(LexerTarget* lexer, AstNode* parent) {
  /* 
   * addrof-indir -> &memberaccess | *memberaccess | !memberaccess | ~memberaccess | memberaccess
   */    
-    std::cout << "Parsing AddrOfIndir Expression!\n";
+    ////std::cout << "Parsing AddrOfIndir Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("addrofindirexpr");
     opnode->setOp(s);
@@ -1003,7 +1003,7 @@ void parseMemberAccess(LexerTarget* lexer, AstNode* parent) {
     /*
      * memberaccess -> parenexp dotarrow memberaccess | parenexp
      */
-    std::cout << "Parsing MemberAccess Expression!\n";
+    ////std::cout << "Parsing MemberAccess Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("memberaccess");
     opnode->setOp(s);
@@ -1023,7 +1023,7 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
  /* 
   * parenexp -> ( expr ) | const | var | funcall
   */
-    std::cout << "Parsing Paren Expression!\n";
+    ////std::cout << "Parsing Paren Expression!\n";
     BinOpNode* opnode = new BinOpNode();
     auto s = std::string("parenexpr");
     opnode->setOp(s);
@@ -1044,7 +1044,7 @@ void parseParenexp(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         return;
     } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit) {
-        std::cout << "Parsing Const!\n";
+        ////std::cout << "Parsing Const!\n";
         parseConst(lexer, opnode);
     } else if(tok.type == TokenType::id) {
         parseFunccallOrVar(lexer, opnode);
@@ -1073,10 +1073,10 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     //consume id, get potential (
     Token tokNext = lexer->peekNext();
     if(tokNext.type == TokenType::lparen) {
-        std::cout << "Parsing FuncCall!\n";
+        //std::cout << "Parsing FuncCall!\n";
         parseFunccall(lexer, parent);
     } else {
-        std::cout << "Parsing Variable!\n";
+        ////std::cout << "Parsing Variable!\n";
         //Will not work, have to fix somehow...
         //pass token into parseVar?
         //parseVar(lexer);    
@@ -1107,7 +1107,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     }
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        std::cout << __FUNCTION__ << ": token wasn't (, was " << tok.token << '\n';
+        //std::cout << __FUNCTION__ << ": token wasn't (, was " << tok.token << '\n';
         parse_error(PET::Unknown, tok);
     }
     //consume (
@@ -1117,7 +1117,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     }
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        std::cout << __FUNCTION__ << ": token wasn't ), was " << tok.token << '\n';
+        //std::cout << __FUNCTION__ << ": token wasn't ), was " << tok.token << '\n';
         parse_error(PET::Unknown, tok);
     }
     //consume ')'
@@ -1126,7 +1126,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
 }
 
 void parseOptargs(LexerTarget* lexer, AstNode* parent) {
-    std::cout << "parsing optargs!\n";
+    //std::cout << "parsing optargs!\n";
     //opt_args -> null | id . | id . , opt_args2
     Token tok = lexer->peek();
     if(tok.type == TokenType::rparen) {
@@ -1161,7 +1161,7 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
     /*
      * flowctrl -> break ; | continue ;
      */
-    std::cout << "Parsing a special loop statement\n";
+    //std::cout << "Parsing a special loop statement\n";
     LoopStmtNode* brkcntnode = new LoopStmtNode();
     //consume break/continue
     if(lexer->peek().type == TokenType::sbreak) {
@@ -1173,10 +1173,10 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
     Token tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
         //consume ;
-        std::cout << "Token: " << tok.token << "\n";
+        //std::cout << "Token: " << tok.token << "\n";
         parse_error(PET::Unknown, tok);
     }
-    std::cout << "parseLoopStmt finished, no problem\n";
+    //std::cout << "parseLoopStmt finished, no problem\n";
     lexer->lex();
     parent->addChild(brkcntnode);
     return;
@@ -1220,7 +1220,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
     //elementlist -> null
     
     while(lexer->peek().type != TokenType::rbrace) {
-        std::cout << "parsing member of struct\n";
+        //std::cout << "parsing member of struct\n";
         Token tokid = lexer->peek();
         //consume id
         lexer->lex();
@@ -1228,7 +1228,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         Token tok = lexer->lex();
         // it : . type
         
-        std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
+        //std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
         
         //we have a declaration
         VarDecNode* vdecnode = new VarDecNode();

@@ -27,5 +27,6 @@
 #include "constantnode.h"
 #include "assignnode.h"
 #include "structdefnode.h"
+#include "castnode.h"
 
 #endif

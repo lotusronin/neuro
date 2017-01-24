@@ -62,7 +62,8 @@ enum class AstNodeType {
     Args,
     LoopStmt,
     Assign,
-    Default
+    Default,
+    Cast
 };
 
 enum class SemanticType {
@@ -76,9 +77,11 @@ enum class SemanticType {
     Infer,
     User,
     u8,
+    u16,
     u32,
     u64,
     s8,
+    s16,
     s32,
     s64,
     intlit,

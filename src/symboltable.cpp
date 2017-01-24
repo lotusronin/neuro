@@ -5,7 +5,7 @@
 
 SymbolTable* addNewScope(SymbolTable* s, std::string name) {
     if(s->children.find(name) == s->children.end()) {
-        std::cout << "Adding new scope for " << name << "\n";
+        //std::cout << "Adding new scope for " << name << "\n";
         auto scope = new SymbolTable;
         s->children.insert(std::make_pair(name, scope));
         scope->parent = s;
@@ -18,7 +18,7 @@ SymbolTable* addNewScope(SymbolTable* s, std::string name) {
 }
 
 SymbolTable* getScope(SymbolTable* s, std::string name) {
-    std::cout << "Getting scope for " << name << '\n';
+    //std::cout << "Getting scope for " << name << '\n';
     auto res = s->children.find(name);
     if(res == s->children.end()) {
         return addNewScope(s,name);
@@ -42,7 +42,7 @@ void addVarEntry(SymbolTable* s, TypeInfo t, std::string name) {
 }
 
 void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name) {
-    std::cout << "updating var entry!\n";
+    //std::cout << "updating var entry!\n";
     auto entry = s->table.find(name);
     if(entry != s->table.end()) {
         entry->second->type = t;
@@ -50,13 +50,13 @@ void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name) {
 }
 
 void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name) {
-    std::cout << __FUNCTION__ << " : updating var\n";
+    //std::cout << __FUNCTION__ << " : updating var\n";
     auto entry = s->table.find(name);
     if(entry != s->table.end()) {
         entry->second->type = t.type;
         entry->second->typeinfo = t;
     } else {
-        std::cout << "Var not updated!!! TO IMPLEMENT!!!!\n";
+        //std::cout << "Var not updated!!! TO IMPLEMENT!!!!\n";
     }
 }
 
@@ -83,10 +83,10 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name)
      */
     //TODO(marcus): should conflicting imported names be an error? Can just report it.
     std::vector<SymbolTableEntry*> ret;
-    std::cout << "Getting Entry for " << name << '\n';
-    std::cout << "Looking in " << s->name << " (scope = " << s->scope << ")\n";
+    //std::cout << "Getting Entry for " << name << '\n';
+    //std::cout << "Looking in " << s->name << " (scope = " << s->scope << ")\n";
     if(!s)  {
-        std::cout << "DANGER WILL ROBINSON! SymbolTable is NULL!!\n";
+        //std::cout << "DANGER WILL ROBINSON! SymbolTable is NULL!!\n";
         return ret;
     }
     auto exists = s->table.find(name);
@@ -111,7 +111,7 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name)
 }
 
 SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name) {
-    //std::cout << "Looking up entry with name " << name << " in current scope " << s->name << "...\n";
+    ////std::cout << "Looking up entry with name " << name << " in current scope " << s->name << "...\n";
     SymbolTableEntry* res = nullptr;
     auto exists = s->table.find(name);
     if(exists != s->table.end()) {
@@ -135,15 +135,15 @@ void printTable(SymbolTable* s) {
     if(s == nullptr) {
         return;
     }
-    std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
+    //std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
     for(auto& e : s->table) {
-        std::cout << e.first << ": " << e.second->type << "\n";
+        //std::cout << e.first << ": " << e.second->type << "\n";
     }
-    std::cout << "children:\n";
+    //std::cout << "children:\n";
     for(auto& c : s->children) {
-        std::cout << c.first << " ";
+        //std::cout << c.first << " ";
     }
-    std::cout << "\n\n";
+    //std::cout << "\n\n";
     for(auto& c : s->children) {
         printTable(c.second);
     }

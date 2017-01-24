@@ -205,7 +205,7 @@ void populateSymbolTableFunctions(AstNode* ast) {
                 }
                 break;
             default:
-                std::cout << "unknown ast node type!\n";
+                //std::cout << "unknown ast node type!\n";
                 break;
         }
     }
@@ -266,7 +266,7 @@ void typeCheckPass(AstNode* ast) {
             case ANT::StructDef:
                 break;
             default:
-                std::cout << "unknown ast node type!\n";
+                //std::cout << "unknown ast node type!\n";
                 break;
         }
     }
@@ -434,51 +434,51 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
         switch(c->nodeType()) {
             case ANT::FuncDef:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
                     auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname);
                     currentFunc2 = ((FuncDefNode*)c)->mfuncname;
                     currentFunc = c;
                     typeCheckPass(c,scope);
                     currentFunc2 = "";
                     currentFunc = nullptr;
-                    std::cout << "done with function " << ((FuncDefNode*)c)->mfuncname << '\n';
+                    //std::cout << "done with function " << ((FuncDefNode*)c)->mfuncname << '\n';
                 }
                 break;
             case ANT::Block:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
-                    std::cout << "Block ID " << ((BlockNode*)c)->getId() << '\n';
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
+                    //std::cout << "Block ID " << ((BlockNode*)c)->getId() << '\n';
                     auto scope = getScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::ForLoop:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
                     auto scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::WhileLoop:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
                     auto scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::IfStmt:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " If!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " If!\n";
                     typeCheckPass(c,symTab);
                 }
                 break;
             case ANT::FuncCall:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
                     auto funccall = (FuncCallNode*)c;
                     std::string funcname = funccall->mfuncname;
                     auto entries = getEntry(symTab,funcname);
-                    std::cout << "Type checking function call " << funcname << "\n";
+                    //std::cout << "Type checking function call " << funcname << "\n";
                     SymbolTableEntry* e = entries.at(0);
                     auto funcparams = e->funcParams;
                     auto args = funccall->margs;
@@ -505,7 +505,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::BinOp:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
                     //TODO(marcus): support operator overloading
                     auto binopn = (BinOpNode*)c;
                     std::string op = binopn->getOp();
@@ -540,11 +540,19 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         } else {
                         //check for casts
                             if(canCast(lhs_t,rhs_t)) {
-                                //insert casts
                                 binopn->mtypeinfo = lhs_t;
+                                CastNode* cast = new CastNode();
+                                cast->fromType = rhs_t;
+                                cast->toType = lhs_t;
+                                cast->addChild(binopn->RHS());
+                                binopn->setRHS(cast);
                             } else if(canCast(rhs_t,lhs_t)) {
-                                //insert casts
                                 binopn->mtypeinfo = rhs_t;
+                                CastNode* cast = new CastNode();
+                                cast->fromType = lhs_t;
+                                cast->toType = rhs_t;
+                                cast->addChild(binopn->LHS());
+                                binopn->setLHS(cast);
                             } else {
                                 std::cout << "Error! Cannot use operator " << op;
                                 std::cout << " on operands of type " << lhs_t << " and " << rhs_t << '\n';
@@ -556,7 +564,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::RetStmnt:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Return!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Return!\n";
                     auto retn = (ReturnNode*)c;
                     auto expr = retn->mchildren.at(0);
                     typeCheckPass(expr,symTab);
@@ -568,12 +576,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     TypeInfo func_typeinfo = entries.at(0)->typeinfo;
                     //do compatibility checking
                     if(isSameType(func_typeinfo,ret_typeinfo)) {
-                        std::cout << "return type and function type matched!\n";
+                        //std::cout << "return type and function type matched!\n";
                     } else {
                         //check for casts
                         if(canCast(func_typeinfo,ret_typeinfo)) {
-                            std::cout << "return type and function type matched!\n";
-                            //TODO(marcus): insert casts
+                            //std::cout << "return type and function type matched!\n";
+                            CastNode* cast = new CastNode();
+                            cast->fromType = ret_typeinfo;
+                            cast->toType = func_typeinfo;
+                            cast->addChild(expr);
+                            retn->mchildren[0] = cast;
                         } else {
                             semanticError(SemanticErrorType::MissmatchReturnType,ret_typeinfo.type,func_typeinfo.type);
                         }
@@ -583,20 +595,24 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::Assign:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
                     auto assignn = (AssignNode*)c;
                     auto lhs = assignn->getLHS();
                     auto rhs = assignn->getRHS();
                     typeCheckPass(rhs,symTab);
                     TypeInfo lhs_typeinfo = getTypeInfo(lhs,symTab);
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
-                    std::cout << "All Type info gotten, beginning type checks\n";
+                    //std::cout << "All Type info gotten, beginning type checks\n";
 
                     //Do compatibility checking
                     if(!isSameType(lhs_typeinfo,rhs_typeinfo)) {
                         //check for casts
                         if(canCast(lhs_typeinfo,rhs_typeinfo)) {
-                            //insert casts
+                            CastNode* cast = new CastNode();
+                            cast->fromType = rhs_typeinfo;
+                            cast->toType = lhs_typeinfo;
+                            cast->addChild(rhs);
+                            assignn->mchildren[1] = cast;
                         } else {
                             std::cout << "Error! Cannot assign value of type " << rhs_typeinfo << " to a variable of type " << lhs_typeinfo << '\n';
                         }
@@ -606,18 +622,18 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::VarDecAssign:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
+                    auto lhs = ((VarDecAssignNode*)c)->getLHS();
                     auto rhs = ((VarDecAssignNode*)c)->getRHS();
                     typeCheckPass(c, symTab);
                     TypeInfo lhs_typeinfo = getTypeInfo(c, symTab);
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
 
                     if(lhs_typeinfo.type == SemanticType::Infer) {
-                        std::cout << "Inferred type!\n";
-                        //TODO(marcus): don't hardcode child access
-                        std::string varname = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
-                        std::cout << "Inferring type for var " << varname << '\n';
-                        std::cout << rhs_typeinfo << '\n';
+                        //std::cout << "Inferred type!\n";
+                        std::string varname = ((VarNode*)lhs)->getVarName();
+                        //std::cout << "Inferring type for var " << varname << '\n';
+                        //std::cout << rhs_typeinfo << '\n';
                         updateVarEntry(symTab,rhs_typeinfo,varname);
                         break;
                     }
@@ -626,8 +642,12 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     if(!isSameType(lhs_typeinfo,rhs_typeinfo)) {
                     //check for casts
                         if(canCast(lhs_typeinfo,rhs_typeinfo)) {
-                            //insert casts
                             //assignn->mtypeinfo = lhs_typeinfo;
+                            CastNode* cast = new CastNode();
+                            cast->fromType = rhs_typeinfo;
+                            cast->toType = lhs_typeinfo;
+                            cast->addChild(rhs);
+                            ((VarDecAssignNode*)c)->mchildren[1] = cast;
                         } else {
                             std::cout << "Error! Cannot assign value of type " << rhs_typeinfo << " to a variable of type " << lhs_typeinfo << '\n';
                         }
@@ -639,27 +659,27 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::Prototype:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
                     auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname);
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::Params:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
                 }
                 break;
             case ANT::VarDec:
-                std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
+                //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
                 break;
             case ANT::Var:
-                std::cout << __FILE__ << ':' << __FUNCTION__ << " Var!\n";
+                //std::cout << __FILE__ << ':' << __FUNCTION__ << " Var!\n";
                 break;
             case ANT::Const:
-                std::cout << __FILE__ << ':' << __FUNCTION__ << " Constant!\n";
+                //std::cout << __FILE__ << ':' << __FUNCTION__ << " Constant!\n";
                 break;
             default:
-                std::cout << __FILE__ << ':' << __FUNCTION__ << " Default Case!\n";
+                //std::cout << __FILE__ << ':' << __FUNCTION__ << " Default Case!\n";
                 break;
         }
     }
@@ -690,7 +710,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDec:
             {
-                std::string name = ((VarNode*)((VarDecAssignNode*)ast)->getLHS())->getVarName();
+                std::string name = ((VarNode*)((VarDecNode*)ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -698,7 +718,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDecAssign:
             {
-                std::string name = ((VarNode*)((VarDecNode*)ast)->getLHS())->getVarName();
+                std::string name = ((VarNode*)((VarDecAssignNode*)ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -744,46 +764,46 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
         switch(c->nodeType()) {
             case ANT::FuncDef:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
                     std::string name = ((FuncDefNode*)c)->mfuncname;
-                    std::cout << "Entering into scope " << name << "\n";
+                    //std::cout << "Entering into scope " << name << "\n";
                     auto scope = getScope(symTab, name);
                     variableUseCheck(c,scope);
                 }
                 break;
             case ANT::Block:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
                     auto scope = getScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
-                    std::cout << "Entering into scope " << scope->name << "\n";
+                    //std::cout << "Entering into scope " << scope->name << "\n";
                     variableUseCheck(c,scope);
                 }
                 break;
             case ANT::IfStmt:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " If!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " If!\n";
                     variableUseCheck(c,symTab);
                 }
                 break;
             case ANT::ForLoop:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
                     auto scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)c)->getId()));
-                    std::cout << "Entering into scope " << scope->name << '\n';
+                    //std::cout << "Entering into scope " << scope->name << '\n';
                     variableUseCheck(c,scope);
                 }
                 break;
             case ANT::WhileLoop:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
                     auto scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)c)->getId()));
-                    std::cout << "Entering into scope " << scope->name << '\n';
+                    //std::cout << "Entering into scope " << scope->name << '\n';
                     variableUseCheck(c,scope);
                 }
                 break;
             case ANT::Assign:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
                     auto lhs = ((AssignNode*)c)->getLHS();
                     auto rhs = ((AssignNode*)c)->getRHS();
                     variableUseCheck(lhs,symTab);
@@ -792,8 +812,8 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::VarDec:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
-                    std::cout << "SymbolTable " << symTab->name << "\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
+                    //std::cout << "SymbolTable " << symTab->name << "\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntryCurrentScope(symTab,name);
                     //TODO(marcus): don't hardcode child access!
@@ -801,7 +821,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     if(entry) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
-                        //std::cout << "Adding variable declaration entry!\n";
+                        ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo;
                         typeinfo.type = typenode->getType();
                         typeinfo.indirection = typenode->mindirection;
@@ -813,7 +833,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::VarDecAssign:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto child_vec = ((VarNode*)(c->getChildren()->at(0)))->getChildren();
                     TypeNode* typenode = nullptr;
@@ -824,7 +844,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     if(entry) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
-                        //std::cout << "Adding variable declaration entry!\n";
+                        ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo;
                         typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
                         typeinfo.indirection = typenode ? typenode->mindirection : 0;
@@ -836,12 +856,9 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     }
                 }
                 break;
-            case ANT::Expression:
-                std::cout << "SHOULD NOT BE IN EXPRESSION!\n";
-                break;
             case ANT::BinOp:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
                     //TODO(marcus): make this work for structs!
                     auto expr = (BinOpNode*)c;
                     //variableUseCheck(expr,symTab);
@@ -857,46 +874,46 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::Var:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Var!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Var!\n";
                     std::string name = ((VarNode*)(c))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
                         std::cout << "Variable " << name << " was used before it was defined!\n";
                     } else {
-                        std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
+                        //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
                     }
                 }
                 break;
             case ANT::FuncCall:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
                     std::string name = ((FuncCallNode*)c)->mfuncname;
-                    std::cout << "Looking in symboltable for function " << name << "\n"; 
+                    //std::cout << "Looking in symboltable for function " << name << "\n"; 
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
                         std::cout << "Function " << name << " called before it was defined.\n";
                     } else {
-                        std::cout << "Function found\n";
+                        //std::cout << "Function found\n";
                     }
                     variableUseCheck(c,symTab);
                 }
                 break;
             case ANT::Params:
                 {
-                    std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
                     auto param_node = (ParamsNode*)c;
                     auto name = param_node->mname;
                     auto entry = getEntry(symTab,name);
                     if(entry.size() != 0) {
-                        std::cout << "Function param " << name << " was previously declared\n";
+                        //std::cout << "Function param " << name << " was previously declared\n";
                     } else {
-                        std::cout << "Adding entry to symbol table, Param " << name << '\n';
+                        //std::cout << "Adding entry to symbol table, Param " << name << '\n';
                         TypeInfo param_typeinfo;
                         //TODO(marcus): don't hard code child access
                         TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
                         param_typeinfo.type = type_node->getType();
                         param_typeinfo.indirection = type_node->mindirection;
-                        std::cout << "Param type info: " << param_typeinfo << '\n';
+                        //std::cout << "Param type info: " << param_typeinfo << '\n';
                         //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -905,21 +922,21 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::DeferStmt:
                 {
-                    std::cout << __FILE__ << ':'<< __FUNCTION__ << " Defer!\n";
+                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Defer!\n";
                     variableUseCheck(c,symTab);
                 }
                 break;
             case ANT::RetStmnt:
                 {
-                    std::cout << __FILE__ << ':'<< __FUNCTION__ << " Return!\n";
+                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Return!\n";
                     variableUseCheck(c,symTab);
                 }
                 break;
             case ANT::Prototype:
                 {
-                    std::cout << __FILE__ << ':'<< __FUNCTION__ << " Prototype!\n";
+                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Prototype!\n";
                     std::string name = ((PrototypeNode*)c)->mfuncname;
-                    std::cout << "Entering into scope " << name << "\n";
+                    //std::cout << "Entering into scope " << name << "\n";
                     auto scope = getScope(symTab, name);
                     variableUseCheck(c,scope);
                 }
@@ -928,7 +945,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::Const:
                 break;
             default:
-                std::cout << "Default Case Variable Use Check\n";
+                //std::cout << "Default Case Variable Use Check\n";
                 break;
         }
     }
@@ -940,12 +957,12 @@ void printSymbolTable() {
 
 std::vector<std::vector<AstNode*>> deferStacks;
 void printDeferStacks() {
-    std::cout << "deferStacks.size = " << deferStacks.size() << "\n";
-    std::cout << "Sizes: ";
+    //std::cout << "deferStacks.size = " << deferStacks.size() << "\n";
+    //std::cout << "Sizes: ";
     for(auto& s : deferStacks) {
-        std::cout << s.size() << " ";
+        //std::cout << s.size() << " ";
     }
-    std::cout << "\n";
+    //std::cout << "\n";
 }
 void deferPass(AstNode* ast) {
     auto children = ast->getChildren();
@@ -955,11 +972,11 @@ void deferPass(AstNode* ast) {
         if(nodetype == AstNodeType::FuncDef) {
             deferPass(c);
         } else if(nodetype == AstNodeType::Block) {
-            std::cout << "Block Encountered, adding new stack\n";
+            //std::cout << "Block Encountered, adding new stack\n";
             deferStacks.push_back(std::vector<AstNode*>());
             deferPass(c);
         } else if(nodetype == AstNodeType::DeferStmt) {
-            std::cout << "Defer Statement! adding to stack!\n";
+            //std::cout << "Defer Statement! adding to stack!\n";
             deferStacks.back().push_back(c);
             printDeferStacks();
             deferPass(c);
@@ -982,16 +999,16 @@ void deferPass(AstNode* ast) {
                 }
             }
         } else if(nodetype == AstNodeType::RetStmnt) {
-            std::cout << "deferPass: Return Statement Found\n";
+            //std::cout << "deferPass: Return Statement Found\n";
             printDeferStacks();
             //iterate thru all defer stacks, last to first
             for(auto stack_iter = deferStacks.rbegin(); stack_iter != deferStacks.rend(); stack_iter++) {
                 auto def_stack = stack_iter;
                 for(auto deferstmt = def_stack->rbegin(); deferstmt != def_stack->rend(); deferstmt++) {
                     auto defer_node = (DeferStmtNode*)*deferstmt;
-                    if(defer_node == nullptr) { std::cout << "ERROR!!! NULLPTR!!!\n"; }
+                    //if(defer_node == nullptr) { //std::cout << "ERROR!!! NULLPTR!!!\n"; }
                     //TODO(marcus): don't hardcode child access
-                    //std::cout << defer_node->mchildren.size() << "IS THE SIZE\n";
+                    ////std::cout << defer_node->mchildren.size() << "IS THE SIZE\n";
                     auto to_insert = defer_node->mchildren.back();
                     i = children->insert(i,to_insert);
                     i++;
@@ -1005,7 +1022,7 @@ void deferPass(AstNode* ast) {
         }
     }
     if(ast->nodeType() == AstNodeType::Block) {
-        std::cout << "deferPass: End of Block is here!\n";
+        //std::cout << "deferPass: End of Block is here!\n";
         printDeferStacks();
         //end of block scope, iterate through all defer statements in last stack
         if(deferStacks.size() > 0) {
@@ -1021,7 +1038,7 @@ void deferPass(AstNode* ast) {
             //TODO(marcus): we have a memory leak here of all the defer nodes.
             //we can fix this using a custom allocator for defer nodes.
             auto last_stack = --deferStacks.end();
-            std::cout << "erasing last stack\n";
+            //std::cout << "erasing last stack\n";
             deferStacks.erase(last_stack);
             printDeferStacks();
         }

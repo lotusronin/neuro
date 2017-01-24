@@ -109,9 +109,9 @@ bool isPrimitiveType(ST type);
 #undef ST
 
 Type* generateTypeCodegen(AstNode* n) {
-    std::cout << "Generating User Defined Type!\n";
+    //std::cout << "Generating User Defined Type!\n";
     StructDefNode* sdnode = (StructDefNode*)n;
-    std::cout << "Type: " << sdnode->ident << "\n";
+    //std::cout << "Type: " << sdnode->ident << "\n";
     //Check to see if we already have an opaque struct defined
     StructType* ret = getStructIRType(sdnode->ident);
     if(ret == nullptr) {
@@ -197,7 +197,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 
 Function* functionCodgen(AstNode* n, SymbolTable* sym) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
-    std::cout << "Generating function " << funcnode->mfuncname << "\n";
+    //std::cout << "Generating function " << funcnode->mfuncname << "\n";
     Function* F = module->getFunction(funcnode->mfuncname);
     std::vector<AstNode*>* vec = funcnode->getParameters();
     if(!F) {
@@ -251,7 +251,7 @@ Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
     FuncCallNode* callnode = (FuncCallNode*) n;
     Function* F = module->getFunction(callnode->mfuncname);
     if(!F) {
-        std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";
+        //std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";
         return nullptr;
     }
 
@@ -273,7 +273,7 @@ Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 Value* retCodegen(AstNode* n, SymbolTable* sym) {
-    std::cout << "Generating return statement\n";
+    //std::cout << "Generating return statement\n";
     ReturnNode* retnode = (ReturnNode*) n;
     auto pchildren = retnode->getChildren();
     Value* ret = nullptr;
@@ -313,10 +313,10 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 auto child = binop->LHS();
                 return expressionCodegen(child, sym);
             }
-            std::cout << "generating binop\n";
+            //std::cout << "generating binop\n";
             auto lhs = binop->LHS();
             if(lhs->nodeType() == AstNodeType::Var) {
-                std::cout << "child node is of type var!\n";
+                //std::cout << "child node is of type var!\n";
             }
             auto rhs = binop->RHS();
             Value* lhsv;
@@ -329,7 +329,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 }
             }
             if(op.compare("+") == 0) {
-                std::cout << "generating add\n";
+                //std::cout << "generating add\n";
                 return Builder.CreateAdd(lhsv,rhsv,"addtemp");
             } else if(op.compare("-") == 0) {
                 return Builder.CreateSub(lhsv,rhsv,"subtemp");
@@ -397,9 +397,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 Builder.SetInsertPoint(endBB);
                 return Builder.CreateLoad(res,"and_res");
             } else if(op.compare(".") == 0) {
-                std::cout << "Generating member access!\n";
-                std::cout << "Var name " << lhs->mtoken.token << "\n";
-                std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
+                //std::cout << "Generating member access!\n";
+                //std::cout << "Var name " << lhs->mtoken.token << "\n";
+                //std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
                 auto structname = ((VarNode*)lhs)->getVarName();
                 auto lhsv = varTable[structname];
                 //FIXME(marcus): need a cleaner way to get address of variables
@@ -412,13 +412,13 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 auto structtype = expressionCodegen(lhs,sym)->getType();
                 //auto structtype = lhsv->getType();
                 if(structtype->isPointerTy()) {
-                    std::cout << "struct is actually a pointer type!\n";
+                    //std::cout << "struct is actually a pointer type!\n";
                 } else {
-                    std::cout << "struct is not a pointer type\n";
+                    //std::cout << "struct is not a pointer type\n";
                 }
                 //auto structmembername = rhs->mtoken.token;
                 auto structmembername = ((VarNode*)rhs)->getVarName();
-                std::cout << "member name is " << structmembername << "\n";
+                //std::cout << "member name is " << structmembername << "\n";
                 auto type_name = structtype->getStructName();
                 auto memberlist = userTypesList.find(type_name.str());
                 if(memberlist != userTypesList.end()) {
@@ -426,7 +426,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                     if(memberind != memberlist->second->end()) {
                         unsigned int index = memberind->second;
                         //auto indexval = ConstantInt::get(context,APInt(32,index));
-                        std::cout << "Success, getting element index " << index << "\n";
+                        //std::cout << "Success, getting element index " << index << "\n";
                         //return Builder.CreateGEP(structtype,lhsv,indexval,structmembername);
                         auto memberptr = Builder.CreateStructGEP(structtype,lhsv,index,"ptr_"+structmembername);
                         return Builder.CreateLoad(memberptr,structmembername);
@@ -445,11 +445,11 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 auto childvar = expressionCodegen(lhs,sym);
                 return Builder.CreateLoad(childvar,"deref");
             } else if(op.compare("&") == 0) {
-                std::cout << "Generating address of\n";
+                //std::cout << "Generating address of\n";
                 //TODO(marcus): we are assuming the expression underneath will be some variable
                 //which has been allocated on the stack.
                 if(lhs->nodeType() == AstNodeType::Var) {
-                    std::cout << "We have a var to take the address of!\n";
+                    //std::cout << "We have a var to take the address of!\n";
                     auto varname = ((VarNode*)lhs)->getVarName();
                     return varTable[varname];
                 }
@@ -465,7 +465,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
             break;
         case ANT::Const:
             {
-                std::cout << "generating constant!\n";
+                //std::cout << "generating constant!\n";
                 auto constn = (ConstantNode*)n;
                 auto strval = constn->getVal();
                 if(constn->mstype == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
@@ -478,10 +478,10 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
             break;
         case ANT::Var:
             {
-                std::cout << "generating varload!\n";
+                //std::cout << "generating varload!\n";
                 auto varn = (VarNode*)n;
                 auto varloc = varTable[varn->getVarName()];
-                if(varloc == nullptr) std::cout << "NULLPTR!!!\n";
+                //if(varloc == nullptr) //std::cout << "NULLPTR!!!\n";
                 auto varv = Builder.CreateLoad(varloc,varn->getVarName());
                 val = varv;
             }
@@ -491,8 +491,99 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 val = funcCallCodegen(n,sym);
             }
             break;
+        case ANT::Cast:
+            {
+                CastNode* cast = (CastNode*)n;
+                val = expressionCodegen(cast->mchildren[0], sym);
+                //TODO(marcus): make sure casts work for all types
+                if(cast->fromType.indirection > 0) {
+                    if(cast->toType.indirection > 0) {
+                        //Pointer Cast!
+                        auto type = getIRType(cast->toType);
+                        return Builder.CreatePointerCast(val, type, "cast");
+                    }
+                } else {
+                    if(cast->fromType.type == SemanticType::Float || cast->fromType.type == SemanticType::floatlit) {
+                        //Cast between floats
+                        if(cast->toType.type == SemanticType::Float || cast->toType.type == SemanticType::Double) {
+                            return Builder.CreateFPCast(val, getIRType(cast->toType), "cast");
+                        }
+                    }
+                    if(cast->toType.type == SemanticType::Float || cast->toType.type == SemanticType::Double) {
+                        //convert integer types to float/double
+                        switch(cast->fromType.type) {
+                            case SemanticType::u8:
+                            case SemanticType::u16:
+                            case SemanticType::u32:
+                            case SemanticType::u64:
+                                return Builder.CreateUIToFP(val, getIRType(cast->toType), "cast");
+                                break;
+                            case SemanticType::Int:
+                            case SemanticType::intlit:
+                            case SemanticType::s8:
+                            case SemanticType::s16:
+                            case SemanticType::s32:
+                            case SemanticType::s64:
+                                return Builder.CreateSIToFP(val, getIRType(cast->toType), "cast");
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    switch(cast->toType.type) {
+                        case SemanticType::u8:
+                        case SemanticType::u16:
+                        case SemanticType::u32:
+                        case SemanticType::u64:
+                            switch(cast->fromType.type) {
+                                case SemanticType::u8:
+                                case SemanticType::u16:
+                                case SemanticType::u32:
+                                case SemanticType::u64:
+                                    //convert unsigned to different unsigned
+                                    return Builder.CreateZExtOrTrunc(val, getIRType(cast->toType), "cast");
+                                    break;
+                                case SemanticType::s8:
+                                case SemanticType::s16:
+                                case SemanticType::s32:
+                                case SemanticType::s64:
+                                    //TODO(marcus): implement this
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        case SemanticType::s8:
+                        case SemanticType::s16:
+                        case SemanticType::s32:
+                        case SemanticType::s64:
+                            switch(cast->fromType.type) {
+                                case SemanticType::s8:
+                                case SemanticType::s16:
+                                case SemanticType::s32:
+                                case SemanticType::s64:
+                                    //convert signed to different signed
+                                    return Builder.CreateSExtOrTrunc(val, getIRType(cast->toType), "cast");
+                                    break;
+                                case SemanticType::u8:
+                                case SemanticType::u16:
+                                case SemanticType::u32:
+                                case SemanticType::u64:
+                                    //TODO(marcus): implement this
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                //std::cout << "Implicit cast not supported from " << cast->fromType << " to " << cast->toType << '\n';
+            }
         default:
-            std::cout << "default case for expression generation\n";
+            //std::cout << "default case for expression generation\n";
             break;
     }
     return val;
@@ -500,7 +591,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
 #undef ANT
 
 void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
-    std::cout << "generating block\n";
+    //std::cout << "generating block\n";
     auto scope = getScope(sym, "block"+std::to_string(((BlockNode*)n)->getId()));
     std::vector<AstNode*>* vec = n->getChildren();
     for(auto c : (*vec)) {
@@ -522,25 +613,25 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
-    std::cout << "Generating vardec assign\n";
+    //std::cout << "Generating vardec assign\n";
     auto vardecan = (VarDecAssignNode*) n;
     auto varn = (VarNode*)vardecan->mchildren.at(0);
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     auto typeinfo = symbol_table_entry->typeinfo;
-    std::cout << typeinfo << '\n';
+    //std::cout << typeinfo << '\n';
     auto ir_type = getIRType(typeinfo);
     //TODO(marcus): fix how you access the name of the variable
     AllocaInst* alloca = Builder.CreateAlloca(ir_type,0,varn->getVarName());
     varTable[varn->getVarName()] = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1), sym);
-    std::cout << "generating store for assignment\n";
+    //std::cout << "generating store for assignment\n";
     Builder.CreateStore(val,alloca);
     return;
 }
 
 void assignCodegen(AstNode* n, SymbolTable* sym) {
-    std::cout << "Generating assingment\n";
+    //std::cout << "Generating assingment\n";
     //TODO(marcus): don't hardcode child access
     auto assignn = (AssignNode*)n;
     auto varn = (VarNode*) assignn->mchildren.at(0);
@@ -554,7 +645,7 @@ void assignCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
-    std::cout << "Generating if statement\n";
+    //std::cout << "Generating if statement\n";
     auto ifn = (IfNode*) n;
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
@@ -646,13 +737,13 @@ Value* conditionalCodegen(AstNode* n, SymbolTable* sym) {
 void loopstmtCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     BasicBlock* loc;
     if(n->mtoken.token.compare("break") == 0) {
-        std::cout << "Generating break! LOOP STATEMENT!\n";
+        //std::cout << "Generating break! LOOP STATEMENT!\n";
         loc = breakto;
     } else {
-        std::cout << "Generating continue! LOOP STATEMENT\n";
+        //std::cout << "Generating continue! LOOP STATEMENT\n";
         loc = continueto;
     }
-    std::cout << n->mtoken.token << "\n";
+    //std::cout << n->mtoken.token << "\n";
 
     if(loc != nullptr) {
         Builder.CreateBr(loc);
@@ -694,8 +785,8 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
                 loopstmtCodegen(n,begin,end);
                 break;
         default:
-            //std::cout << "Unknown node type\n";
-            std::cout << "defaulting to expression\n";
+            ////std::cout << "Unknown node type\n";
+            //std::cout << "defaulting to expression\n";
                 expressionCodegen(n,sym);
             break;
     }
@@ -728,7 +819,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
         case ANT::FuncCall:
             {
                 //TODO(marcus): This is an unused cases.
-                std::cout << "generating function call\n";
+                //std::cout << "generating function call\n";
                 funcCallCodegen(ast, sym);
                 return;
             }
@@ -736,7 +827,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
         case ANT::RetStmnt:
             {
                 //TODO(marcus): This is an unused cases.
-                std::cout << "generating return!\n";
+                //std::cout << "generating return!\n";
                 retCodegen(ast, sym);
                 return;
             }
