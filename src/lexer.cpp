@@ -194,7 +194,7 @@ Token LexerTarget::lex() {
     for (unsigned int i = 0; i < num_regexes; i++) {
         std::smatch tmp;
         std::string remaining = ln.substr(colNum);
-        bool matched = std::regex_search(remaining,tmp,regexes[i].first);
+        bool matched = std::regex_search(remaining,tmp,regexes[i].first, std::regex_constants::match_continuous);
         if(matched) {
             //std::cout << "Matched for regex: " << i << '\n';
             //std::cout << "Total # of matches: " << tmp.size() << '\n';
