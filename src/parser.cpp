@@ -198,8 +198,8 @@ AstNode* Parser::parse() {
     CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
     //std::cout << "Beginning parse!\n";
-    mlexer->lex();
-    mlexer->lex();
+    //mlexer->lex();
+    //mlexer->lex();
     parseTopLevelStatements(mlexer, compunit);
     
     //Generate Dot file for debugging
@@ -227,11 +227,11 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
         parseImportStatement(lexer, parent);
         ////std::cout << "import statement matched\n";
     } else if(tok.type == TokenType::fn) {
-        ////std::cout << "Function Definitions Parse\n";
+        //std::cout << "Function Definitions Parse\n";
         parseFunctionDef(lexer, parent);
-        ////std::cout << "Function Definitions matched\n";
+        //std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
-        ////std::cout << "extern token, beginning to match prototype...\n";
+        //std::cout << "extern token, beginning to match prototype...\n";
         parsePrototype(lexer, (CompileUnitNode*)parent);
         ////std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::tstruct) {
@@ -581,6 +581,7 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     FuncDefNode* funcnode = new FuncDefNode();
     parent->addChild(funcnode);
     Token tok = lexer->lex();
+    //std::cout << tok.token << '\n';
     if(tok.type != TokenType::id) {
         parse_error(PET::BadPrototypeName, tok);
     }

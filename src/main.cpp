@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <stdlib.h>
+#include <chrono>
 #include "lexer.h"
 #include "tokens.h"
 #include "parser.h"
@@ -51,11 +52,22 @@ int main(int argc, char** argv) {
         std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 
         for (auto f : sources) {
+            //LexerTarget target1 = LexerTarget(f, debug_lexer);
+        /**/
+            auto start_total = std::chrono::steady_clock::now();
             LexerTarget target1 = LexerTarget(f, debug_lexer);
+            target1.lexFile();
+            auto end_lex = std::chrono::steady_clock::now();
+            auto diff_lex = end_lex-start_total;
+ 
+            auto start_parse = std::chrono::steady_clock::now();
             Parser parser = Parser(&target1);
             AstNode* ast = parser.parse();
+            auto end_parse = std::chrono::steady_clock::now();
+            auto diff_parse = end_parse - start_parse;
             
             std::cout << "Beginning AST transformations and Semantic analysis\n";
+            auto start_semantic = std::chrono::steady_clock::now();
             collapseExpressionChains(ast);
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
@@ -67,39 +79,60 @@ int main(int argc, char** argv) {
             //printSymbolTable();
             //decorateAst(ast);
             deferPass(ast);
+            auto end_semantic = std::chrono::steady_clock::now();
+            auto diff_semantic = end_semantic - start_semantic;
             if(debug_parser) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);
+                auto start = std::chrono::steady_clock::now();
                 ast->makeGraph(dotfileout);
+                auto end = std::chrono::steady_clock::now();
+                auto diff = end - start;
+                std::cout << "Time for make graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
                 dotfileout.close();
                 std::string cmd = "dot -Tpng "+target1.targetName()+".dot -o "+target1.targetName()+".png";
                 std::cout << "Running command: " << cmd << "\n";
-                system(cmd.c_str());
+                //system(cmd.c_str());
             }
 
+            auto start_ir = std::chrono::steady_clock::now();
             if(!semantic_error) {
                 std::cout << "Generating IR code\n";
                 //Generate IR code
                 generateIR(ast);
                 std::cout << "IR output:\n";
-                dumpIR();
+                //dumpIR();
 
                 //writeObj(target1.targetName());
-                writeIR(target1.targetName());
+                //writeIR(target1.targetName());
             }
+            auto end_total = std::chrono::steady_clock::now();
+            auto diff_total = end_total - start_total;
+            auto diff_ir = end_total - start_ir;
+            std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
+            std::cout << "Time for parsing: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_parse).count() << "ms\n";
+            std::cout << "Time for semantic passes: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_semantic).count() << "ms\n";
+            std::cout << "Time for IR generation: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count() << "ms\n";
+            std::cout << "Total Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count() << "ms\n";
 
             if(false) {
                 SymbolTable* s = getSymtab(f);
                 const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
                 genCFile(f,symtab_entries);
             }
-
-            /*
+            /**/
+            /**
+            auto start_lex = std::chrono::steady_clock::now();
             Token tok;
             while(tok.type != TokenType::eof) {
                 tok = target1.lex();
                 //std::cout << "Token: " << tok.token << " at (" << tok.line << "," << tok.col << ")\n";
-            }*/
+            }/**/
+            /*
+            auto end_lex = std::chrono::steady_clock::now();
+            auto diff_lex = end_lex-start_lex;
+            std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
+            /**/
         }
         return 0;
     }
