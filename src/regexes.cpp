@@ -25,7 +25,15 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("break"),TokenType::sbreak),
     std::make_pair(std::regex("continue"),TokenType::scontinue),
     std::make_pair(std::regex("struct"),TokenType::tstruct),
-    std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id),
+    std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id)
+};
+
+std::pair<std::regex,TokenType> number_literal_regexes[] = { 
+    std::make_pair(std::regex("[0-9]+\\.[0-9]*"),TokenType::floatlit),
+    std::make_pair(std::regex("[0-9]+"),TokenType::intlit)
+};
+
+std::pair<std::regex,TokenType> operator_regexes[] = {
     std::make_pair(std::regex("="),TokenType::assignment),
     std::make_pair(std::regex("=="),TokenType::equality),
     std::make_pair(std::regex("!="),TokenType::nequality),
@@ -46,14 +54,10 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("\\|\\|"),TokenType::dblbar),
     std::make_pair(std::regex("\\^"),TokenType::carrot)
     ,std::make_pair(std::regex("~"),TokenType::tilda)
-    ,std::make_pair(std::regex("\"[^\"]*\""),TokenType::strlit)
 };
 
-std::pair<std::regex,TokenType> number_literal_regexes[] = { 
-    std::make_pair(std::regex("[0-9]+\\.[0-9]*"),TokenType::floatlit),
-    std::make_pair(std::regex("[0-9]+"),TokenType::intlit)
-};
-
+std::regex comment_line_regex = std::regex("^//");
+std::regex comment_block_regex = std::regex("^/\\*");
 /*
     std::make_pair(std::regex("\\("),TokenType::lparen),
     std::make_pair(std::regex("\\)"),TokenType::rparen),
@@ -71,5 +75,6 @@ std::pair<std::regex,TokenType> number_literal_regexes[] = {
 */
 unsigned int num_regexes = sizeof(regexes)/sizeof(std::pair<std::regex,TokenType>);
 unsigned int num_number_literal_regexes = sizeof(number_literal_regexes)/sizeof(std::pair<std::regex,TokenType>);
+unsigned int num_operator_regexes = sizeof(operator_regexes)/sizeof(std::pair<std::regex,TokenType>);
 
-
+std::pair<std::regex,TokenType> str_lit_pair = std::make_pair(std::regex("\"[^\"]*\""),TokenType::strlit);

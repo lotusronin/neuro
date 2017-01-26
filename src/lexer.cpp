@@ -164,7 +164,7 @@ Token LexerTarget::lex_internal() {
     /*
      * check for block comments
      */
-    if(std::regex_search(t,match_blk_comment,std::regex("^/\\*"))) {
+    if(std::regex_search(t,match_blk_comment,comment_block_regex)) {
         for(unsigned int i = 0; i < match_blk_comment.size(); i++) {
             if(match_blk_comment.position(i) != 0) continue;
             ++comment_depth;
@@ -194,7 +194,7 @@ Token LexerTarget::lex_internal() {
     /*
      * Check for line comments
      */
-    if(std::regex_search(t,match_comment,std::regex("^//"))) {
+    if(std::regex_search(t,match_comment,comment_line_regex)) {
         for(unsigned int i = 0; i < match_comment.size(); i++) {
             if(match_comment.position(i) != 0) continue;
 
@@ -279,11 +279,14 @@ Token LexerTarget::lex_internal() {
                 }
             }
             break;
- /*       case '"':
+        case '"':
             {
                 std::smatch tmp;
-                std::string remaining = ln
-                bool matched = std::regex_search(
+                bool matched = std::regex_search(remaining,tmp,str_lit_pair.first,std::regex_constants::match_continuous);
+                if(matched) {
+                    longest_match = tmp.length(0);
+                    longest_match_type = str_lit_pair.second;
+                }
             }
             break;
         case '+':
@@ -297,7 +300,23 @@ Token LexerTarget::lex_internal() {
         case '|':
         case '%':
         case '&':
-        case '^':*/
+        case '^':
+            {
+                std::smatch tmp;
+                for (unsigned int i = 0; i < num_operator_regexes; i++) {
+                    bool matched = std::regex_search(remaining,tmp,operator_regexes[i].first, std::regex_constants::match_continuous);
+                    if(matched) {
+                    for(unsigned int j = 0; j < tmp.size(); j++) {
+                        if(tmp.length(j) > longest_match) {
+                            longest_match = tmp.length(j);
+                            longest_regex_match = operator_regexes[i].first;
+                            longest_match_type = operator_regexes[i].second;
+                        }
+                    }
+                    }
+                }
+            }
+            break;
         default:
             std::smatch tmp;
             for (unsigned int i = 0; i < num_regexes; i++) {
