@@ -43,20 +43,22 @@ std::pair<std::regex,TokenType> operator_regexes[] = {
     std::make_pair(std::regex("<="),TokenType::ltequal),
     std::make_pair(std::regex(">"),TokenType::greaterthan),
     std::make_pair(std::regex(">="),TokenType::gtequal),
-    std::make_pair(std::regex("\\+"),TokenType::plus),
-    std::make_pair(std::regex("-"),TokenType::minus),
-    std::make_pair(std::regex("\\*"),TokenType::star),
-    std::make_pair(std::regex("/"),TokenType::fslash),
-    std::make_pair(std::regex("%"),TokenType::mod),
     std::make_pair(std::regex("!"),TokenType::exclaim),
     std::make_pair(std::regex("\\?"),TokenType::question),
     std::make_pair(std::regex("&"),TokenType::ampersand),
     std::make_pair(std::regex("&&"),TokenType::dblampersand),
     std::make_pair(std::regex("\\|"),TokenType::bar),
     std::make_pair(std::regex("\\|\\|"),TokenType::dblbar),
-    std::make_pair(std::regex("\\^"),TokenType::carrot)
-    ,std::make_pair(std::regex("~"),TokenType::tilda)
+    std::make_pair(std::regex("~"),TokenType::tilda)
 };
+
+/*std::make_pair(std::regex("\\+"),TokenType::plus),
+    std::make_pair(std::regex("-"),TokenType::minus),
+    std::make_pair(std::regex("\\*"),TokenType::star),
+    std::make_pair(std::regex("/"),TokenType::fslash),
+    std::make_pair(std::regex("%"),TokenType::mod),
+    std::make_pair(std::regex("\\^"),TokenType::carrot)
+ */
 
 std::regex comment_line_regex = std::regex("^//");
 std::regex comment_block_regex = std::regex("^/\\*");

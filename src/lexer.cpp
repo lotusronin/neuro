@@ -267,20 +267,28 @@ Token LexerTarget::lex_internal() {
         case '8':
         case '9':
             {
-                std::smatch tmp;
-                for (unsigned int i = 0; i < num_number_literal_regexes; i++) {
-                    //std::string remaining = ln.substr(colNum);
-                    bool matched = std::regex_search(remaining,tmp,number_literal_regexes[i].first, std::regex_constants::match_continuous);
-                    if(matched) {
-                        for(unsigned int j = 0; j < tmp.size(); j++) {
-                            if(tmp.length(j) > longest_match) {
-                                longest_match = tmp.length(j);
-                                longest_regex_match = number_literal_regexes[i].first;
-                                longest_match_type = number_literal_regexes[i].second;
-                            }
-                        }
-                    }
-                }
+                //TODO(marcus): throw lexer error if input is bad number is malformed
+                int len_lit = 0;
+                longest_match_type = TokenType::intlit;
+                char current;
+                do {
+                    current = remaining[len_lit];
+                    len_lit++;
+                } while(current >= '0' && current <= '9');
+                
+                if(current == '.') {
+                    //parse floating point
+                    do {
+                        current = remaining[len_lit];
+                        len_lit++;
+                    } while(current >= '0' && current <= '9');
+                    len_lit--;
+                    longest_match_type = TokenType::floatlit;
+                    longest_match = len_lit;
+                } else {
+                    len_lit--;
+                    longest_match = len_lit;
+                } 
             }
             break;
         case '"':
@@ -294,17 +302,55 @@ Token LexerTarget::lex_internal() {
             }
             break;
         case '+':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::plus;
+            }
+            break;
         case '-':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::minus;
+            }
+            break;
         case '/':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::fslash;
+            }
+            break;
         case '*':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::star;
+            }
+            break;
+        case '^':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::carrot;
+            }
+            break;
+        case '%':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::carrot;
+            }
         case '=':
+            {
+                longest_match = 1;
+                longest_match_type = TokenType::assignment;
+                if(remaining[1] == '=') {
+                    longest_match = 2;
+                    longest_match_type = TokenType::equality;
+                }
+            }
+            break;
         case '<':
         case '>':
         case '!':
         case '|':
-        case '%':
         case '&':
-        case '^':
             {
                 std::smatch tmp;
                 for (unsigned int i = 0; i < num_operator_regexes; i++) {
@@ -376,6 +422,27 @@ Token LexerTarget::lex_internal() {
                     "struct"
                 };
                 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
+
+                //TODO(marcus): error checks
+                int len_t = 0;
+                char current;
+                do {
+                    current =remaining[len_t];
+                    len_t++;
+                }while(isalnum(current) || current == '_');
+                len_t--;
+                longest_match = len_t;
+                longest_match_type = TokenType::id;
+                std::string matched_string = ln.substr(colNum,longest_match);
+                for(unsigned int j = 0; j < num_keywords; j++) {
+                   if(matched_string == keyword_array[j]) {
+                       longest_match = strlen(keyword_array[j]);
+                       longest_match_type = keyword_type[j];
+                       break;
+                   }
+                }
+                /*
+
                 std::smatch tmp;
                 bool matched = std::regex_search(remaining,tmp,regexes[0].first, std::regex_constants::match_continuous);
                 if(matched) {
@@ -392,7 +459,7 @@ Token LexerTarget::lex_internal() {
                            break;
                        }
                     }
-                }
+                }*/
             }
             break;
     }
