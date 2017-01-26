@@ -1,6 +1,10 @@
 #include "regexes.h"
 
 std::pair<std::regex,TokenType> regexes[] = { 
+   std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id)
+};
+
+/*
     std::make_pair(std::regex("fn"),TokenType::fn),
     std::make_pair(std::regex("extern"),TokenType::foreign),
     std::make_pair(std::regex("import"),TokenType::import),
@@ -25,9 +29,7 @@ std::pair<std::regex,TokenType> regexes[] = {
     std::make_pair(std::regex("break"),TokenType::sbreak),
     std::make_pair(std::regex("continue"),TokenType::scontinue),
     std::make_pair(std::regex("struct"),TokenType::tstruct),
-    std::make_pair(std::regex("[a-zA-Z_][a-zA-Z0-9_]*"),TokenType::id)
-};
-
+*/ 
 std::pair<std::regex,TokenType> number_literal_regexes[] = { 
     std::make_pair(std::regex("[0-9]+\\.[0-9]*"),TokenType::floatlit),
     std::make_pair(std::regex("[0-9]+"),TokenType::intlit)

@@ -529,14 +529,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         increaseDerefTypeInfo(t);
                         binopn->mtypeinfo = t;
                     } else {
-                        typeCheckPass(binopn->LHS(),symTab);
-                        typeCheckPass(binopn->RHS(),symTab);
+                        typeCheckPass(binopn,symTab);
+                        //typeCheckPass(binopn->LHS(),symTab);
+                        //typeCheckPass(binopn->RHS(),symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
 
                         //do compatiblity checking
                         if(isSameType(lhs_t,rhs_t)) {
                             binopn->mtypeinfo = lhs_t;
+                            binopn->mstype = lhs_t.type;
                         } else {
                         //check for casts
                             if(canCast(lhs_t,rhs_t)) {
@@ -690,7 +692,8 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     switch(ast_node_type) {
         case ANT::Const:
             {
-                auto t = ast->getType();
+                auto constn = (ConstantNode*)ast;
+                auto t = constn->getType();
                 TypeInfo typeinfo;
                 typeinfo.type = t;
                 return typeinfo;

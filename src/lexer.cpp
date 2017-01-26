@@ -164,15 +164,17 @@ Token LexerTarget::lex_internal() {
     /*
      * check for block comments
      */
-    if(std::regex_search(t,match_blk_comment,comment_block_regex)) {
-        for(unsigned int i = 0; i < match_blk_comment.size(); i++) {
-            if(match_blk_comment.position(i) != 0) continue;
-            ++comment_depth;
-            colNum += 2;
-            //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
-            //std::cout << "OOGIE BOOGIE BOO\n";
-            lexcomment();
-            return lex_internal();
+    if(t[0] == '/') {
+        if(std::regex_search(t,match_blk_comment,comment_block_regex)) {
+            for(unsigned int i = 0; i < match_blk_comment.size(); i++) {
+                if(match_blk_comment.position(i) != 0) continue;
+                ++comment_depth;
+                colNum += 2;
+                //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
+                //std::cout << "OOGIE BOOGIE BOO\n";
+                lexcomment();
+                return lex_internal();
+            }
         }
     }
    
@@ -194,19 +196,21 @@ Token LexerTarget::lex_internal() {
     /*
      * Check for line comments
      */
-    if(std::regex_search(t,match_comment,comment_line_regex)) {
-        for(unsigned int i = 0; i < match_comment.size(); i++) {
-            if(match_comment.position(i) != 0) continue;
+    if(t[0] == '/') {
+        if(std::regex_search(t,match_comment,comment_line_regex)) {
+            for(unsigned int i = 0; i < match_comment.size(); i++) {
+                if(match_comment.position(i) != 0) continue;
 
-            colNum = 0;
-            lineNum++;
-            if(lineNum >= content.size()) {
-                //currentTok = EOFTOKEN;
-                updateTokens(EOFTOKEN);
-                return currentTok;
+                colNum = 0;
+                lineNum++;
+                if(lineNum >= content.size()) {
+                    //currentTok = EOFTOKEN;
+                    updateTokens(EOFTOKEN);
+                    return currentTok;
+                }
+                ln = content.at(lineNum);
+                return lex_internal();
             }
-            ln = content.at(lineNum);
-            return lex_internal();
         }
     }
 
@@ -318,25 +322,76 @@ Token LexerTarget::lex_internal() {
             }
             break;
         default:
-            std::smatch tmp;
-            for (unsigned int i = 0; i < num_regexes; i++) {
-                //std::smatch tmp;
-                //std::string remaining = ln.substr(colNum);
-                bool matched = std::regex_search(remaining,tmp,regexes[i].first, std::regex_constants::match_continuous);
+            {
+                TokenType keyword_type[] = {
+                    TokenType::fn,
+                    TokenType::foreign,
+                    TokenType::import,
+                    TokenType::tchar,
+                    TokenType::tint,
+                    TokenType::tbool,
+                    TokenType::tfloat,
+                    TokenType::tdouble,
+                    TokenType::tvoid,
+                    TokenType::tuchar,
+                    TokenType::tchar,
+                    TokenType::tuint,
+                    TokenType::tint,
+                    TokenType::tfloat,
+                    TokenType::tdouble,
+                    TokenType::sif,
+                    TokenType::sfor,
+                    TokenType::swhile,
+                    TokenType::sdefer,
+                    TokenType::sreturn,
+                    TokenType::selse,
+                    TokenType::sbreak,
+                    TokenType::scontinue,
+                    TokenType::tstruct
+                };
+                const char* keyword_array[] = {
+                    "fn",
+                    "extern",
+                    "import",
+                    "char",
+                    "int",
+                    "bool",
+                    "float",
+                    "double",
+                    "void",
+                    "u8",
+                    "s8",
+                    "u32",
+                    "s32",
+                    "f32",
+                    "f64",
+                    "if",
+                    "for",
+                    "while",
+                    "defer",
+                    "return",
+                    "else",
+                    "break",
+                    "continue",
+                    "struct"
+                };
+                unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
+                std::smatch tmp;
+                bool matched = std::regex_search(remaining,tmp,regexes[0].first, std::regex_constants::match_continuous);
                 if(matched) {
-                    //std::cout << "Matched for regex: " << i << '\n';
-                    //std::cout << "Total # of matches: " << tmp.size() << '\n';
-                for(unsigned int j = 0; j < tmp.size(); j++) {
-                    //make sure match starts at beginning of last token
-                    //std::cout << "Match for: " << tmp[j] << " at pos " << tmp.position(j) <<'\n';
-                    //if(tmp.position(j) != 0) continue;
-
-                    if(tmp.length(j) > longest_match) {
-                        longest_match = tmp.length(j);
-                        longest_regex_match = regexes[i].first;
-                        longest_match_type = regexes[i].second;
+                    if(tmp.length(0) > longest_match) {
+                        longest_match = tmp.length(0);
+                        longest_regex_match = regexes[0].first;
+                        longest_match_type = regexes[0].second;
                     }
-                }
+                    std::string matched_string = ln.substr(colNum,longest_match);
+                    for(unsigned int j = 0; j < num_keywords; j++) {
+                       if(matched_string == keyword_array[j]) {
+                           longest_match = strlen(keyword_array[j]);
+                           longest_match_type = keyword_type[j];
+                           break;
+                       }
+                    }
                 }
             }
             break;

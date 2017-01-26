@@ -63,10 +63,13 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
             out = "float";
             break;
         case SemanticType::Typeless:
-            out = "";
+            out = "typeless";
             break;
         case SemanticType::Infer:
             out = "Inferred";
+            break;
+        case SemanticType::intlit:
+            out = "intlit";
             break;
         default:
             out = "Unrecognized value!";
