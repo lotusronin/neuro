@@ -6,6 +6,8 @@
 #include <regex>
 #include <utility>
 #include <ctype.h>
+#include <chrono>
+#include <cstring>
 #include "lexer.h"
 #include "tokens.h"
 
@@ -18,9 +20,72 @@ Token EOFTOKEN {
 	"EOF" //token
 };
 
+TokenType keyword_type[] = {
+    TokenType::fn,
+    TokenType::foreign,
+    TokenType::import,
+    TokenType::tchar,
+    TokenType::tint,
+    TokenType::tbool,
+    TokenType::tfloat,
+    TokenType::tdouble,
+    TokenType::tvoid,
+    TokenType::tuchar,
+    TokenType::tchar,
+    TokenType::tuint,
+    TokenType::tint,
+    TokenType::tfloat,
+    TokenType::tdouble,
+    TokenType::sif,
+    TokenType::sfor,
+    TokenType::swhile,
+    TokenType::sdefer,
+    TokenType::sreturn,
+    TokenType::selse,
+    TokenType::sbreak,
+    TokenType::scontinue,
+    TokenType::tstruct
+};
+
+const char* keyword_array[] = {
+    "fn",
+    "extern",
+    "import",
+    "char",
+    "int",
+    "bool",
+    "float",
+    "double",
+    "void",
+    "u8",
+    "s8",
+    "u32",
+    "s32",
+    "f32",
+    "f64",
+    "if",
+    "for",
+    "while",
+    "defer",
+    "return",
+    "else",
+    "break",
+    "continue",
+    "struct"
+};
+unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
+
+void test_read();
+
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
+    
+    auto start = std::chrono::steady_clock::now();
     content = read_file(name);
+    auto finish = std::chrono::steady_clock::now();
+    auto diff = finish - start;
+    std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
+
     lineNum = 0;
     colNum = 0;
     sub_begin = sub_len = 0;
@@ -28,6 +93,8 @@ LexerTarget::LexerTarget(std::string name, bool debug) {
     debug_out = debug;
     currentTok = EOFTOKEN;
     nextTok = EOFTOKEN;
+
+    //test_read();
 }
 
 LexerTarget::~LexerTarget() {
@@ -103,7 +170,7 @@ Token LexerTarget::lex() {
 void LexerTarget::lexFile() {
     Token tok = lex_internal();
     tok = lex_internal();
-    tokenizedFile.reserve(100);
+    tokenizedFile.reserve(200);
     while(tok.type != TokenType::eof) {
         tokenizedFile.push_back(tok);
         tok = lex_internal();
@@ -111,6 +178,14 @@ void LexerTarget::lexFile() {
     tokenizedFile.push_back(tok);
     tokenizedFile.push_back(EOFTOKEN);
     currentIdx = 0;
+
+    /*
+    std::cout << "Token " << sizeof(Token) << '\n';
+    std::cout << "String " << sizeof(std::string) << '\n';
+    std::cout << "const char* " << sizeof(const char*) << '\n';
+    std::cout << "int " << sizeof(int) << '\n';
+    std::cout << "TokenType " << sizeof(TokenType) << '\n';
+    /**/
 }
 
 Token LexerTarget::lex_internal() {
@@ -176,27 +251,25 @@ Token LexerTarget::lex_internal() {
                 return lex_internal();
             }
         }
-    }
    
 
-    //std::cout << "colNum = " << colNum << '\n';
-    DEBUGLEX(
-    std::cout << ln << '\n';
-    if(colNum == 0) {
-        std::cout << "^\n";
-    } else {
-        for(unsigned int c = 0; c < colNum-1; c++) {
-            std::cout << '-';
+        //std::cout << "colNum = " << colNum << '\n';
+        DEBUGLEX(
+        std::cout << ln << '\n';
+        if(colNum == 0) {
+            std::cout << "^\n";
+        } else {
+            for(unsigned int c = 0; c < colNum-1; c++) {
+                std::cout << '-';
+            }
+            std::cout << "-^\n";
         }
-        std::cout << "-^\n";
-    }
-    )
+        )
 
 
-    /*
-     * Check for line comments
-     */
-    if(t[0] == '/') {
+        /*
+         * Check for line comments
+         */
         if(std::regex_search(t,match_comment,comment_line_regex)) {
             for(unsigned int i = 0; i < match_comment.size(); i++) {
                 if(match_comment.position(i) != 0) continue;
@@ -369,60 +442,6 @@ Token LexerTarget::lex_internal() {
             break;
         default:
             {
-                TokenType keyword_type[] = {
-                    TokenType::fn,
-                    TokenType::foreign,
-                    TokenType::import,
-                    TokenType::tchar,
-                    TokenType::tint,
-                    TokenType::tbool,
-                    TokenType::tfloat,
-                    TokenType::tdouble,
-                    TokenType::tvoid,
-                    TokenType::tuchar,
-                    TokenType::tchar,
-                    TokenType::tuint,
-                    TokenType::tint,
-                    TokenType::tfloat,
-                    TokenType::tdouble,
-                    TokenType::sif,
-                    TokenType::sfor,
-                    TokenType::swhile,
-                    TokenType::sdefer,
-                    TokenType::sreturn,
-                    TokenType::selse,
-                    TokenType::sbreak,
-                    TokenType::scontinue,
-                    TokenType::tstruct
-                };
-                const char* keyword_array[] = {
-                    "fn",
-                    "extern",
-                    "import",
-                    "char",
-                    "int",
-                    "bool",
-                    "float",
-                    "double",
-                    "void",
-                    "u8",
-                    "s8",
-                    "u32",
-                    "s32",
-                    "f32",
-                    "f64",
-                    "if",
-                    "for",
-                    "while",
-                    "defer",
-                    "return",
-                    "else",
-                    "break",
-                    "continue",
-                    "struct"
-                };
-                unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
-
                 //TODO(marcus): error checks
                 int len_t = 0;
                 char current;
@@ -441,25 +460,6 @@ Token LexerTarget::lex_internal() {
                        break;
                    }
                 }
-                /*
-
-                std::smatch tmp;
-                bool matched = std::regex_search(remaining,tmp,regexes[0].first, std::regex_constants::match_continuous);
-                if(matched) {
-                    if(tmp.length(0) > longest_match) {
-                        longest_match = tmp.length(0);
-                        longest_regex_match = regexes[0].first;
-                        longest_match_type = regexes[0].second;
-                    }
-                    std::string matched_string = ln.substr(colNum,longest_match);
-                    for(unsigned int j = 0; j < num_keywords; j++) {
-                       if(matched_string == keyword_array[j]) {
-                           longest_match = strlen(keyword_array[j]);
-                           longest_match_type = keyword_type[j];
-                           break;
-                       }
-                    }
-                }*/
             }
             break;
     }
@@ -480,11 +480,13 @@ Token LexerTarget::lex_internal() {
             }
         }
     }
+    char* c_str_tok = (char*)malloc(token.size()+1);
+    std::strcpy(c_str_tok,token.c_str());
     Token ret = {
 		longest_match_type, //type
 		colNum, //col
 		lineNum, //line
-		token //token
+		c_str_tok //token
 	};
     colNum += longest_match;
     updateTokens(ret);
@@ -533,3 +535,49 @@ std::vector<std::string> read_file(const std::string& filename) {
     return content;
 }
 
+const char* read_file_2(const std::string& filename) {
+    std::ifstream in(filename);
+    in.seekg(0,std::ios::end);
+    int size = in.tellg();
+    char* content = (char*) malloc(size+1);
+    in.seekg(0,std::ios::beg);
+    in.read(content,size);
+    content[size] = '\0';
+    return content;
+}
+
+std::string read_file_3(const std::string& filename) {
+    std::ifstream in(filename);
+    return std::string((std::istreambuf_iterator<char>(in)),std::istreambuf_iterator<char>());
+}
+
+void test_read() {
+    {
+        auto start = std::chrono::steady_clock::now();
+        read_file("stress_test_old.nro");
+        auto finish = std::chrono::steady_clock::now();
+        auto diff = finish - start;
+        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
+    }
+    {
+        auto start = std::chrono::steady_clock::now();
+        read_file_2("stress_test_old.nro");
+        auto finish = std::chrono::steady_clock::now();
+        auto diff = finish - start;
+        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
+    }
+    {
+        auto start = std::chrono::steady_clock::now();
+        read_file_3("stress_test_old.nro");
+        auto finish = std::chrono::steady_clock::now();
+        auto diff = finish - start;
+        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
+    }
+    {
+        auto start = std::chrono::steady_clock::now();
+        read_file("stress_test_old.nro");
+        auto finish = std::chrono::steady_clock::now();
+        auto diff = finish - start;
+        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
+    }
+}

@@ -94,7 +94,7 @@ int BinOpNode::getPriority() {
 
 void BinOpNode::setToken(Token& t) {
     mtoken = t;
-    setOp(t.token);
+    setOp(std::string(t.token));
 }
 
 SemanticType BinOpNode::getType() {

@@ -193,7 +193,35 @@ void Parser::setLexer(LexerTarget* _lexer) {
 //TODO(marcus): Currently goal program node is global. Is this okay or should we do it differently?
 ProgramNode* program;
 
+void printSizes() {
+    std::cout << "astnode " << sizeof(AstNode) << '\n';
+    std::cout << "program " << sizeof(ProgramNode) << '\n';
+    std::cout << "compileunit " << sizeof(CompileUnitNode) << '\n';
+    std::cout << "prototype " << sizeof(PrototypeNode) << '\n';
+    std::cout << "funcdef " << sizeof(FuncDefNode) << '\n';
+    std::cout << "params " << sizeof(ParamsNode) << '\n';
+    std::cout << "block " << sizeof(BlockNode) << '\n';
+    std::cout << "vdeca " << sizeof(VarDecAssignNode) << '\n';
+    std::cout << "vdec " << sizeof(VarDecNode) << '\n';
+    std::cout << "for " << sizeof(ForLoopNode) << '\n';
+    std::cout << "while " << sizeof(WhileLoopNode) << '\n';
+    std::cout << "return " << sizeof(ReturnNode) << '\n';
+    std::cout << "type " << sizeof(TypeNode) << '\n';
+    std::cout << "defer " << sizeof(DeferStmtNode) << '\n';
+    std::cout << "loopstmt " << sizeof(LoopStmtNode) << '\n';
+    std::cout << "if " << sizeof(IfNode) << '\n';
+    std::cout << "else " << sizeof(ElseNode) << '\n';
+    std::cout << "funccall " << sizeof(FuncCallNode) << '\n';
+    std::cout << "var " << sizeof(VarNode) << '\n';
+    std::cout << "binop " << sizeof(BinOpNode) << '\n';
+    std::cout << "constant " << sizeof(ConstantNode) << '\n';
+    std::cout << "assign " << sizeof(AssignNode) << '\n';
+    std::cout << "structdef " << sizeof(StructDefNode) << '\n';
+    std::cout << "cast " << sizeof(CastNode) << '\n';
+}
+
 AstNode* Parser::parse() {
+    //printSizes();
     program = new ProgramNode();
     CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
@@ -252,7 +280,7 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadImportName, tok);
     }
-    std::string newfilename = tok.token+".nro";
+    std::string newfilename = std::string(tok.token)+".nro";
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {

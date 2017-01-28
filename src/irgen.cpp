@@ -736,7 +736,7 @@ Value* conditionalCodegen(AstNode* n, SymbolTable* sym) {
 
 void loopstmtCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     BasicBlock* loc;
-    if(n->mtoken.token.compare("break") == 0) {
+    if(std::string(n->mtoken.token).compare("break") == 0) {
         //std::cout << "Generating break! LOOP STATEMENT!\n";
         loc = breakto;
     } else {

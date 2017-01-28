@@ -65,7 +65,8 @@ struct Token {
     TokenType type;
     unsigned int col;
     unsigned int line;
-    std::string token;
+    //std::string token;
+    char* token;
 };
 
 #endif
