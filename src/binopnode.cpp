@@ -28,7 +28,7 @@ void BinOpNode::addChild(AstNode* node) {
     mchildren.push_back(node);
 }
 
-void BinOpNode::setOp(std::string& op) {
+void BinOpNode::setOp(const std::string& op) {
     mop = op;
     //TODO(marcus): Not sure I like using constants here, maybe make them enums?
     //FIXME(marcus): I really don't like using constants here. Definitely make them enums.
