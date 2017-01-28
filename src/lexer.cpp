@@ -76,20 +76,24 @@ const char* keyword_array[] = {
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 
 void test_read();
+char* read_file_2(const std::string& filename);
 
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
     
-    auto start = std::chrono::steady_clock::now();
-    content = read_file(name);
-    auto finish = std::chrono::steady_clock::now();
-    auto diff = finish - start;
-    std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
+    //auto start = std::chrono::steady_clock::now();
+    //content = read_file(name);
+    content= read_file_2(name);
+    //auto finish = std::chrono::steady_clock::now();
+    //auto diff = finish - start;
+    //std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
+    ln = content;
 
     lineNum = 0;
     colNum = 0;
     sub_begin = sub_len = 0;
     comment_depth = 0;
+    f_idx = 0;
     debug_out = debug;
 
     //test_read();
@@ -110,48 +114,44 @@ void LexerTarget::lexcomment() {
     
     while(comment_depth > 0) {
         //std::cout << "Parsing comment block\n";
-        std::smatch match_blk_comment_open;
-        std::smatch match_blk_comment_close;
         
-        if(lineNum >= content.size()) {
+        if(content[f_idx] == '\0') {
             DEBUGLEX(std::cout << "Comment reaches the end of the file\n";)
             //we've reached end of file, stop
             comment_depth = 0;
             return;
         }
-    
-        std::string ln = content.at(lineNum);
         
-        while(colNum >= ln.size()) {
+        while(content[f_idx] == 12 || content[f_idx] == 15) {
             //std::cout << ln << '\n';
             lineNum++;
             colNum = 0;
-            if(lineNum >= content.size()) {
+            f_idx++;
+            ln = content+f_idx;
+            if(content[f_idx] == '\0') {
                 DEBUGLEX(std::cout << "Comment reaches the end of the file\n";)
                 comment_depth = 0;
                 return;
             }
-            ln = content.at(lineNum);
         }
     
-        std::string t = ln.substr(colNum);
-
-        if(std::regex_search(t,match_blk_comment_open,std::regex("^/\\*"))) {
-            for(unsigned int i = 0; i < match_blk_comment_open.size(); i++) {
-                if(match_blk_comment_open.position(i) != 0) continue;
+        if(content[f_idx] == '/') {
+            if(content[f_idx+1] == '*') {
                 ++comment_depth;
                 colNum += 2;
+                f_idx += 2;
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
             }
-        } else if(std::regex_search(t,match_blk_comment_close,std::regex("^\\*/"))) {
-            for(unsigned int i = 0; i < match_blk_comment_close.size(); i++) {
-                if(match_blk_comment_close.position(i) != 0) continue;
+        } else if(content[f_idx] == '*') {
+            if(content[f_idx] == '/') {
                 --comment_depth;
                 colNum += 2;
+                f_idx += 2;
                 //std::cout << "Block comment ends. Depth " << comment_depth << "\n";
             }
         } else {
             ++colNum;
+            ++f_idx;
         }
     }
 }
@@ -170,6 +170,7 @@ void LexerTarget::lexFile() {
     //tok = lex_internal();
     tokenizedFile.reserve(200);
     while(tok.type != TokenType::eof) {
+        //if(tokenizedFile.size() < 10) std::cout << tok.token << '\n';
         tokenizedFile.push_back(tok);
         tok = lex_internal();
     }
@@ -177,8 +178,8 @@ void LexerTarget::lexFile() {
     tokenizedFile.push_back(EOFTOKEN);
     currentIdx = 0;
 
-    std::cout << "Lexer " << sizeof(LexerTarget) << '\n';
     /*
+    std::cout << "Lexer " << sizeof(LexerTarget) << '\n';
     std::cout << "Token " << sizeof(Token) << '\n';
     std::cout << "String " << sizeof(std::string) << '\n';
     std::cout << "const char* " << sizeof(const char*) << '\n';
@@ -190,32 +191,37 @@ void LexerTarget::lexFile() {
 Token LexerTarget::lex_internal() {
     std::string token = "";
 
-    if(lineNum >= content.size()) {
+    if(content[f_idx] == '\0') {
         return EOFTOKEN;
     }
     
-    std::string ln = content.at(lineNum);
-    while(colNum >= ln.size()) {
+    //char* ln = content+f_idx;
+    //15 == CR, 12 == LF
+    while(content[f_idx] == 15 || content[f_idx] == 12 || content[f_idx] == '\n') {
         lineNum++;
         colNum = 0;
-        if(lineNum >= content.size()) {
+        f_idx++;
+        if(content[f_idx] == '\0') {
             return EOFTOKEN;
         }
-        ln = content.at(lineNum);
+        ln = content+f_idx;
     }
 
+
+    //TODO(marcus): isspace may be true for \r and \f, so count would be off
     while(isspace(ln[colNum])) {
         colNum++;
+        f_idx++;
 
         //std::cout << "there is a space!!!\n";
-        while(colNum >= ln.size()) {
-            if(lineNum+1 >= content.size()) {
+        while(content[f_idx] == 12 || content[f_idx] == 15) {
+            lineNum++;
+            f_idx++;
+            colNum = 0;
+            if(content[f_idx] == '\0') {
                 return EOFTOKEN;
-            } else {
-                lineNum++;
-                ln = content.at(lineNum);
-                colNum = 0;
             }
+            ln = content + f_idx;
         }
     }
             
@@ -224,29 +230,23 @@ Token LexerTarget::lex_internal() {
     TokenType longest_match_type;
     int longest_match = 0;
 
-
-    std::smatch match_comment;
-    std::smatch match_blk_comment;
-    std::string t = ln.substr(colNum);
+    //std::string t = ln.substr(colNum);
+    char* t = ln+colNum;
+    //char* t = content+f_idx;
 
     /*
      * check for block comments
      */
     if(t[0] == '/') {
-        if(std::regex_search(t,match_blk_comment,comment_block_regex)) {
-            for(unsigned int i = 0; i < match_blk_comment.size(); i++) {
-                if(match_blk_comment.position(i) != 0) continue;
-                ++comment_depth;
-                colNum += 2;
-                //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
-                //std::cout << "OOGIE BOOGIE BOO\n";
-                lexcomment();
-                return lex_internal();
-            }
+        if(t[1] == '*') {
+            ++comment_depth;
+            colNum += 2;
+            f_idx += 2;
+            lexcomment();
+            return lex_internal();
         }
-   
-
         //std::cout << "colNum = " << colNum << '\n';
+        //TODO(marcus): make this work with content/ln beign char*
         DEBUGLEX(
         std::cout << ln << '\n';
         if(colNum == 0) {
@@ -263,18 +263,21 @@ Token LexerTarget::lex_internal() {
         /*
          * Check for line comments
          */
-        if(std::regex_search(t,match_comment,comment_line_regex)) {
-            for(unsigned int i = 0; i < match_comment.size(); i++) {
-                if(match_comment.position(i) != 0) continue;
-
-                colNum = 0;
-                lineNum++;
-                if(lineNum >= content.size()) {
+        if(t[1] == '/') {
+            colNum += 2;
+            f_idx += 2;
+            while(t[colNum] != 12 && t[colNum] != 15) {
+                if(content[f_idx] == '\0') {
                     return EOFTOKEN;
                 }
-                ln = content.at(lineNum);
-                return lex_internal();
+                colNum++;
+                f_idx++;
             }
+            f_idx++;
+            colNum = 0;
+            lineNum++;
+            ln = content+f_idx;
+            return lex_internal();
         }
     }
 
@@ -282,42 +285,38 @@ Token LexerTarget::lex_internal() {
      * Match other tokens
      */
     
-    std::string remaining = ln.substr(colNum);
+    char* remaining = ln+colNum;
+    //std::string remaining = ln.substr(colNum);
+    longest_match = 1; //default to 1
     switch(remaining[0]) {
+        case '\0':
+            return EOFTOKEN;
+            break;
         case '(':
-            longest_match = 1;
             longest_match_type = TokenType::lparen;
             break;
         case ')':
-            longest_match = 1;
             longest_match_type = TokenType::rparen;
             break;
         case '.':
-            longest_match = 1;
             longest_match_type = TokenType::dot;
             break;
         case ',':
-            longest_match = 1;
             longest_match_type = TokenType::comma;
             break;
         case '{':
-            longest_match = 1;
             longest_match_type = TokenType::lbrace;
             break;
         case '}':
-            longest_match = 1;
             longest_match_type = TokenType::rbrace;
             break;
         case ':':
-            longest_match = 1;
             longest_match_type = TokenType::colon;
             break;
         case ';':
-            longest_match = 1;
             longest_match_type = TokenType::semicolon;
             break;
         case '@':
-            longest_match = 1;
             longest_match_type = TokenType::dereference;
             break;
         case '0':
@@ -353,56 +352,60 @@ Token LexerTarget::lex_internal() {
                     len_lit--;
                     longest_match = len_lit;
                 } 
+                
             }
             break;
         case '"':
             {
-                std::smatch tmp;
-                bool matched = std::regex_search(remaining,tmp,str_lit_pair.first,std::regex_constants::match_continuous);
-                if(matched) {
-                    longest_match = tmp.length(0);
-                    longest_match_type = str_lit_pair.second;
+                //TODO(marcus): handle errors/end of file
+                int match_len = 1;
+                bool matched = false;
+                while(!matched) {
+                    char c = content[f_idx+match_len];
+                    if(c == 15 || c == 12) {
+                        //handle multiline strings
+                        lineNum++;
+                        colNum = 0;
+                    } if(c == '"' && content[f_idx+match_len-1] != '\\') {
+                        matched = true;
+                    }
+                    match_len++;
                 }
+                longest_match = match_len;
+                longest_match_type = TokenType::strlit;
             }
             break;
         case '+':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::plus;
             }
             break;
         case '-':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::minus;
             }
             break;
         case '/':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::fslash;
             }
             break;
         case '*':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::star;
             }
             break;
         case '^':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::carrot;
             }
             break;
         case '%':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::carrot;
             }
         case '=':
             {
-                longest_match = 1;
                 longest_match_type = TokenType::assignment;
                 if(remaining[1] == '=') {
                     longest_match = 2;
@@ -417,16 +420,17 @@ Token LexerTarget::lex_internal() {
         case '&':
             {
                 std::smatch tmp;
+                std::string rem_tmp(ln+colNum);
                 for (unsigned int i = 0; i < num_operator_regexes; i++) {
-                    bool matched = std::regex_search(remaining,tmp,operator_regexes[i].first, std::regex_constants::match_continuous);
+                    bool matched = std::regex_search(rem_tmp,tmp,operator_regexes[i].first, std::regex_constants::match_continuous);
                     if(matched) {
-                    for(unsigned int j = 0; j < tmp.size(); j++) {
-                        if(tmp.length(j) > longest_match) {
-                            longest_match = tmp.length(j);
-                            longest_regex_match = operator_regexes[i].first;
-                            longest_match_type = operator_regexes[i].second;
+                        for(unsigned int j = 0; j < tmp.size(); j++) {
+                            if(tmp.length(j) > longest_match) {
+                                longest_match = tmp.length(j);
+                                longest_regex_match = operator_regexes[i].first;
+                                longest_match_type = operator_regexes[i].second;
+                            }
                         }
-                    }
                     }
                 }
             }
@@ -437,13 +441,13 @@ Token LexerTarget::lex_internal() {
                 int len_t = 0;
                 char current;
                 do {
-                    current =remaining[len_t];
+                    current=remaining[len_t];
                     len_t++;
                 }while(isalnum(current) || current == '_');
                 len_t--;
                 longest_match = len_t;
                 longest_match_type = TokenType::id;
-                std::string matched_string = ln.substr(colNum,longest_match);
+                std::string matched_string(ln+colNum,longest_match);
                 for(unsigned int j = 0; j < num_keywords; j++) {
                    if(matched_string == keyword_array[j]) {
                        longest_match = strlen(keyword_array[j]);
@@ -455,8 +459,10 @@ Token LexerTarget::lex_internal() {
             break;
     }
     
+    f_idx += longest_match;
     
-    token = ln.substr(colNum,longest_match);
+    
+    token = std::string(ln+colNum,longest_match);
     if(longest_match_type == TokenType::strlit) {
         std::regex stripped("\"([^\"]*)\"");
         std::smatch m;
@@ -482,6 +488,7 @@ Token LexerTarget::lex_internal() {
     colNum += longest_match;
 
     DEBUGLEX(std::cout << "token: " << token << "\n\n";)
+    //std::cout << colNum << ' ' << f_idx << '\t' << content[f_idx] << '\n';
     return ret;
 
 }
@@ -516,14 +523,15 @@ std::vector<std::string> read_file(const std::string& filename) {
     return content;
 }
 
-const char* read_file_2(const std::string& filename) {
-    std::ifstream in(filename);
+char* read_file_2(const std::string& filename) {
+    std::ifstream in(filename, std::ios::binary);
     in.seekg(0,std::ios::end);
     int size = in.tellg();
     char* content = (char*) malloc(size+1);
     in.seekg(0,std::ios::beg);
     in.read(content,size);
     content[size] = '\0';
+    //std::cout << "File size was... " << size << '\n';
     return content;
 }
 

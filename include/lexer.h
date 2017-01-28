@@ -23,13 +23,16 @@ public:
 
 private:
     std::string filename;
-    std::vector<std::string> content;
+    char* content;
+    char* ln;
     std::vector<Token> tokenizedFile;
     unsigned int lineNum, colNum;
+    unsigned int f_idx;
     int sub_begin, sub_len;
     int comment_depth;
     bool debug_out;
     unsigned int currentIdx;
+    unsigned int content_size;
     /* data */
 };
 
