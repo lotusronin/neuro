@@ -22,7 +22,6 @@ public:
     std::string targetName();
 
 private:
-    void updateTokens(Token& t);
     std::string filename;
     std::vector<std::string> content;
     std::vector<Token> tokenizedFile;
@@ -30,8 +29,6 @@ private:
     int sub_begin, sub_len;
     int comment_depth;
     bool debug_out;
-    Token currentTok;
-    Token nextTok;
     unsigned int currentIdx;
     /* data */
 };

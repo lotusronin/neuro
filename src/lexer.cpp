@@ -91,8 +91,6 @@ LexerTarget::LexerTarget(std::string name, bool debug) {
     sub_begin = sub_len = 0;
     comment_depth = 0;
     debug_out = debug;
-    currentTok = EOFTOKEN;
-    nextTok = EOFTOKEN;
 
     //test_read();
 }
@@ -169,7 +167,7 @@ Token LexerTarget::lex() {
 
 void LexerTarget::lexFile() {
     Token tok = lex_internal();
-    tok = lex_internal();
+    //tok = lex_internal();
     tokenizedFile.reserve(200);
     while(tok.type != TokenType::eof) {
         tokenizedFile.push_back(tok);
@@ -179,6 +177,7 @@ void LexerTarget::lexFile() {
     tokenizedFile.push_back(EOFTOKEN);
     currentIdx = 0;
 
+    std::cout << "Lexer " << sizeof(LexerTarget) << '\n';
     /*
     std::cout << "Token " << sizeof(Token) << '\n';
     std::cout << "String " << sizeof(std::string) << '\n';
@@ -192,9 +191,7 @@ Token LexerTarget::lex_internal() {
     std::string token = "";
 
     if(lineNum >= content.size()) {
-        //currentTok = EOFTOKEN;
-        updateTokens(EOFTOKEN);
-        return currentTok;
+        return EOFTOKEN;
     }
     
     std::string ln = content.at(lineNum);
@@ -202,9 +199,7 @@ Token LexerTarget::lex_internal() {
         lineNum++;
         colNum = 0;
         if(lineNum >= content.size()) {
-            //currentTok = EOFTOKEN;
-            updateTokens(EOFTOKEN);
-            return currentTok;
+            return EOFTOKEN;
         }
         ln = content.at(lineNum);
     }
@@ -215,9 +210,7 @@ Token LexerTarget::lex_internal() {
         //std::cout << "there is a space!!!\n";
         while(colNum >= ln.size()) {
             if(lineNum+1 >= content.size()) {
-                //currentTok = EOFTOKEN;
-                updateTokens(EOFTOKEN);
-                return currentTok;
+                return EOFTOKEN;
             } else {
                 lineNum++;
                 ln = content.at(lineNum);
@@ -277,9 +270,7 @@ Token LexerTarget::lex_internal() {
                 colNum = 0;
                 lineNum++;
                 if(lineNum >= content.size()) {
-                    //currentTok = EOFTOKEN;
-                    updateTokens(EOFTOKEN);
-                    return currentTok;
+                    return EOFTOKEN;
                 }
                 ln = content.at(lineNum);
                 return lex_internal();
@@ -489,18 +480,14 @@ Token LexerTarget::lex_internal() {
 		c_str_tok //token
 	};
     colNum += longest_match;
-    updateTokens(ret);
-    //currentTok = ret;
 
-    
     DEBUGLEX(std::cout << "token: " << token << "\n\n";)
-    return currentTok;
+    return ret;
 
 }
 
 Token LexerTarget::peek() {
     return tokenizedFile[currentIdx];
-    //return currentTok;
 }
 
 Token LexerTarget::peekNext() {
@@ -508,12 +495,6 @@ Token LexerTarget::peekNext() {
         return tokenizedFile[currentIdx+1];
     }
     return tokenizedFile[currentIdx];
-    //return nextTok;
-}
-
-void LexerTarget::updateTokens(Token& t) {
-    currentTok = nextTok;
-    nextTok = t;
 }
 
 std::vector<std::string> read_file(const std::string& filename) {
