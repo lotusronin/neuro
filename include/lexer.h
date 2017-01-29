@@ -4,7 +4,6 @@
 #include <vector>
 #include <string>
 #include <regex>
-#include "regexes.h"
 #include "tokens.h"
 
 class LexerTarget
@@ -32,9 +31,8 @@ private:
     int comment_depth;
     bool debug_out;
     unsigned int currentIdx;
-    unsigned int content_size;
     /* data */
 };
 
-std::vector<std::string> read_file(const std::string& filename);
+char* read_file(const std::string& filename);
 #endif

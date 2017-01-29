@@ -75,15 +75,13 @@ const char* keyword_array[] = {
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 
-void test_read();
-char* read_file_2(const std::string& filename);
 
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
     
     //auto start = std::chrono::steady_clock::now();
     //content = read_file(name);
-    content= read_file_2(name);
+    content= read_file(name);
     //auto finish = std::chrono::steady_clock::now();
     //auto diff = finish - start;
     //std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
@@ -95,8 +93,6 @@ LexerTarget::LexerTarget(std::string name, bool debug) {
     comment_depth = 0;
     f_idx = 0;
     debug_out = debug;
-
-    //test_read();
 }
 
 LexerTarget::~LexerTarget() {
@@ -226,7 +222,6 @@ Token LexerTarget::lex_internal() {
     }
             
 
-    std::regex longest_regex_match;
     TokenType longest_match_type;
     int longest_match = 0;
 
@@ -414,24 +409,46 @@ Token LexerTarget::lex_internal() {
             }
             break;
         case '<':
+            {
+                longest_match_type = TokenType::lessthan;
+                if(remaining[1] == '=') {
+                    longest_match_type = TokenType::ltequal;
+                    longest_match = 2;
+                }
+            }
+            break;
         case '>':
+            {
+                longest_match_type = TokenType::greaterthan;
+                if(remaining[1] == '=') {
+                    longest_match_type = TokenType::gtequal;
+                    longest_match = 2;
+                }
+            }
+            break;
         case '!':
+            {
+                longest_match_type = TokenType::exclaim;
+                if(remaining[1] == '=') {
+                    longest_match_type = TokenType::nequality;
+                    longest_match = 2;
+                }
+            }
+            break;
         case '|':
+            {
+                longest_match_type = TokenType::bar;
+                if(remaining[1] == '|') {
+                    longest_match_type = TokenType::dblbar;
+                    longest_match = 2;
+                }
+            }
         case '&':
             {
-                std::smatch tmp;
-                std::string rem_tmp(ln+colNum);
-                for (unsigned int i = 0; i < num_operator_regexes; i++) {
-                    bool matched = std::regex_search(rem_tmp,tmp,operator_regexes[i].first, std::regex_constants::match_continuous);
-                    if(matched) {
-                        for(unsigned int j = 0; j < tmp.size(); j++) {
-                            if(tmp.length(j) > longest_match) {
-                                longest_match = tmp.length(j);
-                                longest_regex_match = operator_regexes[i].first;
-                                longest_match_type = operator_regexes[i].second;
-                            }
-                        }
-                    }
+                longest_match_type = TokenType::ampersand;
+                if(remaining[1] == '&') {
+                    longest_match_type = TokenType::dblampersand;
+                    longest_match = 2;
                 }
             }
             break;
@@ -504,26 +521,7 @@ Token LexerTarget::peekNext() {
     return tokenizedFile[currentIdx];
 }
 
-std::vector<std::string> read_file(const std::string& filename) {
-    std::ifstream in(filename);
-    std::vector<std::string> content;
-    
-    if(!in.is_open()) {
-        std::cerr << "Error opening file: " << filename << "\n";
-        return content;
-    }
-    
-    std::string line;
-    while(std::getline(in, line)) {
-        content.push_back(line);
-        //std::cout << line << '\n';
-    }
-    //std::cout << '\n';
-    
-    return content;
-}
-
-char* read_file_2(const std::string& filename) {
+char* read_file(const std::string& filename) {
     std::ifstream in(filename, std::ios::binary);
     in.seekg(0,std::ios::end);
     int size = in.tellg();
@@ -533,40 +531,4 @@ char* read_file_2(const std::string& filename) {
     content[size] = '\0';
     //std::cout << "File size was... " << size << '\n';
     return content;
-}
-
-std::string read_file_3(const std::string& filename) {
-    std::ifstream in(filename);
-    return std::string((std::istreambuf_iterator<char>(in)),std::istreambuf_iterator<char>());
-}
-
-void test_read() {
-    {
-        auto start = std::chrono::steady_clock::now();
-        read_file("stress_test_old.nro");
-        auto finish = std::chrono::steady_clock::now();
-        auto diff = finish - start;
-        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
-    }
-    {
-        auto start = std::chrono::steady_clock::now();
-        read_file_2("stress_test_old.nro");
-        auto finish = std::chrono::steady_clock::now();
-        auto diff = finish - start;
-        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
-    }
-    {
-        auto start = std::chrono::steady_clock::now();
-        read_file_3("stress_test_old.nro");
-        auto finish = std::chrono::steady_clock::now();
-        auto diff = finish - start;
-        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
-    }
-    {
-        auto start = std::chrono::steady_clock::now();
-        read_file("stress_test_old.nro");
-        auto finish = std::chrono::steady_clock::now();
-        auto diff = finish - start;
-        std::cout << "File Read Time: " << std::chrono::duration_cast<std::chrono::nanoseconds>(diff).count() << "ns\n";
-    }
 }
