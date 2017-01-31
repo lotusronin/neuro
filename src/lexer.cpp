@@ -166,7 +166,7 @@ void LexerTarget::lexFile() {
     //tok = lex_internal();
     tokenizedFile.reserve(200);
     while(tok.type != TokenType::eof) {
-        //if(tokenizedFile.size() < 10) std::cout << tok.token << '\n';
+        //if(tokenizedFile.size() < 15) std::cout << tok.token << '\n';
         tokenizedFile.push_back(tok);
         tok = lex_internal();
     }
@@ -184,43 +184,20 @@ void LexerTarget::lexFile() {
     /**/
 }
 
+void printLn(char* s) {
+    std::cout << "Ln is...\n";
+    if(s[0] == '\0')
+        return;
+
+    while(s[0] != '\n') {
+        std::cout << s[0];
+        s++;
+    }
+    std::cout << "\n";
+}
+
 Token LexerTarget::lex_internal() {
-    std::string token = "";
-
-    if(content[f_idx] == '\0') {
-        return EOFTOKEN;
-    }
-    
-    //char* ln = content+f_idx;
-    //15 == CR, 12 == LF
-    while(content[f_idx] == 15 || content[f_idx] == 12 || content[f_idx] == '\n') {
-        lineNum++;
-        colNum = 0;
-        f_idx++;
-        if(content[f_idx] == '\0') {
-            return EOFTOKEN;
-        }
-        ln = content+f_idx;
-    }
-
-
-    //TODO(marcus): isspace may be true for \r and \f, so count would be off
-    while(isspace(ln[colNum])) {
-        colNum++;
-        f_idx++;
-
-        //std::cout << "there is a space!!!\n";
-        while(content[f_idx] == 12 || content[f_idx] == 15) {
-            lineNum++;
-            f_idx++;
-            colNum = 0;
-            if(content[f_idx] == '\0') {
-                return EOFTOKEN;
-            }
-            ln = content + f_idx;
-        }
-    }
-            
+    std::string token = "";            
 
     TokenType longest_match_type;
     int longest_match = 0;
@@ -231,7 +208,7 @@ Token LexerTarget::lex_internal() {
 
     /*
      * check for block comments
-     */
+     *//*
     if(t[0] == '/') {
         if(t[1] == '*') {
             ++comment_depth;
@@ -257,7 +234,7 @@ Token LexerTarget::lex_internal() {
 
         /*
          * Check for line comments
-         */
+         *//*
         if(t[1] == '/') {
             colNum += 2;
             f_idx += 2;
@@ -280,10 +257,27 @@ Token LexerTarget::lex_internal() {
      * Match other tokens
      */
     
-    char* remaining = ln+colNum;
+    char* remaining; // = ln+colNum;
     //std::string remaining = ln.substr(colNum);
     longest_match = 1; //default to 1
+TOP:
+    remaining = ln+colNum;
+    //printLn(remaining);
     switch(remaining[0]) {
+        case ' ':
+        case '\t':
+            colNum++;
+            f_idx++;
+            goto TOP;
+            break;
+        case '\r':
+        case '\n':
+            lineNum++;
+            colNum = 0;
+            f_idx++;
+            ln = content+f_idx;
+            goto TOP;
+            break;
         case '\0':
             return EOFTOKEN;
             break;
@@ -382,6 +376,37 @@ Token LexerTarget::lex_internal() {
             break;
         case '/':
             {
+                /*
+                 * Check for block comments
+                 */
+                if(remaining[1] == '*') {
+                    ++comment_depth;
+                    colNum += 2;
+                    f_idx += 2;
+                    lexcomment();
+                    return lex_internal();
+                }
+
+                /*
+                 * Check for line comments
+                 */
+                else if(remaining[1] == '/') {
+                    colNum += 2;
+                    f_idx += 2;
+                    while(remaining[colNum] != '\n' && remaining[colNum] != '\r') {
+                        if(content[f_idx] == '\0') {
+                            return EOFTOKEN;
+                        }
+                        colNum++;
+                        f_idx++;
+                    }
+                    f_idx++;
+                    colNum = 0;
+                    lineNum++;
+                    ln = content+f_idx;
+                    //TODO(marcus): can probable replace this with goto
+                    return lex_internal();
+                }
                 longest_match_type = TokenType::fslash;
             }
             break;
@@ -399,6 +424,7 @@ Token LexerTarget::lex_internal() {
             {
                 longest_match_type = TokenType::carrot;
             }
+            break;
         case '=':
             {
                 longest_match_type = TokenType::assignment;
@@ -456,12 +482,12 @@ Token LexerTarget::lex_internal() {
             {
                 //TODO(marcus): error checks
                 int len_t = 0;
-                char current;
-                do {
-                    current=remaining[len_t];
+                char current=remaining[len_t];
+                while(isalnum(current) || current == '_')
+                {
                     len_t++;
-                }while(isalnum(current) || current == '_');
-                len_t--;
+                    current=remaining[len_t];
+                }
                 longest_match = len_t;
                 longest_match_type = TokenType::id;
                 std::string matched_string(ln+colNum,longest_match);
