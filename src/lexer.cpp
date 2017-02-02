@@ -202,67 +202,14 @@ Token LexerTarget::lex_internal() {
     TokenType longest_match_type;
     int longest_match = 0;
 
-    //std::string t = ln.substr(colNum);
-    char* t = ln+colNum;
-    //char* t = content+f_idx;
-
-    /*
-     * check for block comments
-     *//*
-    if(t[0] == '/') {
-        if(t[1] == '*') {
-            ++comment_depth;
-            colNum += 2;
-            f_idx += 2;
-            lexcomment();
-            return lex_internal();
-        }
-        //std::cout << "colNum = " << colNum << '\n';
-        //TODO(marcus): make this work with content/ln beign char*
-        DEBUGLEX(
-        std::cout << ln << '\n';
-        if(colNum == 0) {
-            std::cout << "^\n";
-        } else {
-            for(unsigned int c = 0; c < colNum-1; c++) {
-                std::cout << '-';
-            }
-            std::cout << "-^\n";
-        }
-        )
-
-
-        /*
-         * Check for line comments
-         *//*
-        if(t[1] == '/') {
-            colNum += 2;
-            f_idx += 2;
-            while(t[colNum] != 12 && t[colNum] != 15) {
-                if(content[f_idx] == '\0') {
-                    return EOFTOKEN;
-                }
-                colNum++;
-                f_idx++;
-            }
-            f_idx++;
-            colNum = 0;
-            lineNum++;
-            ln = content+f_idx;
-            return lex_internal();
-        }
-    }
-
     /*
      * Match other tokens
      */
     
     char* remaining; // = ln+colNum;
-    //std::string remaining = ln.substr(colNum);
     longest_match = 1; //default to 1
 TOP:
     remaining = ln+colNum;
-    //printLn(remaining);
     switch(remaining[0]) {
         case ' ':
         case '\t':
