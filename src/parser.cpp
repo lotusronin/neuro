@@ -862,12 +862,7 @@ AstNode* parseExpression(LexerTarget* lexer) {
  * expr -> exprlogicaland dblbar expr  | exprlogicaland
  */
     ////std::cout << "Parsing Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("expression");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
     auto child = parseLogicalAnd(lexer);
-    //opnode->addChild(child);
     Token tok = lexer->peek();
     if(tok.type == TokenType::dblbar) {
         BinOpNode* opnode = new BinOpNode();
@@ -889,23 +884,13 @@ AstNode* parseLogicalAnd(LexerTarget* lexer) {
  * exprand -> exprbitor dblampersand exprlogicaland  | exprbitor
  */
     ////std::cout << "Parsing Logical And Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("expression");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseBitOr(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseBitOr(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::dblampersand) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume &&
         lexer->lex();
-        //parseLogicalAnd(lexer, opnode);
-        //parseLogicalAnd(lexer, parent);
         auto ret2 = parseLogicalAnd(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -919,22 +904,13 @@ AstNode* parseBitOr(LexerTarget* lexer) {
  * exprbitor -> exprxor bar exprbitor  | exprxor
  */
     ////std::cout << "Parsing Bitwise Or Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("expression");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseBitXor(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseBitXor(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::bar) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume |
         lexer->lex();
-        //parseBitOr(lexer, opnode);
-        //parseBitOr(lexer, parent);
         auto ret2 = parseBitOr(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -948,22 +924,13 @@ AstNode* parseBitXor(LexerTarget* lexer) {
  * exprxor -> expreqneq carrot exprxor  | expreqneq
  */
     ////std::cout << "Parsing Bitwise Xor Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("expression");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseEqneq(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseEqneq(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::carrot) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume ^
         lexer->lex();
-        //parseBitXor(lexer, opnode);
-        //parseBitXor(lexer, parent);
         auto ret2 = parseBitXor(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -977,22 +944,13 @@ AstNode* parseEqneq(LexerTarget* lexer) {
  * expreqneq -> exprglte eqneq expreqneq  | exprglte
  */
     ////std::cout << "Parsing EqNeq Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("eqneqexp");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseGLTE(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseGLTE(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::equality || tok.type == TokenType::nequality) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume == or !=
         lexer->lex();
-        //parseEqneq(lexer, opnode);
-        //parseEqneq(lexer, parent);
         auto ret2 = parseEqneq(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -1006,22 +964,13 @@ AstNode* parseGLTE(LexerTarget* lexer) {
  * exprgtle -> exprplusmin gtelte exprgtle  | exprplusmin
  */
     ////std::cout << "Parsing GTELTE Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("gtelteexpr");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parsePlusmin(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parsePlusmin(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::ltequal || tok.type == TokenType::gtequal || tok.type == TokenType::greaterthan || tok.type == TokenType::lessthan) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume < or > or <= or >=
         lexer->lex();
-        //parseGLTE(lexer, opnode);
-        //parseGLTE(lexer, parent);
         auto ret2 = parseGLTE(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -1035,21 +984,13 @@ AstNode* parsePlusmin(LexerTarget* lexer) {
  * exprplusmin -> multdiv plusmin exprplusmin  | multdiv
  */
     ////std::cout << "Parsing PlusMin Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("plusminexpr");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseMultdiv(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseMultdiv(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         //consume + or -
         lexer->lex();
-        //parsePlusmin(lexer, opnode);
         auto ret2 = parsePlusmin(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -1063,21 +1004,13 @@ AstNode* parseMultdiv(LexerTarget* lexer) {
   * multdiv -> addrofindir starslash multdiv | addrofindir
   */
     ////std::cout << "Parsing MultDiv Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("multdivexpr");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseAddrOfIndir(lexer, opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseAddrOfIndir(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::star || tok.type == TokenType::fslash || tok.type == TokenType::mod) {
         //consume token
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         lexer->lex();
-        //parseMultdiv(lexer, opnode);
         auto ret2 = parseMultdiv(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -1091,21 +1024,14 @@ AstNode* parseAddrOfIndir(LexerTarget* lexer) {
   * addrof-indir -> &memberaccess | *memberaccess | !memberaccess | ~memberaccess | memberaccess
   */    
     ////std::cout << "Parsing AddrOfIndir Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("addrofindirexpr");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //auto parent = (BinOpNode*)p;
     BinOpNode* opnode = nullptr;
     Token tok = lexer->peek();
     if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda) {
         //consume token (@ or & or ! or ~)
         opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         lexer->lex();
     }
-     //parseMemberAccess(lexer,opnode);
      auto ret = parseMemberAccess(lexer);
      if(opnode) {
          opnode->addChild(ret);
@@ -1119,21 +1045,13 @@ AstNode* parseMemberAccess(LexerTarget* lexer) {
      * memberaccess -> parenexp dotarrow memberaccess | parenexp
      */
     ////std::cout << "Parsing MemberAccess Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
-    //auto s = std::string("memberaccess");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
-    //parseParenexp(lexer,opnode);
-    //auto parent = (BinOpNode*)p;
     auto ret = parseParenexp(lexer);
     Token tok = lexer->peek();
     if(tok.type == TokenType::dot) {
         //consume token
         auto opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         lexer->lex();
-        //parseMemberAccess(lexer,opnode);
         auto ret2 = parseMemberAccess(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
@@ -1146,29 +1064,20 @@ AstNode* parseParenexp(LexerTarget* lexer) {
  /* 
   * parenexp -> ( expr ) | const | var | funcall
   */
-    //auto parent = (BinOpNode*)p;
-    //BinOpNode* parent = nullptr;
     BinOpNode parent;
     BinOpNode::constructed--;
     BinOpNode::deleted--;
     ////std::cout << "Parsing Paren Expression!\n";
-    //BinOpNode* opnode = new BinOpNode();
     auto s = std::string("parenexpr");
-    //opnode->setOp(s);
-    //parent->addChild(opnode);
     Token tok = lexer->peek();
     if(tok.type == TokenType::lparen) {
         BinOpNode* opnode = new BinOpNode();
         opnode->setToken(tok);
-        //parent->setToken(tok);
         s = std::string("( )");
         opnode->setOp(s);
-        //parent->addChild(opnode);
-        //parent->setOp(s);
         //consume (
         lexer->lex();
         parseExpression(lexer, opnode);
-        //parseExpression(lexer, parent);
         tok = lexer->peek();
         if(tok.type != TokenType::rparen) {
             parse_error(PET::Unknown, tok);
@@ -1177,19 +1086,14 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         lexer->lex();
         return opnode;
     } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit) {
-        //parent = new BinOpNode();
         ////std::cout << "Parsing Const!\n";
-        //parseConst(lexer, opnode);
         parseConst(lexer, &parent);
     } else if(tok.type == TokenType::id) {
-        //parent = new BinOpNode();
-        //parseFunccallOrVar(lexer, opnode);
         parseFunccallOrVar(lexer, &parent);
     } else {
         assert(false);
         parse_error(PET::Unknown, tok);
     }
-    //parent->setOp(s);
     return parent.mchildren[0];
 }
 
