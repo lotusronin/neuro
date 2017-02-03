@@ -9,6 +9,7 @@
 class BinOpNode : public AstNode {
     public:
         static int count;
+        static int constructed;
         BinOpNode();
         ~BinOpNode();
         void makeGraph(std::ofstream& outfile);
@@ -25,6 +26,8 @@ class BinOpNode : public AstNode {
         void setToken(Token& t);
         SemanticType getType();
         std::vector<AstNode*> mchildren;
+        static void printDeleted();
+        static int deleted;
     private:
         int id;
         //TODO(marcus): make this an enum

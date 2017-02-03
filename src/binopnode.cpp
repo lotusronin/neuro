@@ -2,13 +2,17 @@
 #include <iostream>
 
 int BinOpNode::count = 0;
+int BinOpNode::deleted = 0;
+int BinOpNode::constructed = 0;
 
 BinOpNode::BinOpNode() {
     id = BinOpNode::count;
     BinOpNode::count++;
+    BinOpNode::constructed++;
 }
 
 BinOpNode::~BinOpNode() {
+    BinOpNode::deleted += 1;
 }
 
 void BinOpNode::makeGraph(std::ofstream& outfile) {
@@ -116,4 +120,9 @@ SemanticType BinOpNode::getType() {
     }
 
     return mstype;
+}
+
+void BinOpNode::printDeleted() {
+    std::cout << "Constructed binop nodes " << BinOpNode::constructed << '\n';
+    std::cout << "Deleted binop nodes: " << BinOpNode::deleted << '\n';
 }

@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
             std::cout << "Time for semantic passes: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_semantic).count() << "ms\n";
             std::cout << "Time for IR generation: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count() << "ms\n";
             std::cout << "Total Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count() << "ms\n";
+            BinOpNode::printDeleted();
 
             if(false) {
                 SymbolTable* s = getSymtab(f);
