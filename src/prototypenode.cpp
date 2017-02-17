@@ -47,5 +47,6 @@ std::vector<AstNode*>* PrototypeNode::getParameters() {
 }
 
 SemanticType PrototypeNode::getType() {
-    return mparams[mparams.size()-1]->getType();
+    return mtypeinfo.type;
+    //return mparams[mparams.size()-1]->getType();
 }

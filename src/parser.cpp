@@ -221,6 +221,8 @@ void printSizes() {
     std::cout << "cast " << sizeof(CastNode) << '\n';
 }
 
+static int typenode_counter = 0;
+
 AstNode* Parser::parse() {
     //printSizes();
     program = new ProgramNode();
@@ -240,6 +242,7 @@ AstNode* Parser::parse() {
     //std::cout << "Running command: " << cmd << "\n";
     system(cmd.c_str());
     */
+    //std::cout << "Typenodes constructed = " << typenode_counter  << '\n';
 
     return program;
 }
@@ -425,8 +428,10 @@ static bool isTokenAType(TokenType t) {
 void parseType(LexerTarget* lexer, AstNode* parent) {
     //type -> int | char | float | double | bool | id
     //optional *'s infront of each type name
-    TypeNode* tnode = new TypeNode();
+    //TypeNode* tnode = new TypeNode();
+    //typenode_counter++;
     Token tok = lexer->peek();
+    TypeInfo t;
 
     //Handle pointer types
     int indirection = 0;
@@ -436,9 +441,44 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         tok = lexer->peek();
     }
-    tnode->mindirection = indirection;
-
-    tnode->setToken(tok);
+    //tnode->mindirection = indirection;
+    t.indirection = indirection;
+    /**/
+    SemanticType mstype;
+    switch(tok.type) {
+        case TokenType::tuchar:
+        case TokenType::tchar:
+            mstype = SemanticType::Char;
+            break;
+        case TokenType::tint:
+            mstype =SemanticType::Int;
+            break;
+        case TokenType::tbool:
+            mstype = SemanticType::Bool;
+            break;
+        case TokenType::tfloat:
+            mstype = SemanticType::Float;
+            break;
+        case TokenType::tdouble:
+            mstype = SemanticType::Double;
+            break;
+        case TokenType::tvoid:
+            mstype = SemanticType::Void;
+            break;
+        case TokenType::id:
+            mstype = SemanticType::User;
+            std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
+            break;
+        default:
+            mstype = SemanticType::Typeless;
+            break;
+    }
+    /**/
+    //tnode->setToken(tok);
+    //t.type = tnode->mstype;
+    t.type = mstype;
+    parent->mtypeinfo = t;
+    parent->mstype = t.type;
     if(isTokenAType(tok.type)) {
         //consume int/char/bool/float/double/void/id
         lexer->lex();
@@ -446,12 +486,14 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         parse_error(PET::BadTypeIdentifier, tok);
     }
     
+    //delete tnode;
+    /*
     if(parent) {
         //null check
         parent->addChild(tnode);
     } else {
         delete tnode;
-    }
+    }*/
     return;
 }
 

@@ -820,14 +820,14 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntryCurrentScope(symTab,name);
                     //TODO(marcus): don't hardcode child access!
-                    TypeNode* typenode = (TypeNode*) ((VarNode*)(c->getChildren()->at(1)));
+                    //TypeNode* typenode = (TypeNode*) ((VarNode*)(c->getChildren()->at(1)));
                     if(entry) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo;
-                        typeinfo.type = typenode->getType();
-                        typeinfo.indirection = typenode->mindirection;
+                        TypeInfo typeinfo = ((VarNode*)c)->mtypeinfo;
+                        //typeinfo.type = typenode->getType();
+                        //typeinfo.indirection = typenode->mindirection;
                         //TODO(marcus): get struct name if the var dec is a user type
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -848,9 +848,10 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo;
-                        typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
-                        typeinfo.indirection = typenode ? typenode->mindirection : 0;
+                        TypeInfo typeinfo = ((VarNode*)c)->mtypeinfo;
+                        if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
+                        //typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
+                        //typeinfo.indirection = typenode ? typenode->mindirection : 0;
                         //TODO(marcus): add userid if type is a struct!
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -911,11 +912,11 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         //std::cout << "Function param " << name << " was previously declared\n";
                     } else {
                         //std::cout << "Adding entry to symbol table, Param " << name << '\n';
-                        TypeInfo param_typeinfo;
+                        TypeInfo param_typeinfo = param_node->mtypeinfo;
                         //TODO(marcus): don't hard code child access
-                        TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
-                        param_typeinfo.type = type_node->getType();
-                        param_typeinfo.indirection = type_node->mindirection;
+                        //TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
+                        //param_typeinfo.type = type_node->getType();
+                        //param_typeinfo.indirection = type_node->mindirection;
                         //std::cout << "Param type info: " << param_typeinfo << '\n';
                         //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);

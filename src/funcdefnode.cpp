@@ -44,13 +44,15 @@ std::vector<AstNode*>* FuncDefNode::getChildren() {
 
 SemanticType FuncDefNode::getType() {
     //TODO(marcus): should not hard-code node locations
-    AstNode* tn = mparams[mparams.size()-2];
-    mstype = tn->getType();
-    return mstype;
+    //AstNode* tn = mparams[mparams.size()-2];
+    //mstype = tn->getType();
+    //mstype = mytpeinfo.type;
+    return mtypeinfo.type;
+    //return mstype;
 }
 
 std::vector<AstNode*>* FuncDefNode::getParameters() {
-    std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-2);
+    std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-1);
     return params;
 }
 
