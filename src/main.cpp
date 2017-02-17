@@ -35,6 +35,8 @@ void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
     }
 }
 
+void linkFile(std::string file);
+
 int main(int argc, char** argv) {
     std::cout << "Welcome to the neuro compiler.\n";
 
@@ -92,7 +94,7 @@ int main(int argc, char** argv) {
                 dotfileout.close();
                 std::string cmd = "dot -Tpng "+target1.targetName()+".dot -o "+target1.targetName()+".png";
                 std::cout << "Running command: " << cmd << "\n";
-                //system(cmd.c_str());
+                system(cmd.c_str());
             }
 
             auto start_ir = std::chrono::steady_clock::now();
@@ -103,7 +105,8 @@ int main(int argc, char** argv) {
                 std::cout << "IR output:\n";
                 //dumpIR();
 
-                //writeObj(target1.targetName());
+                writeObj(target1.targetName());
+                linkFile(target1.targetName());
                 //writeIR(target1.targetName());
             }
             auto end_total = std::chrono::steady_clock::now();
