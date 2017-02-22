@@ -18,7 +18,9 @@ set(MY_SOURCES main.cpp lexer.cpp regexes.cpp parser.cpp astnode.cpp compileunit
 
 if (WIN32)
     list(APPEND MY_SOURCES win32_linker.cpp)
-endif (WIN32)
+elseif (UNIX)
+    list(APPEND MY_SOURCES linux_linker.cpp)
+endif ()
 
 add_executable(Neuro ${MY_SOURCES})
 
