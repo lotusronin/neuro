@@ -5,5 +5,7 @@ fi
 
 cd build
 
-exec cmake -G Ninja ../
-exec ninja
+#exec cmake -G Ninja ../
+#exec ninja
+cmake -G Ninja ../
+ninja

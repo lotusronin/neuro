@@ -1,5 +1,5 @@
 
-func_base = "func"
+func_base = "fn"
 var_base = "var"
 
 numlines = 200
