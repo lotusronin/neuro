@@ -41,6 +41,7 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent);
 void parseReturnStatement(LexerTarget* lexer, AstNode* parent);
 void parseExpression(LexerTarget* lexer, AstNode* parent);
 AstNode* parseExpression(LexerTarget* lexer);
+AstNode* parseLogicalOr(LexerTarget* lexer);
 AstNode* parseLogicalAnd(LexerTarget* lexer);
 AstNode* parseBitOr(LexerTarget* lexer);
 AstNode* parseBitXor(LexerTarget* lexer);
@@ -637,9 +638,9 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
             //TODO(marcus): clean this up
-            auto typenode = vnode->mchildren.back();
-            vnode->mchildren.erase(--(vnode->mchildren.cend()));
-            vdecnode->addChild(typenode);
+            //auto typenode = vnode->mchildren.back();
+            //vnode->mchildren.erase(--(vnode->mchildren.cend()));
+            //vdecnode->addChild(typenode);
         }
     } else {
         parse_error(PET::MissVardecColon, tok);
@@ -900,6 +901,24 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
 }
 
 AstNode* parseExpression(LexerTarget* lexer) {
+    /*
+     * expr -> orexpr cast type | orexpr
+     */
+    auto child = parseLogicalOr(lexer);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::cast) {
+        //consume cast
+        lexer->lex();
+        CastNode* cnode = new CastNode();
+        parseType(lexer, cnode);
+        cnode->toType = cnode->mtypeinfo;
+        cnode->addChild(child);
+        return cnode;
+    }
+    return child;
+}
+
+AstNode* parseLogicalOr(LexerTarget* lexer) {
 /* 
  * expr -> exprlogicaland dblbar expr  | exprlogicaland
  */

@@ -162,8 +162,11 @@ static void registerTypeDef(StructDefNode* n) {
     std::unordered_map<std::string,int>* member_map = new std::unordered_map<std::string,int>();
     int index = 0;
     for(auto c : n->mchildren) {
-        //TODO(marcus): Might want to check that we have a vardec node if we
-        //allow other things in function body definitions.
+        if(c->nodeType() != ANT::Var) {
+            //TODO(marcus): report error unless we allow other things in struct body
+            //definitions.
+            continue;
+        }
         auto vdec = (VarDecNode*) c;
         auto v = (VarNode*) vdec->getLHS();
         std::string member_name = v->getVarName();
@@ -287,6 +290,38 @@ static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
 }
 
 #define ST SemanticType
+bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
+    if(t1.indirection > 0 && t2.indirection > 0) {
+        return false;
+    }
+
+    SemanticType st;
+    if(t1.indirection > 0) {
+        st = t2.type;
+    } else if(t2.indirection > 0) {
+        st = t1.type;
+    }
+
+    switch(st) {
+        case ST::u8:
+        case ST::u16:
+        case ST::u32:
+        case ST::u64:
+        case ST::s8:
+        case ST::s16:
+        case ST::s32:
+        case ST::s64:
+        case ST::Int:
+        case ST::intlit:
+            return true;
+            break;
+        default:
+            break;
+    }
+
+    return false;
+}
+
 static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
 
@@ -503,6 +538,15 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     }
                 }
                 break;
+            case ANT::Cast:
+                {
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Cast!\n";
+                    auto cnode = (CastNode*)c;
+                    typeCheckPass(c,symTab);
+                    TypeInfo t = getTypeInfo(cnode->mchildren.at(0),symTab);
+                    cnode->fromType = t;
+                }
+                break;
             case ANT::BinOp:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
@@ -540,8 +584,18 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             binopn->mtypeinfo = lhs_t;
                             binopn->mstype = lhs_t.type;
                         } else {
-                        //check for casts
-                            if(canCast(lhs_t,rhs_t)) {
+                            //check for pointer math
+                            if(isPointerMath(lhs_t,rhs_t)) {
+                                if(lhs_t.indirection) {
+                                    binopn->mtypeinfo = lhs_t;
+                                    binopn->mstype = lhs_t.type;
+                                } else {
+                                    binopn->mtypeinfo = rhs_t;
+                                    binopn->mstype = rhs_t.type;
+                                }
+                            }
+                            //check for casts
+                            else if(canCast(lhs_t,rhs_t)) {
                                 binopn->mtypeinfo = lhs_t;
                                 CastNode* cast = new CastNode();
                                 cast->fromType = rhs_t;
@@ -705,6 +759,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                 auto entries = getEntry(symTab,name);
                 if(entries.size() > 0) {
                     SymbolTableEntry* e = entries.at(0);
+                    ast->mtypeinfo = e->typeinfo;
                     return e->typeinfo;
                 } else {
                     std::cout << "No Entries! Var name is " << name << "\n";
@@ -741,6 +796,11 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             {
                 auto binopn = (BinOpNode*)ast;
                 return binopn->mtypeinfo;
+            }
+        case ANT::Cast:
+            {
+                auto castnode = (CastNode*)ast;
+                return castnode->toType;
             }
         default:
             break;
@@ -825,7 +885,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo = ((VarNode*)c)->mtypeinfo;
+                        TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
                         //typeinfo.type = typenode->getType();
                         //typeinfo.indirection = typenode->mindirection;
                         //TODO(marcus): get struct name if the var dec is a user type
@@ -848,7 +908,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         std::cout << "Error, you declared var " << name << " previously!\n";
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo = ((VarNode*)c)->mtypeinfo;
+                        TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
                         if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
                         //typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
                         //typeinfo.indirection = typenode ? typenode->mindirection : 0;

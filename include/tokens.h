@@ -58,6 +58,7 @@ enum class TokenType {
     carrot,
     tilda,
     mod,
+    cast,
     eof
 };
 

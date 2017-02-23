@@ -329,9 +329,19 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 }
             }
             if(op.compare("+") == 0) {
+                if(lhs->mtypeinfo.indirection) {
+                    return Builder.CreateGEP(lhsv,rhsv,"ptr");
+                } else if(rhs->mtypeinfo.indirection) {
+                    return Builder.CreateGEP(rhsv,lhsv,"ptr");
+                }
                 //std::cout << "generating add\n";
                 return Builder.CreateAdd(lhsv,rhsv,"addtemp");
             } else if(op.compare("-") == 0) {
+                if(lhs->mtypeinfo.indirection) {
+                    return Builder.CreateGEP(lhsv,rhsv,"ptr");
+                } else if(rhs->mtypeinfo.indirection) {
+                    return Builder.CreateGEP(rhsv,lhsv,"ptr");
+                }
                 return Builder.CreateSub(lhsv,rhsv,"subtemp");
             } else if(op.compare("*") == 0) {
                 return Builder.CreateMul(lhsv,rhsv,"multtemp");
