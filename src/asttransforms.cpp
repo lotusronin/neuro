@@ -10,12 +10,44 @@
 extern bool semantic_error;
 
 #define ANT AstNodeType
+#define SET SemanticErrorType
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 
-static void semanticError(SemanticErrorType err, SemanticType lt, SemanticType rt) {
+static void semanticError(SemanticErrorType err, std::string& name) {
+    std::cout << "Semantic Error!!!\n";
+    switch(err) {
+        case SemanticErrorType::DupDecl:
+        {
+            ERROR("Error: Duplicate Declaration of variable: " << name << "!\n");
+        }
+        break;
+        case SemanticErrorType::UndefUse:
+        {
+            ERROR("Error: Variable " << name << " used before it was defined!\n");
+        }
+        break;
+        case SemanticErrorType::NoFunc:
+        {
+            ERROR("Error: No Function named " << name << " is defined!\n");
+        }
+        break;
+        case SemanticErrorType::OutLoop:
+        {
+            ERROR("Error, Break or Continue used outside of a loop!\n");
+        }
+        break;
+        default:
+            break;
+    }
+    std::cout << '\n';
+    semantic_error = true;
+    return;
+}
+
+static void semanticError(SemanticErrorType err, TypeInfo lt, TypeInfo rt) {
     std::cout << "Semantic Error!!!\n";
     switch(err) {
     case SemanticErrorType::MissmatchAssign:
@@ -41,6 +73,11 @@ static void semanticError(SemanticErrorType err, SemanticType lt, SemanticType r
     case SemanticErrorType::MissmatchReturnType:
         {
             ERROR("Return value of type " << lt << " does not match function type " << rt << '\n');
+        }
+        break;
+    case SemanticErrorType::DerefNonPointer:
+        {
+            ERROR("Cannot Derefernece value, type " << lt << " is not a pointer\n");
         }
         break;
     case SemanticErrorType::Unknown:
@@ -91,7 +128,9 @@ void checkContinueBreak(AstNode* ast, int loopDepth) {
     AstNodeType type = ast->nodeType();
     if(type == AstNodeType::LoopStmt) {
         if(loopDepth == 0) {
-            std::cout << "Error, Break or Continue used outside of a loop!\n";
+            //TODO(marcus): get rid of tmp variable
+            std::string tmp;
+            semanticError(SET::OutLoop, tmp);
         }
     }
 
@@ -452,7 +491,7 @@ static void decreaseDerefTypeInfo(TypeInfo& t) {
     if(t.indirection > 0) {
         t.indirection -= 1;
     } else {
-        std::cout << "Error! Cannot dereference a non pointer type!\n";
+        semanticError(SET::DerefNonPointer,t,t);
     }
     return;
 }
@@ -610,8 +649,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 cast->addChild(binopn->LHS());
                                 binopn->setLHS(cast);
                             } else {
-                                std::cout << "Error! Cannot use operator " << op;
-                                std::cout << " on operands of type " << lhs_t << " and " << rhs_t << '\n';
+                                std::cout << "Error with use of operator " << op << '\n';
+                                semanticError(SET::MissmatchBinop,lhs_t,rhs_t);
                             }
                         }
                     }
@@ -643,7 +682,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(expr);
                             retn->mchildren[0] = cast;
                         } else {
-                            semanticError(SemanticErrorType::MissmatchReturnType,ret_typeinfo.type,func_typeinfo.type);
+                            semanticError(SemanticErrorType::MissmatchReturnType,ret_typeinfo,func_typeinfo);
                         }
                     }
 
@@ -670,7 +709,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(rhs);
                             assignn->mchildren[1] = cast;
                         } else {
-                            std::cout << "Error! Cannot assign value of type " << rhs_typeinfo << " to a variable of type " << lhs_typeinfo << '\n';
+                            semanticError(SET::MissmatchAssign,lhs_typeinfo,rhs_typeinfo);
                         }
                     }
 
@@ -705,7 +744,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(rhs);
                             ((VarDecAssignNode*)c)->mchildren[1] = cast;
                         } else {
-                            std::cout << "Error! Cannot assign value of type " << rhs_typeinfo << " to a variable of type " << lhs_typeinfo << '\n';
+                            semanticError(SET::MissmatchVarDecAssign,lhs_typeinfo,rhs_typeinfo);
                         }
                     }
                 }
@@ -879,15 +918,11 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "SymbolTable " << symTab->name << "\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntryCurrentScope(symTab,name);
-                    //TODO(marcus): don't hardcode child access!
-                    //TypeNode* typenode = (TypeNode*) ((VarNode*)(c->getChildren()->at(1)));
                     if(entry) {
-                        std::cout << "Error, you declared var " << name << " previously!\n";
+                        semanticError(SET::DupDecl, name);
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
-                        //typeinfo.type = typenode->getType();
-                        //typeinfo.indirection = typenode->mindirection;
                         //TODO(marcus): get struct name if the var dec is a user type
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -905,13 +940,11 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     }
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
-                        std::cout << "Error, you declared var " << name << " previously!\n";
+                        semanticError(SET::DupDecl, name);
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
                         if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
-                        //typeinfo.type = typenode ? typenode->getType() : SemanticType::Infer;
-                        //typeinfo.indirection = typenode ? typenode->mindirection : 0;
                         //TODO(marcus): add userid if type is a struct!
                         addVarEntry(symTab, typeinfo, name);
                         //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
@@ -942,7 +975,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        std::cout << "Variable " << name << " was used before it was defined!\n";
+                        semanticError(SET::UndefUse, name);
                     } else {
                         //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
                     }
@@ -955,7 +988,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "Looking in symboltable for function " << name << "\n"; 
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        std::cout << "Function " << name << " called before it was defined.\n";
+                        semanticError(SET::NoFunc, name);
                     } else {
                         //std::cout << "Function found\n";
                     }
@@ -973,10 +1006,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     } else {
                         //std::cout << "Adding entry to symbol table, Param " << name << '\n';
                         TypeInfo param_typeinfo = param_node->mtypeinfo;
-                        //TODO(marcus): don't hard code child access
-                        //TypeNode* type_node = (TypeNode*) param_node->mchildren.at(0);
-                        //param_typeinfo.type = type_node->getType();
-                        //param_typeinfo.indirection = type_node->mindirection;
                         //std::cout << "Param type info: " << param_typeinfo << '\n';
                         //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);

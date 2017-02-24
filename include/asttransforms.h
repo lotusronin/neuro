@@ -22,6 +22,11 @@ enum class SemanticErrorType{
     MissmatchBinop,
     MissmatchFunctionParams,
     MissmatchReturnType,
+    DerefNonPointer,
+    DupDecl,
+    UndefUse,
+    NoFunc,
+    OutLoop,
     Unknown
 };
 
