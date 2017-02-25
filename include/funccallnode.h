@@ -10,7 +10,6 @@ class FuncCallNode : public AstNode {
         static int count;
         FuncCallNode();
         ~FuncCallNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addArgs(AstNode* node);
         void addChild(AstNode* node);
@@ -18,7 +17,7 @@ class FuncCallNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> margs;
         std::string mfuncname;
-    private:
+    //private:
         int id;
 };
 

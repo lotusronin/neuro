@@ -11,15 +11,6 @@ BlockNode::BlockNode() {
 BlockNode::~BlockNode() {
 }
 
-void BlockNode::makeGraph(std::ofstream& outfile) {
-    outfile << "block" << id << ";\n";
-    outfile << "block" << id << "[label=\"block\"];\n";
-    for (auto s : mstatements) {
-        outfile << "block" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType BlockNode::nodeType() {
     return AstNodeType::Block;
 }

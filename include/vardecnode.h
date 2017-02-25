@@ -10,14 +10,13 @@ class VarDecNode : public AstNode {
         static int count;
         VarDecNode();
         ~VarDecNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
         AstNode* getLHS();
         AstNode* getRHS();
-    private:
+    //private:
         int id;
 };
 

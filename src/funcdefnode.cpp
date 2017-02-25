@@ -12,16 +12,6 @@ FuncDefNode::FuncDefNode() {
 FuncDefNode::~FuncDefNode() {
 }
 
-void FuncDefNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "funcDef" << id << ";\n";
-    outfile << "funcDef" << id << "[label=\"fn "<<mfuncname<<"\ntype: "<<mstype<<"\"];\n";
-    for (auto param : mparams) {
-        outfile << "funcDef" << id << " -> ";
-        param->makeGraph(outfile);
-    }
-}
-
 AstNodeType FuncDefNode::nodeType() {
     return AstNodeType::FuncDef;
 }

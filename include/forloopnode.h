@@ -10,7 +10,6 @@ class ForLoopNode : public AstNode {
         static int count;
         ForLoopNode();
         ~ForLoopNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
@@ -20,7 +19,7 @@ class ForLoopNode : public AstNode {
         AstNode* getInit();
         AstNode* getBody();
         int getId();
-    private:
+    //private:
         int id;
 };
 

@@ -11,15 +11,6 @@ AssignNode::AssignNode() {
 AssignNode::~AssignNode() {
 }
 
-void AssignNode::makeGraph(std::ofstream& outfile) {
-    outfile << "assign" << id << ";\n";
-    outfile << "assign" << id << "[label=\"=\"];\n";
-    for (auto s : mchildren) {
-        outfile << "assign" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType AssignNode::nodeType() {
     return AstNodeType::Assign;
 }

@@ -102,7 +102,6 @@ class AstNode {
     public:
         AstNode();
         virtual ~AstNode();
-        virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType nodeType();
         virtual SemanticType getType();
         TypeInfo* getTypeInfo();

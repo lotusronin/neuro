@@ -11,15 +11,6 @@ WhileLoopNode::WhileLoopNode() {
 WhileLoopNode::~WhileLoopNode() {
 }
 
-void WhileLoopNode::makeGraph(std::ofstream& outfile) {
-    outfile << "whileloop" << id << ";\n";
-    outfile << "whileloop" << id << "[label=\"while\"];\n";
-    for (auto s : mstatements) {
-        outfile << "whileloop" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType WhileLoopNode::nodeType() {
     return AstNodeType::WhileLoop;
 }

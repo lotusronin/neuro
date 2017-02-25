@@ -11,16 +11,6 @@ TypeNode::TypeNode() {
 TypeNode::~TypeNode() {
 }
 
-void TypeNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "type"<<id<<";\n";
-    outfile << "type"<<id<<"[label=\"";
-    for(int i = 0; i < mindirection; i++) {
-        outfile << "*";
-    }
-    outfile <<mname<<"\"];\n";
-}
-
 AstNodeType TypeNode::nodeType() {
     return AstNodeType::Type;
 }

@@ -15,10 +15,6 @@ SemanticType AstNode::getType() {
     return mstype;
 }
 
-void AstNode::makeGraph(std::ofstream& outfile) {
-    std::cout << "makeGraph not called on subclass\n";
-}
-
 void AstNode::addChild(AstNode* child) {
     std::cout << "addChild not called on subclass\n";
 }

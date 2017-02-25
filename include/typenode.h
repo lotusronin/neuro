@@ -10,7 +10,6 @@ class TypeNode : public AstNode {
         static int count;
         TypeNode();
         ~TypeNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         void setTypeName(std::string tname);

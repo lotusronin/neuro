@@ -11,16 +11,6 @@ VarNode::VarNode() {
 VarNode::~VarNode() {
 }
 
-void VarNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "var"<<id<<";\n";
-    outfile << "var"<<id<<"[label=\""<<mname<<"\"];\n";
-    for (auto child : mchildren) {
-        outfile << "var" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType VarNode::nodeType() {
     return AstNodeType::Var;
 }

@@ -11,15 +11,6 @@ VarDecNode::VarDecNode() {
 VarDecNode::~VarDecNode() {
 }
 
-void VarDecNode::makeGraph(std::ofstream& outfile) {
-    outfile << "vardec" << id << ";\n";
-    outfile << "vardec" << id << "[label=\"vardec\"];\n";
-    for (auto child : mchildren) {
-        outfile << "vardec" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType VarDecNode::nodeType() {
     return AstNodeType::VarDec;
 }

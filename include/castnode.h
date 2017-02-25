@@ -10,14 +10,13 @@ class CastNode : public AstNode {
         static int count;
         CastNode();
         ~CastNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
         TypeInfo fromType;
         TypeInfo toType;
-    private:
+//    private:
         int id;
 };
 

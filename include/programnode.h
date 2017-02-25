@@ -8,7 +8,6 @@ class ProgramNode : public AstNode {
     public:
         ProgramNode();
         ~ProgramNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();

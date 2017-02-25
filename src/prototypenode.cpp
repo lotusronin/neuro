@@ -11,16 +11,6 @@ PrototypeNode::PrototypeNode() {
 PrototypeNode::~PrototypeNode() {
 }
 
-void PrototypeNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "prototype" << id << ";\n";
-    outfile << "prototype" << id << "[label=\"extern fn "<<mfuncname<<"\"];\n";
-    for (auto param : mparams) {
-        outfile << "prototype" << id << " -> ";
-        param->makeGraph(outfile);
-    }
-}
-
 AstNodeType PrototypeNode::nodeType() {
     return AstNodeType::Prototype;
 }

@@ -10,7 +10,6 @@ class ElseNode : public AstNode {
         static int count;
         ElseNode();
         ~ElseNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();

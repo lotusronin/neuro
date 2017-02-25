@@ -10,14 +10,13 @@ class VarNode : public AstNode {
         static int count;
         VarNode();
         ~VarNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         void addVarName(std::string name);
         std::string getVarName();
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
-    private:
+    //private:
         int id;
         std::string mname;
 };

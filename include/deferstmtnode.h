@@ -10,12 +10,11 @@ class DeferStmtNode : public AstNode {
         static int count;
         DeferStmtNode();
         ~DeferStmtNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
-    private:
+//    private:
         int id;
 };
 

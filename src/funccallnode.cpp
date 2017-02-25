@@ -11,16 +11,6 @@ FuncCallNode::FuncCallNode() {
 FuncCallNode::~FuncCallNode() {
 }
 
-void FuncCallNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "funcCall" << id << ";\n";
-    outfile << "funcCall" << id << "[label=\"" << mfuncname << "()\"];\n";
-    for (auto arg : margs) {
-        outfile << "funcCall" << id << " -> ";
-        arg->makeGraph(outfile);
-    }
-}
-
 AstNodeType FuncCallNode::nodeType() {
     return AstNodeType::FuncCall;
 }

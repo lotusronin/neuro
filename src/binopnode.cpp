@@ -15,15 +15,6 @@ BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
 }
 
-void BinOpNode::makeGraph(std::ofstream& outfile) {
-    outfile << "binop" << id << ";\n";
-    outfile << "binop" << id << "[label=\"" << mop << "\ntype: " << mstype << "\"];\n";
-    for (auto child : mchildren) {
-        outfile << "binop" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType BinOpNode::nodeType() {
     return AstNodeType::BinOp;
 }

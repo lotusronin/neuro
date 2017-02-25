@@ -10,14 +10,13 @@ class StructDefNode : public AstNode {
         static int count;
         StructDefNode();
         ~StructDefNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::string& getIdent();
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
         std::string ident;
-    private:
+    //private:
         int id;
 };
 

@@ -11,15 +11,6 @@ ConstantNode::ConstantNode() {
 ConstantNode::~ConstantNode() {
 }
 
-void ConstantNode::makeGraph(std::ofstream& outfile) {
-    outfile << "constant" << id << ";\n";
-    outfile << "constant" << id << "[label=\"" << mval << "\ntype: " << mstype << "\"];\n";
-    for (auto child : mchildren) {
-        outfile << "constant" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType ConstantNode::nodeType() {
     return AstNodeType::Const;
 }

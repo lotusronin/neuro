@@ -36,6 +36,7 @@ void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
 }
 
 void linkFile(std::string file);
+void makeDotGraph(std::ofstream& outfile, AstNode* ast);
 
 int main(int argc, char** argv) {
     std::cout << "Welcome to the neuro compiler.\n";
@@ -50,6 +51,10 @@ int main(int argc, char** argv) {
             badargspass();
             return 0;
         }
+
+        std::cout << "Sizeof(AstNode) = " << sizeof(AstNode) << '\n';
+        std::cout << "Sizeof(Token) = " << sizeof(Token) << '\n';
+        std::cout << "Sizeof(TypeInfo) = " << sizeof(TypeInfo) << '\n';
 
         std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 
@@ -87,14 +92,15 @@ int main(int argc, char** argv) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);
                 auto start = std::chrono::steady_clock::now();
-                ast->makeGraph(dotfileout);
+                //ast->makeGraph(dotfileout);
+                makeDotGraph(dotfileout,ast);
                 auto end = std::chrono::steady_clock::now();
                 auto diff = end - start;
                 std::cout << "Time for make graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
                 dotfileout.close();
                 std::string cmd = "dot -Tpng "+target1.targetName()+".dot -o "+target1.targetName()+".png";
                 std::cout << "Running command: " << cmd << "\n";
-                system(cmd.c_str());
+                //system(cmd.c_str());
             }
 
             auto start_ir = std::chrono::steady_clock::now();
@@ -105,8 +111,8 @@ int main(int argc, char** argv) {
                 std::cout << "IR output:\n";
                 //dumpIR();
 
-                writeObj(target1.targetName());
-                linkFile(target1.targetName());
+                //writeObj(target1.targetName());
+                //linkFile(target1.targetName());
                 //writeIR(target1.targetName());
             }
             auto end_total = std::chrono::steady_clock::now();

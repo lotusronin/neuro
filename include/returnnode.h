@@ -9,12 +9,11 @@ class ReturnNode : public AstNode {
         static int count;
         ReturnNode();
         ~ReturnNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*> mchildren;
-    private:
+    //private:
         int id;
 };
 

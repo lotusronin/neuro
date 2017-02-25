@@ -11,15 +11,6 @@ IfNode::IfNode() {
 IfNode::~IfNode() {
 }
 
-void IfNode::makeGraph(std::ofstream& outfile) {
-    outfile << "if" << id << ";\n";
-    outfile << "if" << id << "[label=\"if\"];\n";
-    for (auto s : mstatements) {
-        outfile << "if" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType IfNode::nodeType() {
     return AstNodeType::IfStmt;
 }
