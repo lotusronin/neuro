@@ -212,7 +212,7 @@ void printSizes() {
     std::cout << "defer " << sizeof(DeferStmtNode) << '\n';
     std::cout << "loopstmt " << sizeof(LoopStmtNode) << '\n';
     std::cout << "if " << sizeof(IfNode) << '\n';
-    std::cout << "else " << sizeof(ElseNode) << '\n';
+    //std::cout << "else " << sizeof(ElseNode) << '\n';
     std::cout << "funccall " << sizeof(FuncCallNode) << '\n';
     std::cout << "var " << sizeof(VarNode) << '\n';
     std::cout << "binop " << sizeof(BinOpNode) << '\n';
@@ -778,11 +778,11 @@ void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::selse) {
         return;
     }
-    ElseNode* elsenode = new ElseNode();
-    parent->addChild(elsenode);
+    //ElseNode* elsenode = new ElseNode();
+    //parent->addChild(elsenode);
     //consume else
     lexer->lex();
-    parseStatement(lexer, elsenode);
+    parseStatement(lexer, parent);
 }
 
 void parseLoop(LexerTarget* lexer, AstNode* parent) {

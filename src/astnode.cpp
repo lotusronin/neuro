@@ -21,8 +21,8 @@ void AstNode::addChild(AstNode* child) {
 }
 
 AstNode* AstNode::lastChild() {
-    std::cout << "lastChild not called on subclass\n";
-    return nullptr;
+    //std::cout << "lastChild not called on subclass\n";
+    return mchildren.back();
 }
 
 std::vector<AstNode*>* AstNode::getChildren() {

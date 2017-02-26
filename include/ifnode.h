@@ -15,6 +15,7 @@ class IfNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         AstNode* getConditional();
         AstNode* getThen();
+        AstNode* getElse();
     //private:
         int id;
 };
