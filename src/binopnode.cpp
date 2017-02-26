@@ -97,6 +97,7 @@ SemanticType BinOpNode::getType() {
     //The . and -> operators don't care about lhs type
     //also this breaks for math operators since it always
     //promotes to the rhs type, instead of largest
+    /*
     if(mpriority == 3) {
         mstype = mchildren[0]->getType();
     } else {
@@ -108,9 +109,9 @@ SemanticType BinOpNode::getType() {
         } else {
             mstype = rhs_type;
         }
-    }
-
-    return mstype;
+    }*/
+    return mtypeinfo.type;
+    //return mstype;
 }
 
 void BinOpNode::printDeleted() {

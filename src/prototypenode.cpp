@@ -16,11 +16,11 @@ AstNodeType PrototypeNode::nodeType() {
 }
 
 void PrototypeNode::addParams(AstNode* node) {
-    mparams.push_back(node);
+    mchildren.push_back(node);
 }
 
 void PrototypeNode::addChild(AstNode* node) {
-    mparams.push_back(node);
+    mchildren.push_back(node);
 }
 
 void PrototypeNode::addFuncName(std::string funcname) {
@@ -28,15 +28,14 @@ void PrototypeNode::addFuncName(std::string funcname) {
 }
 
 std::vector<AstNode*>* PrototypeNode::getChildren() {
-    return &mparams;
+    return &mchildren;
 }
 
 std::vector<AstNode*>* PrototypeNode::getParameters() {
-    std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-1);
+    std::vector<AstNode*>* params = new std::vector<AstNode*>(mchildren.begin(),mchildren.end()-1);
     return params;
 }
 
 SemanticType PrototypeNode::getType() {
     return mtypeinfo.type;
-    //return mparams[mparams.size()-1]->getType();
 }

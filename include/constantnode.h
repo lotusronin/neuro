@@ -16,7 +16,7 @@ class ConstantNode : public AstNode {
         void setVal(std::string& val);
         void setToken(const Token& t);
         std::string getVal();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
     //private:
         int id;
         std::string mval;

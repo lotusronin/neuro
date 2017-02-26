@@ -555,7 +555,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "Type checking function call " << funcname << "\n";
                     SymbolTableEntry* e = entries.at(0);
                     auto funcparams = e->funcParams;
-                    auto args = funccall->margs;
+                    //auto args = funccall->margs;
+                    auto args = funccall->mchildren;
                     std::vector<TypeInfo> arg_types;
                     arg_types.reserve(sizeof(TypeInfo)*args.size());
                     for(auto a : args) {

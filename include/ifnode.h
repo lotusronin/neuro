@@ -13,7 +13,6 @@ class IfNode : public AstNode {
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mstatements;
         AstNode* getConditional();
         AstNode* getThen();
     //private:

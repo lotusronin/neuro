@@ -12,11 +12,13 @@ AstNodeType AstNode::nodeType() {
 }
 
 SemanticType AstNode::getType() {
-    return mstype;
+    return mtypeinfo.type;
+    //return mstype;
 }
 
 void AstNode::addChild(AstNode* child) {
-    std::cout << "addChild not called on subclass\n";
+    //std::cout << "addChild not called on subclass\n";
+    mchildren.push_back(child);
 }
 
 AstNode* AstNode::lastChild() {
@@ -25,8 +27,8 @@ AstNode* AstNode::lastChild() {
 }
 
 std::vector<AstNode*>* AstNode::getChildren() {
-    std::cout << "getChildren not called on subclass\n";
-    return nullptr;
+    //std::cout << "getChildren not called on subclass\n";
+    return &mchildren;
 }
 
 void AstNode::setToken(Token& t) {

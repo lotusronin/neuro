@@ -13,7 +13,7 @@ class ElseNode : public AstNode {
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mstatements;
+        //std::vector<AstNode*> mstatements;
     private:
         int id;
 };

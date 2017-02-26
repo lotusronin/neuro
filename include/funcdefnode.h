@@ -18,7 +18,7 @@ class FuncDefNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*>* getParameters();
         AstNode* getFunctionBody();
-        std::vector<AstNode*> mparams;
+        //std::vector<AstNode*> mparams;
         std::string mfuncname;
     //private:
         int id;

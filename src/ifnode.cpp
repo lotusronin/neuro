@@ -16,17 +16,21 @@ AstNodeType IfNode::nodeType() {
 }
 
 void IfNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    //mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 
 std::vector<AstNode*>* IfNode::getChildren() {
-    return &mstatements;
+    //return &mstatements;
+    return &mchildren;
 }
 
 AstNode* IfNode::getConditional() {
-    return mstatements.at(0);
+    //return mstatements.at(0);
+    return mchildren.at(0);
 }
 
 AstNode* IfNode::getThen() {
-    return mstatements.at(1);
+    //return mstatements.at(1);
+    return mchildren.at(1);
 }

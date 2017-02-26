@@ -14,7 +14,7 @@ class LoopStmtNode : public AstNode {
         void addChild(AstNode* node);
         void setBreak(bool b);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
     //private:
         int id;
         bool isBreak;

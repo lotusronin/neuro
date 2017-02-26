@@ -17,7 +17,7 @@ class PrototypeNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*>* getParameters();
         SemanticType getType();
-        std::vector<AstNode*> mparams;
+        //std::vector<AstNode*> mparams;
         std::string mfuncname;
     //private:
         int id;

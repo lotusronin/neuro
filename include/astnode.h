@@ -103,15 +103,16 @@ class AstNode {
         AstNode();
         virtual ~AstNode();
         virtual AstNodeType nodeType();
-        virtual SemanticType getType();
+        SemanticType getType();
         TypeInfo* getTypeInfo();
-        virtual void addChild(AstNode* child);
+        void addChild(AstNode* child);
         virtual AstNode* lastChild();
         virtual void setToken(Token& t);
-        virtual std::vector<AstNode*>* getChildren();
+        std::vector<AstNode*>* getChildren();
         Token mtoken;
         SemanticType mstype = SemanticType::Typeless;
         TypeInfo mtypeinfo;
+        std::vector<AstNode*> mchildren;
 };
 
 

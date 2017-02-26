@@ -15,7 +15,7 @@ class VarNode : public AstNode {
         void addVarName(std::string name);
         std::string getVarName();
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
     //private:
         int id;
         std::string mname;

@@ -16,15 +16,18 @@ AstNodeType BlockNode::nodeType() {
 }
 
 void BlockNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    //mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 
 AstNode* BlockNode::lastChild() {
-    return mstatements.back();
+    //return mstatements.back();
+    return mchildren.back();
 }
 
 std::vector<AstNode*>* BlockNode::getChildren() {
-    return &mstatements;
+    //return &mstatements;
+    return &mchildren;
 }
 
 int BlockNode::getId() {

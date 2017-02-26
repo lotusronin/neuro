@@ -14,7 +14,7 @@ class StructDefNode : public AstNode {
         void addChild(AstNode* node);
         std::string& getIdent();
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
         std::string ident;
     //private:
         int id;

@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
         std::cout << "Sizeof(AstNode) = " << sizeof(AstNode) << '\n';
         std::cout << "Sizeof(Token) = " << sizeof(Token) << '\n';
         std::cout << "Sizeof(TypeInfo) = " << sizeof(TypeInfo) << '\n';
+        std::cout << "Sizeof(vec<AstNode*>) = " << sizeof(std::vector<AstNode*>) << '\n';
 
         std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 

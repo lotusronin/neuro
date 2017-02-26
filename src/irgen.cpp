@@ -671,10 +671,12 @@ void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, Symb
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(elseBB);
     Builder.SetInsertPoint(elseBB);
-    if(ifn->mstatements.size() == 3) {
+    //if(ifn->mstatements.size() == 3) {
+    if(ifn->mchildren.size() == 3) {
         //TODO(marcus): don't hardcode child access
-        auto elsen = (ElseNode*) ifn->mstatements.at(2);
-        statementCodegen(elsen->mstatements.at(0), continueto, breakto, sym);
+        //auto elsen = (ElseNode*) ifn->mstatements.at(2);
+        auto elsen = (ElseNode*) ifn->mchildren.at(2);
+        statementCodegen(elsen->mchildren.at(0), continueto, breakto, sym);
     }
     Builder.CreateBr(mergeBB);
     enclosingscope->getBasicBlockList().push_back(mergeBB);

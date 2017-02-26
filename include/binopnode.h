@@ -24,7 +24,7 @@ class BinOpNode : public AstNode {
         int getPriority();
         void setToken(Token& t);
         SemanticType getType();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
         static void printDeleted();
         static int deleted;
     //private:

@@ -16,11 +16,13 @@ AstNodeType FuncCallNode::nodeType() {
 }
 
 void FuncCallNode::addArgs(AstNode* node) {
-    margs.push_back(node);
+    //margs.push_back(node);
+    mchildren.push_back(node);
 }
 
 void FuncCallNode::addChild(AstNode* node) {
-    margs.push_back(node);
+    //margs.push_back(node);
+    mchildren.push_back(node);
 }
 
 void FuncCallNode::addFuncName(std::string funcname) {
@@ -28,5 +30,6 @@ void FuncCallNode::addFuncName(std::string funcname) {
 }
 
 std::vector<AstNode*>* FuncCallNode::getChildren() {
-    return &margs;
+    //return &margs;
+    return &mchildren;
 }
