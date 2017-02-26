@@ -195,7 +195,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     return F;
 }
 
-Function* functionCodgen(AstNode* n, SymbolTable* sym) {
+Function* functionCodegen(AstNode* n, SymbolTable* sym) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
     Function* F = module->getFunction(funcnode->mfuncname);
@@ -238,10 +238,10 @@ Function* functionCodgen(AstNode* n, SymbolTable* sym) {
 
     for(auto &Arg : F->args()) {
         //std::cout << "Arg name: " << Arg.getName() << "\n";
-        AllocaInst *alloca = Builder.CreateAlloca(Arg.getType(),0,Arg.getName());
+        AllocaInst *alloca = Builder.CreateAlloca(Arg.getType(),0,Arg.getName()+".addr");
         Builder.CreateStore(&Arg, alloca);
-        //TODO(marcus): make sure to add these to the ir symbol table
-        varTable[Arg.getName().str()] = alloca;
+        auto sym_entry = getFirstEntry(sym, Arg.getName());
+        sym_entry->address = (void*) alloca;
     }
     delete vec;
     return F;
@@ -287,7 +287,7 @@ Value* retCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 #define ANT AstNodeType
-Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
+Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
     //TODO(marcus): Returning 0 isn't a great idea in the long run
     //if we fail to generate an expression we should report an error
     Value* val = ConstantInt::get(context, APInt(32,0));
@@ -411,7 +411,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 //std::cout << "Var name " << lhs->mtoken.token << "\n";
                 //std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
                 auto structname = ((VarNode*)lhs)->getVarName();
-                auto lhsv = varTable[structname];
+                auto sym_entry = getFirstEntry(sym, structname);
+                auto lhsv = (Value*)sym_entry->address;
                 //FIXME(marcus): need a cleaner way to get address of variables
                 //should use the symbol table instead.
                 //Currently it generates a load of the lefthand side variable
@@ -439,6 +440,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                         //std::cout << "Success, getting element index " << index << "\n";
                         //return Builder.CreateGEP(structtype,lhsv,indexval,structmembername);
                         auto memberptr = Builder.CreateStructGEP(structtype,lhsv,index,"ptr_"+structmembername);
+                        if(lvalue) {
+                            return memberptr;
+                        }
                         return Builder.CreateLoad(memberptr,structmembername);
 
                     } else {
@@ -453,6 +457,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 //TODO(marcus): we are assuming the expression underneath will be just a variable of
                 //some pointer type
                 auto childvar = expressionCodegen(lhs,sym);
+                if(lvalue) {
+                    return childvar;
+                }
                 return Builder.CreateLoad(childvar,"deref");
             } else if(op.compare("&") == 0) {
                 //std::cout << "Generating address of\n";
@@ -461,7 +468,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 if(lhs->nodeType() == AstNodeType::Var) {
                     //std::cout << "We have a var to take the address of!\n";
                     auto varname = ((VarNode*)lhs)->getVarName();
-                    return varTable[varname];
+                    auto sym_entry = getFirstEntry(sym,varname);
+                    return (Value*)sym_entry->address;
                 }
                 //TODO(marcus): this is wrong but will need to fix storing of variables for IR
                 //generation first. Maybe its own symbol table?
@@ -490,7 +498,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
             {
                 //std::cout << "generating varload!\n";
                 auto varn = (VarNode*)n;
-                auto varloc = varTable[varn->getVarName()];
+                auto sym_entry = getFirstEntry(sym, varn->getVarName());
+                auto varloc = (Value*)sym_entry->address;
                 //if(varloc == nullptr) //std::cout << "NULLPTR!!!\n";
                 auto varv = Builder.CreateLoad(varloc,varn->getVarName());
                 val = varv;
@@ -615,10 +624,9 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
     auto varn = (VarNode*)vardecn->mchildren.at(0);
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     auto typeinfo = symbol_table_entry->typeinfo;
-    //TODO(marcus): fix how you access the name of the variable
     auto irtype = getIRType(typeinfo);
     auto alloc = Builder.CreateAlloca(irtype,0,varn->getVarName());
-    varTable[varn->getVarName()] = alloc;
+    symbol_table_entry->address = (void*)alloc;
     return;
 }
 
@@ -630,9 +638,8 @@ void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     auto typeinfo = symbol_table_entry->typeinfo;
     //std::cout << typeinfo << '\n';
     auto ir_type = getIRType(typeinfo);
-    //TODO(marcus): fix how you access the name of the variable
     AllocaInst* alloca = Builder.CreateAlloca(ir_type,0,varn->getVarName());
-    varTable[varn->getVarName()] = alloca;
+    symbol_table_entry->address = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1), sym);
     //std::cout << "generating store for assignment\n";
@@ -644,13 +651,18 @@ void assignCodegen(AstNode* n, SymbolTable* sym) {
     //std::cout << "Generating assingment\n";
     //TODO(marcus): don't hardcode child access
     auto assignn = (AssignNode*)n;
-    auto varn = (VarNode*) assignn->mchildren.at(0);
+    auto lhs = assignn->mchildren.at(0);
+    bool lval = (lhs->nodeType() != AstNodeType::Var);
     auto rhs = assignn->mchildren.at(1);
-    //TODO(marcus): make left hand side work for expressions that dereference an address
-    //(arrays, *ptrs, member access)
-    Value* var = varTable[varn->getVarName()];
     Value* val = expressionCodegen(rhs,sym);
-    Builder.CreateStore(val,var);
+    if(lval) {
+        auto lhsv = expressionCodegen(lhs,sym,lval);
+        Builder.CreateStore(val,lhsv);
+    } else {
+        auto varn = (VarNode*) assignn->mchildren.at(0);
+        Value* var = (Value*)getFirstEntry(sym,varn->getVarName())->address;
+        Builder.CreateStore(val,var);
+    }
     return;
 }
 
@@ -820,7 +832,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
         case ANT::FuncDef:
             {
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
-                Function* F = functionCodgen(ast, scope);
+                Function* F = functionCodegen(ast, scope);
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
                return;
             }

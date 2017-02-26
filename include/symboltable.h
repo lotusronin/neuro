@@ -14,6 +14,7 @@ struct SymbolTableEntry {
     TypeInfo typeinfo;
     std::vector<std::pair<SemanticType,AstNode*>> funcParams;
     std::vector<std::pair<TypeInfo,AstNode*>> funcParamsTypeInfo;
+    void* address;
 };
 
 struct SymbolTable {

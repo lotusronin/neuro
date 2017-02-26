@@ -469,6 +469,7 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         case TokenType::id:
             mstype = SemanticType::User;
             std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
+            t.userid = tok.token;
             break;
         default:
             mstype = SemanticType::Typeless;
@@ -740,7 +741,17 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         //consume ;
         lexer->lex();
     } else {
-        parseExpression(lexer, parent);
+        AssignNode* anode = new AssignNode();
+        parseExpression(lexer, anode);
+        if(lexer->peek().type == TokenType::assignment) {
+            parent->addChild(anode);
+            //consume =
+            lexer->lex();
+            parseExpression(lexer, anode);
+        } else {
+            parent->addChild(anode->mchildren.at(0));
+            delete anode;
+        }
         //consume ;
         lexer->lex();
     }
@@ -1361,6 +1372,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         vnode->addVarName(tokid.token);
         vdecnode->addChild(vnode);
         parseType(lexer, vdecnode);
+        vnode->mtypeinfo = vdecnode->mtypeinfo;
         //consume ;
         lexer->lex();
         parent->addChild(vdecnode);

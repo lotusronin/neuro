@@ -190,6 +190,7 @@ SymbolTable progSymTab;
 //per file?
 //a list of user defined types with a mapping of member name to member index
 std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
+std::unordered_map<std::string,AstNode*> structList;
 
 static void registerTypeDef(StructDefNode* n) {
     auto type_name = n->ident;
@@ -198,10 +199,11 @@ static void registerTypeDef(StructDefNode* n) {
         //should we error?
         return;
     }
+    structList.insert(std::make_pair(type_name,n));
     std::unordered_map<std::string,int>* member_map = new std::unordered_map<std::string,int>();
     int index = 0;
     for(auto c : n->mchildren) {
-        if(c->nodeType() != ANT::Var) {
+        if(c->nodeType() != ANT::VarDec) {
             //TODO(marcus): report error unless we allow other things in struct body
             //definitions.
             continue;
@@ -215,8 +217,7 @@ static void registerTypeDef(StructDefNode* n) {
 
     userTypesList.insert(std::make_pair(type_name,member_map));
 }
-
-void populateTypeList(AstNode* ast) {
+void populateTypeList(AstNode* ast, SymbolTable* sym) {
     //We only need to go through the list of top level statements
     //of each program as we won't ever have struct definitions occur in
     //function definitions, prototypes, etc, so we can skip any of these 
@@ -229,6 +230,21 @@ void populateTypeList(AstNode* ast) {
             case ANT::StructDef:
                 //parse definition!
                 registerTypeDef((StructDefNode*)c);
+                break;
+            default:
+                continue;
+                break;
+        }
+    }
+}
+void populateTypeList(AstNode* ast) {
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::CompileUnit:
+                {
+                    auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                    populateTypeList(c, scope);
+                }
                 break;
             default:
                 continue;
@@ -305,8 +321,8 @@ void typeCheckPass(AstNode* ast) {
                 typeCheckPass(c, scope);
                 }
                 break;
-            case ANT::StructDef:
-                break;
+            //case ANT::StructDef:
+                //break;
             default:
                 //std::cout << "unknown ast node type!\n";
                 break;
@@ -605,6 +621,28 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         binopn->mtypeinfo = t;
                     } else if(op.compare(".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
+                        typeCheckPass(c,symTab);
+                        //FIXME(marcus): this is broken if the lhs is not a variable
+                        //if . also dereferences then we will need to handle this case
+                        //or maybe the right side is a dereferenced struct ptr, also
+                        //will need to handle that case
+                        auto varname = ((VarNode*)binopn->LHS())->getVarName();
+                        auto entry = getFirstEntry(symTab,varname);
+                        if(!entry) std::cout << "No Entry found for variable" << varname << "\n";
+                        auto lhs_t = entry->typeinfo;
+                        auto structtypename = lhs_t.userid;
+                        auto membername = ((VarNode*)binopn->RHS())->getVarName();
+                        auto tmp = structList.find(structtypename);
+                        if(tmp == structList.end()) std::cout << "Error, struct not found...\n";
+                        auto strdef = tmp->second;
+                        for(auto member : strdef->mchildren) {
+                            auto vardec = (VarDecNode*)member;
+                            auto var = (VarNode*)vardec->mchildren[0];
+                            if(var->getVarName() == membername) {
+                                binopn->mtypeinfo = var->mtypeinfo; 
+                                break;
+                            }
+                        }
                     } else if(op.compare("&") == 0) {
                         //TODO(marcus): make sure to differentiate between address-of and
                         //bitwise-and when you get both
@@ -695,7 +733,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto assignn = (AssignNode*)c;
                     auto lhs = assignn->getLHS();
                     auto rhs = assignn->getRHS();
-                    typeCheckPass(rhs,symTab);
+                    typeCheckPass(c,symTab);
                     TypeInfo lhs_typeinfo = getTypeInfo(lhs,symTab);
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
                     //std::cout << "All Type info gotten, beginning type checks\n";
@@ -774,6 +812,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Const:
                 //std::cout << __FILE__ << ':' << __FUNCTION__ << " Constant!\n";
                 break;
+            case ANT::StructDef:
+                {
+                    typeCheckPass(c,symTab);
+                }
             default:
                 //std::cout << __FILE__ << ':' << __FUNCTION__ << " Default Case!\n";
                 break;
@@ -909,8 +951,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
                     auto lhs = ((AssignNode*)c)->getLHS();
                     auto rhs = ((AssignNode*)c)->getRHS();
-                    variableUseCheck(lhs,symTab);
-                    variableUseCheck(rhs,symTab);
+                    variableUseCheck(c,symTab);
                 }
                 break;
             case ANT::VarDec:

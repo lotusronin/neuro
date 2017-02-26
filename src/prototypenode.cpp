@@ -32,7 +32,7 @@ std::vector<AstNode*>* PrototypeNode::getChildren() {
 }
 
 std::vector<AstNode*>* PrototypeNode::getParameters() {
-    std::vector<AstNode*>* params = new std::vector<AstNode*>(mchildren.begin(),mchildren.end()-1);
+    std::vector<AstNode*>* params = new std::vector<AstNode*>(mchildren.begin(),mchildren.end());
     return params;
 }
 
