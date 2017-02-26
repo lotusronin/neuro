@@ -63,7 +63,8 @@ enum class AstNodeType {
     LoopStmt,
     Assign,
     Default,
-    Cast
+    Cast,
+    SizeOf
 };
 
 enum class SemanticType {

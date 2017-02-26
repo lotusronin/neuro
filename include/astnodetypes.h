@@ -26,5 +26,6 @@
 #include "assignnode.h"
 #include "structdefnode.h"
 #include "castnode.h"
+#include "sizeofnode.h"
 
 #endif

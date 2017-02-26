@@ -1136,3 +1136,86 @@ void deferPass(AstNode* ast) {
     }
     return;
 }
+
+#define ST SemanticType
+
+static int calcTypeSize(TypeInfo t) {
+//TODO(marcus): make this not hard coded
+    if(t.indirection) {
+        return 8;
+    }
+
+    switch(t.type) {
+        case ST::Bool:
+        case ST::Char:
+        case ST::u8:
+        case ST::s8:
+            return 1;
+            break;
+        case ST::u16:
+        case ST::s16:
+            return 2;
+            break;
+        case ST::u32:
+        case ST::s32:
+        case ST::Float:
+        case ST::Int:
+        case ST::intlit:
+        case ST::floatlit:
+            return 4;
+            break;
+        case ST::u64:
+        case ST::s64:
+        case ST::Double:
+            return 8;
+            break;
+        case ST::User:
+/*
+ *            {
+ *                int sum = 0;
+ *                //TODO(marcus): factor in alignment?
+ *                auto iter = userTypesList.find(t.userid);
+ *                if(iter == userTypesList.end()) {
+ *                    //TODO(marcus): add error case
+ *                    semanticError(SemanticErrorType::Unknown, t,t);
+ *                    return 1;
+ *                }
+ *
+ *                auto members = iter->second;
+ *
+ *                for(auto i : *members) {
+ *                    s
+ *                }
+ *                return sum;
+ *            }
+ *            break;
+ */
+            //TODO(marcus): implement this for user defined types!
+            return 1;
+        default:
+            semanticError(SemanticErrorType::Unknown, t,t);
+            return 0;
+            break;
+    }
+}
+
+#undef ST
+
+void resolveSizeOfs(AstNode* ast) {
+    std::vector<AstNode*>* vec = ast->getChildren();
+    for(unsigned int i = 0; i < vec->size(); i++) {
+        AstNode* child = (*vec)[i];
+        if(child->nodeType() == ANT::SizeOf) {
+            int size = calcTypeSize(child->mtypeinfo);
+            auto val = std::to_string(size);
+            auto cnode = new ConstantNode();
+            cnode->setVal(val);
+            cnode->mtypeinfo.type = SemanticType::intlit;
+            (*vec)[i] = cnode;
+            delete child; //TODO(marcus): allocate all sizeofs with a special allocator
+        }
+    }
+    for(auto c : (*vec)) {
+        resolveSizeOfs(c);
+    }
+}

@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
             populateTypeList(ast);
+            resolveSizeOfs(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();
@@ -109,7 +110,7 @@ int main(int argc, char** argv) {
                 //Generate IR code
                 generateIR(ast);
                 std::cout << "IR output:\n";
-                //dumpIR();
+                dumpIR();
 
                 //writeObj(target1.targetName());
                 //linkFile(target1.targetName());

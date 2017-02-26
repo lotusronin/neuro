@@ -14,6 +14,7 @@ void variableUseAndTypeCheck(AstNode* ast);
 void variableUseCheck(AstNode* ast);
 void printSymbolTable();
 void deferPass(AstNode* ast);
+void resolveSizeOfs(AstNode* ast);
 SymbolTable* getSymtab(std::string& file);
 
 enum class SemanticErrorType{

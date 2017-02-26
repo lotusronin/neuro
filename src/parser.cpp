@@ -1151,6 +1151,28 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         parseConst(lexer, &parent);
     } else if(tok.type == TokenType::id) {
         parseFunccallOrVar(lexer, &parent);
+    } else if(tok.type == TokenType::ssizeof) {
+        //consume sizeof
+        lexer->lex();
+        std::cout << "parsing sizeof!\n";
+        std::cout << lexer->peek().token << '\n';
+        if(lexer->peek().type != TokenType::lparen) {
+            parse_error(PET::Unknown, tok);
+        }
+        //consume (
+        lexer->lex();
+        //parseType
+        auto sizeofn = new SizeOfNode();
+        std::cout << "parsing sizeof Type!\n";
+        parseType(lexer,sizeofn);
+        if(lexer->peek().type != TokenType::rparen) {
+            parse_error(PET::Unknown,tok);
+        }
+        //consume )
+        lexer->lex();
+        std::cout << "parsing sizeof done!\n";
+        std::cout << "Next is " << lexer->peek().token << '\n';
+        return sizeofn;
     } else {
         assert(false);
         parse_error(PET::Unknown, tok);

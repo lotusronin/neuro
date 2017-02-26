@@ -45,7 +45,8 @@ TokenType keyword_type[] = {
     TokenType::sbreak,
     TokenType::scontinue,
     TokenType::tstruct,
-    TokenType::cast
+    TokenType::cast,
+    TokenType::ssizeof
 };
 
 const char* keyword_array[] = {
@@ -73,7 +74,8 @@ const char* keyword_array[] = {
     "break",
     "continue",
     "struct",
-    "cast"
+    "cast",
+    "sizeof"
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 

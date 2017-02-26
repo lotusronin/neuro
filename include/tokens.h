@@ -59,6 +59,7 @@ enum class TokenType {
     tilda,
     mod,
     cast,
+    ssizeof,
     eof
 };
 
