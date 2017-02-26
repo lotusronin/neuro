@@ -75,7 +75,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             {
                 id = ((FuncDefNode*)ast)->id;
                 outfile << "funcDef" << id << ";\n";
-                outfile << "funcDef" << id << "[label=\"fn "<<((FuncDefNode*)ast)->mfuncname<<"\ntype: "<<((FuncDefNode*)ast)->mstype<<"\"];\n";
+                outfile << "funcDef" << id << "[label=\"fn "<<((FuncDefNode*)ast)->mfuncname<<"\ntype: "<<((FuncDefNode*)ast)->mtypeinfo.type<<"\"];\n";
                 header = "funcDef";
             }
             break;
@@ -139,7 +139,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             {
                 id = ((BinOpNode*)ast)->id;
                 outfile << "binop" << id << ";\n";
-                outfile << "binop" << id << "[label=\"" << ((BinOpNode*)ast)->mop << "\ntype: " << ((BinOpNode*)ast)->mstype << "\"];\n";
+                outfile << "binop" << id << "[label=\"" << ((BinOpNode*)ast)->mop << "\ntype: " << ((BinOpNode*)ast)->mtypeinfo.type << "\"];\n";
                 header =  "binop";
             }
             break;
@@ -155,7 +155,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             {
                 id = ((ConstantNode*)ast)->id;
                 outfile << "constant" << id << ";\n";
-                outfile << "constant" << id << "[label=\"" << ((ConstantNode*)ast)->mval << "\ntype: " << ((ConstantNode*)ast)->mstype << "\"];\n";
+                outfile << "constant" << id << "[label=\"" << ((ConstantNode*)ast)->mval << "\ntype: " << ((ConstantNode*)ast)->mtypeinfo << "\"];\n";
                 header = "constant";
             }
             break;

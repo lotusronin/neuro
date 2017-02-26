@@ -13,7 +13,6 @@ AstNodeType AstNode::nodeType() {
 
 SemanticType AstNode::getType() {
     return mtypeinfo.type;
-    //return mstype;
 }
 
 void AstNode::addChild(AstNode* child) {

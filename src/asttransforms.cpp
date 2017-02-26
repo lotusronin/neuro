@@ -622,16 +622,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //do compatiblity checking
                         if(isSameType(lhs_t,rhs_t)) {
                             binopn->mtypeinfo = lhs_t;
-                            binopn->mstype = lhs_t.type;
+                            //binopn->mstype = lhs_t.type;
                         } else {
                             //check for pointer math
                             if(isPointerMath(lhs_t,rhs_t)) {
                                 if(lhs_t.indirection) {
                                     binopn->mtypeinfo = lhs_t;
-                                    binopn->mstype = lhs_t.type;
+                                    //binopn->mstype = lhs_t.type;
                                 } else {
                                     binopn->mtypeinfo = rhs_t;
-                                    binopn->mstype = rhs_t.type;
+                                    //binopn->mstype = rhs_t.type;
                                 }
                             }
                             //check for casts

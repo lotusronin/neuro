@@ -479,7 +479,7 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     //t.type = tnode->mstype;
     t.type = mstype;
     parent->mtypeinfo = t;
-    parent->mstype = t.type;
+    //parent->mstype = t.type;
     if(isTokenAType(tok.type)) {
         //consume int/char/bool/float/double/void/id
         lexer->lex();

@@ -478,7 +478,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym) {
                 //std::cout << "generating constant!\n";
                 auto constn = (ConstantNode*)n;
                 auto strval = constn->getVal();
-                if(constn->mstype == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
+                if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
                 } else {
                     int constval = std::stoi(strval);
