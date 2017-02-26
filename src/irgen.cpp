@@ -130,13 +130,13 @@ Type* generateTypeCodegen(AstNode* n) {
 
     for(auto c : *(n->getChildren())) {
         auto var = (VarDecNode*)c;
-        SemanticType stype = var->getRHS()->getType();
-        int indirection = ((TypeNode*)var->getRHS())->mindirection;
+        TypeInfo typeinfo = var->mtypeinfo; 
+        SemanticType stype = typeinfo.type;
+        int indirection = typeinfo.indirection;
         if(isPrimitiveType(stype)) {
             memberTypes.push_back(getIRType(stype,"",indirection));
         } else {
-            auto typenode = (TypeNode*) var->getRHS();
-            std::string usertypename = typenode->mtoken.token;
+            std::string usertypename = typeinfo.userid;
             auto userdeftype = getStructIRType(usertypename);
             userdeftype = (StructType*) getIRPtrType((Type*)userdeftype,indirection);
             if(userdeftype == nullptr) {

@@ -208,7 +208,7 @@ void printSizes() {
     std::cout << "for " << sizeof(ForLoopNode) << '\n';
     std::cout << "while " << sizeof(WhileLoopNode) << '\n';
     std::cout << "return " << sizeof(ReturnNode) << '\n';
-    std::cout << "type " << sizeof(TypeNode) << '\n';
+    //std::cout << "type " << sizeof(TypeNode) << '\n';
     std::cout << "defer " << sizeof(DeferStmtNode) << '\n';
     std::cout << "loopstmt " << sizeof(LoopStmtNode) << '\n';
     std::cout << "if " << sizeof(IfNode) << '\n';

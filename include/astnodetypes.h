@@ -16,7 +16,6 @@
 #include "forloopnode.h"
 #include "whileloopnode.h"
 #include "returnnode.h"
-#include "typenode.h"
 #include "deferstmtnode.h"
 #include "loopstmtnode.h"
 #include "ifnode.h"

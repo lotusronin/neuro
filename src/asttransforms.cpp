@@ -934,10 +934,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto child_vec = ((VarNode*)(c->getChildren()->at(0)))->getChildren();
-                    TypeNode* typenode = nullptr;
-                    if(child_vec->size() > 0) {
-                        typenode = (TypeNode*) child_vec->at(0);
-                    }
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
                         semanticError(SET::DupDecl, name);
