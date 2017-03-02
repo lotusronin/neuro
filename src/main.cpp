@@ -80,6 +80,7 @@ int main(int argc, char** argv) {
             fixOperatorAssociativity(ast);
             populateTypeList(ast);
             resolveSizeOfs(ast);
+            checkAssignments(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();

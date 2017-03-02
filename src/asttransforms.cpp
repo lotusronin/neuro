@@ -39,6 +39,14 @@ static void semanticError(SemanticErrorType err, std::string& name) {
             ERROR("Error, Break or Continue used outside of a loop!\n");
         }
         break;
+        case SemanticErrorType::NotLValue:
+        {
+            ERROR("Error, attempting to assign " << name << " to something that is not an lvalue!\n");
+        }
+        case SemanticErrorType::DotOpLhs:
+        {
+            ERROR("Error Left hand side of '.' is not valid!\n");
+        }
         default:
             break;
     }
@@ -1258,5 +1266,46 @@ void resolveSizeOfs(AstNode* ast) {
     }
     for(auto c : (*vec)) {
         resolveSizeOfs(c);
+    }
+}
+
+void checkAssignments(AstNode* ast) {
+    std::vector<AstNode*>* vec = ast->getChildren();
+    for(unsigned int i = 0; i < vec->size(); i++) {
+        AstNode* child = (*vec)[i];
+        if(child->nodeType() == ANT::Assign) {
+            auto anode = (AssignNode*)child;
+            auto lhs = anode->getLHS();
+            if(lhs->nodeType() == ANT::Var) {
+                continue;
+            }
+            if(lhs->nodeType() == ANT::BinOp) {
+                auto binopn = (BinOpNode*)lhs;
+                auto op = binopn->mop;
+                if((op == "@") || (op == ".")) {
+                    continue;
+                }
+            }
+            //TODO(marcus): provide better information for error
+            std::string replace_me = anode->getRHS()->mtoken.token;
+            semanticError(SemanticErrorType::NotLValue,replace_me);
+        } else if(child->nodeType() == ANT::BinOp) {
+            auto binopn = (BinOpNode*)child;
+            auto op = binopn->mop;
+            if(op == ".") {
+                auto lhs = binopn->LHS();
+                auto lhst = lhs->nodeType();
+                if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp) {
+                    continue;
+                } else {
+                    //Error
+                    std::string replace_me = op;
+                    semanticError(SemanticErrorType::DotOpLhs,replace_me);
+                }
+            }
+        }
+    }
+    for(auto c : (*vec)) {
+        checkAssignments(c);
     }
 }
