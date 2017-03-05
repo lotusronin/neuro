@@ -2,6 +2,7 @@
 #define ASTTRANSFORMS_H
 #include "astnode.h"
 #include "symboltable.h"
+#include "errors.h"
 
 void collapseExpressionChains(AstNode* ast);
 void checkContinueBreak(AstNode* ast, int loopDepth);
@@ -15,23 +16,8 @@ void variableUseCheck(AstNode* ast);
 void printSymbolTable();
 void deferPass(AstNode* ast);
 void resolveSizeOfs(AstNode* ast);
+void checkAssignments(AstNode* ast, SymbolTable* symTab);
 void checkAssignments(AstNode* ast);
 SymbolTable* getSymtab(std::string& file);
-
-enum class SemanticErrorType{
-    MissmatchAssign,
-    MissmatchVarDecAssign,
-    MissmatchBinop,
-    MissmatchFunctionParams,
-    MissmatchReturnType,
-    DerefNonPointer,
-    DupDecl,
-    UndefUse,
-    NoFunc,
-    OutLoop,
-    NotLValue,
-    DotOpLhs,
-    Unknown
-};
 
 #endif

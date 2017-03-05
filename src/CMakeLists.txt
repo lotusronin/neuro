@@ -15,7 +15,7 @@ set(MY_SOURCES main.cpp lexer.cpp regexes.cpp parser.cpp astnode.cpp compileunit
     ifnode.cpp funccallnode.cpp varnode.cpp vardecnode.cpp vardecassignnode.cpp
     binopnode.cpp constantnode.cpp assignnode.cpp asttransforms.cpp symboltable.cpp
     irgen.cpp ccodegen.cpp structdefnode.cpp castnode.cpp linker.cpp graphDotGenerator.cpp
-    sizeofnode.cpp)
+    sizeofnode.cpp errors.cpp)
 
 if (WIN32)
     list(APPEND MY_SOURCES win32_linker.cpp)

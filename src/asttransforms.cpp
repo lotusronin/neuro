@@ -9,98 +9,15 @@
 
 extern bool semantic_error;
 
+//TODO(marcus): should this be global? is there a better way?
+SymbolTable progSymTab;
+
 #define ANT AstNodeType
 #define SET SemanticErrorType
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
-
-static void semanticError(SemanticErrorType err, std::string& name) {
-    std::cout << "Semantic Error!!!\n";
-    switch(err) {
-        case SemanticErrorType::DupDecl:
-        {
-            ERROR("Error: Duplicate Declaration of variable: " << name << "!\n");
-        }
-        break;
-        case SemanticErrorType::UndefUse:
-        {
-            ERROR("Error: Variable " << name << " used before it was defined!\n");
-        }
-        break;
-        case SemanticErrorType::NoFunc:
-        {
-            ERROR("Error: No Function named " << name << " is defined!\n");
-        }
-        break;
-        case SemanticErrorType::OutLoop:
-        {
-            ERROR("Error, Break or Continue used outside of a loop!\n");
-        }
-        break;
-        case SemanticErrorType::NotLValue:
-        {
-            ERROR("Error, attempting to assign " << name << " to something that is not an lvalue!\n");
-        }
-        case SemanticErrorType::DotOpLhs:
-        {
-            ERROR("Error Left hand side of '.' is not valid!\n");
-        }
-        default:
-            break;
-    }
-    std::cout << '\n';
-    semantic_error = true;
-    return;
-}
-
-static void semanticError(SemanticErrorType err, TypeInfo lt, TypeInfo rt) {
-    std::cout << "Semantic Error!!!\n";
-    switch(err) {
-    case SemanticErrorType::MissmatchAssign:
-        {
-            ERROR("Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
-        }
-        break;
-    case SemanticErrorType::MissmatchVarDecAssign:
-        {
-            ERROR("Variable Decl and Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
-        }
-        break;
-    case SemanticErrorType::MissmatchBinop:
-        {
-            ERROR("Binary Operator had conflicting types: " << lt << " binop " << rt << '\n');
-        }
-        break;
-    case SemanticErrorType::MissmatchFunctionParams:
-        {
-            ERROR("Function parameter expected " << rt << " but was given " << lt << '\n');
-        }
-        break;
-    case SemanticErrorType::MissmatchReturnType:
-        {
-            ERROR("Return value of type " << lt << " does not match function type " << rt << '\n');
-        }
-        break;
-    case SemanticErrorType::DerefNonPointer:
-        {
-            ERROR("Cannot Derefernece value, type " << lt << " is not a pointer\n");
-        }
-        break;
-    case SemanticErrorType::Unknown:
-        {
-        }
-        break;
-    default:
-        //Let's hope we never get here or something is terribly wrong... :)
-        std::cout << "UNKNOWN SEMANTIC ERROR!\n";
-        break;
-    }
-    std::cout << '\n';
-    semantic_error = true;
-    return;
-}
 
 void collapseExpressionChains(AstNode* ast) {
     //TODO(marcus): clean this up.
@@ -132,13 +49,11 @@ void collapseExpressionChains(AstNode* ast) {
     }
 }
 
-void checkContinueBreak(AstNode* ast, int loopDepth) {
+void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
     AstNodeType type = ast->nodeType();
     if(type == AstNodeType::LoopStmt) {
         if(loopDepth == 0) {
-            //TODO(marcus): get rid of tmp variable
-            std::string tmp;
-            semanticError(SET::OutLoop, tmp);
+            semanticError(SET::OutLoop, ast, symTab);
         }
     }
 
@@ -146,9 +61,33 @@ void checkContinueBreak(AstNode* ast, int loopDepth) {
     if(type == AstNodeType::ForLoop || type == AstNodeType::WhileLoop) {
         nextLoopDepth += 1;
     }
-    for(auto c : (*(ast->getChildren()))) {
-        checkContinueBreak(c, nextLoopDepth);
+    auto scope = symTab;
+    switch(type) {
+        case ANT::CompileUnit:
+            scope = getScope(symTab, ((CompileUnitNode*)ast)->getFileName());
+            break;
+        case ANT::FuncDef:
+            scope = getScope(symTab, ((FuncDefNode*)ast)->mfuncname);
+            break;
+        case ANT::Block:
+            scope = getScope(symTab, "block"+std::to_string(((BlockNode*)ast)->getId()));
+            break;
+        case ANT::ForLoop:
+            scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)ast)->getId()));
+            break;
+        case ANT::WhileLoop:
+            scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)ast)->getId()));
+            break;
+        default:
+            break;
     }
+    for(auto c : (*(ast->getChildren()))) {
+        checkContinueBreak(c, nextLoopDepth, scope);
+    }
+}
+
+void checkContinueBreak(AstNode* ast, int loopDepth) {
+    checkContinueBreak(ast,loopDepth,&progSymTab);
 }
 
 void fixOperatorAssociativity(AstNode* ast) {
@@ -190,9 +129,6 @@ void decorateAst(AstNode* ast) {
         c->getType();
     }
 }
-
-//TODO(marcus): should this be global? is there a better way?
-SymbolTable progSymTab;
 
 //TODO(marcus): Currently this is global. Is there a better way to do this? Maybed a list of types
 //per file?
@@ -511,13 +447,13 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
 }
 #undef ST
 
-static void decreaseDerefTypeInfo(TypeInfo& t) {
+static int decreaseDerefTypeInfo(TypeInfo& t) {
     if(t.indirection > 0) {
         t.indirection -= 1;
     } else {
-        semanticError(SET::DerefNonPointer,t,t);
+        return 1;
     }
-    return;
+    return 0;
 }
 
 static void increaseDerefTypeInfo(TypeInfo& t) {
@@ -577,6 +513,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     std::string funcname = funccall->mfuncname;
                     auto entries = getEntry(symTab,funcname);
                     //std::cout << "Type checking function call " << funcname << "\n";
+                    if(entries.size() == 0) {
+                        break;
+                    }
                     SymbolTableEntry* e = entries.at(0);
                     auto funcparams = e->funcParams;
                     //auto args = funccall->margs;
@@ -625,7 +564,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     } else if(op.compare("@") == 0) {
                         typeCheckPass(c,symTab);
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
-                        decreaseDerefTypeInfo(t);
+                        int err = decreaseDerefTypeInfo(t);
+                        if(err) {
+                            semanticError(SET::DerefNonPointer,c,symTab);
+                        }
                         binopn->mtypeinfo = t;
                     } else if(op.compare(".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
@@ -634,6 +576,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //if . also dereferences then we will need to handle this case
                         //or maybe the right side is a dereferenced struct ptr, also
                         //will need to handle that case
+                        if(binopn->LHS()->nodeType() != ANT::Var) {
+                            break;
+                        }
                         auto varname = ((VarNode*)binopn->LHS())->getVarName();
                         auto entry = getFirstEntry(symTab,varname);
                         if(!entry) std::cout << "No Entry found for variable" << varname << "\n";
@@ -697,7 +642,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 binopn->setLHS(cast);
                             } else {
                                 std::cout << "Error with use of operator " << op << '\n';
-                                semanticError(SET::MissmatchBinop,lhs_t,rhs_t);
+                                semanticError(SET::MissmatchBinop,binopn,symTab);
                             }
                         }
                     }
@@ -729,7 +674,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(expr);
                             retn->mchildren[0] = cast;
                         } else {
-                            semanticError(SemanticErrorType::MissmatchReturnType,ret_typeinfo,func_typeinfo);
+                            retn->mtypeinfo = func_typeinfo;
+                            semanticError(SemanticErrorType::MissmatchReturnType,retn,symTab);
                         }
                     }
 
@@ -756,7 +702,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(rhs);
                             assignn->mchildren[1] = cast;
                         } else {
-                            semanticError(SET::MissmatchAssign,lhs_typeinfo,rhs_typeinfo);
+                            semanticError(SET::MissmatchAssign,c,symTab);
                         }
                     }
 
@@ -791,7 +737,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->addChild(rhs);
                             ((VarDecAssignNode*)c)->mchildren[1] = cast;
                         } else {
-                            semanticError(SET::MissmatchVarDecAssign,lhs_typeinfo,rhs_typeinfo);
+                            semanticError(SET::MissmatchVarDecAssign,c,symTab);
                         }
                     }
                 }
@@ -969,7 +915,8 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
-                        semanticError(SET::DupDecl, name);
+                        auto tok = c->getChildren()->at(0)->mtoken;
+                        semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
@@ -986,7 +933,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     auto child_vec = ((VarNode*)(c->getChildren()->at(0)))->getChildren();
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
-                        semanticError(SET::DupDecl, name);
+                        semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
                         TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
@@ -1021,7 +968,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        semanticError(SET::UndefUse, name);
+                        semanticError(SET::UndefUse, c, symTab);
                     } else {
                         //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
                     }
@@ -1034,7 +981,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "Looking in symboltable for function " << name << "\n"; 
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        semanticError(SET::NoFunc, name);
+                        semanticError(SET::NoFunc, c, symTab);
                     } else {
                         //std::cout << "Function found\n";
                     }
@@ -1242,7 +1189,8 @@ static int calcTypeSize(TypeInfo t) {
             //TODO(marcus): implement this for user defined types!
             return 1;
         default:
-            semanticError(SemanticErrorType::Unknown, t,t);
+            //TODO(marcus): fix this error
+            semanticError(SemanticErrorType::Unknown, nullptr, &progSymTab);
             return 0;
             break;
     }
@@ -1270,7 +1218,12 @@ void resolveSizeOfs(AstNode* ast) {
 }
 
 void checkAssignments(AstNode* ast) {
+    checkAssignments(ast,&progSymTab);
+}
+
+void checkAssignments(AstNode* ast, SymbolTable* symTab) {
     std::vector<AstNode*>* vec = ast->getChildren();
+    auto scope = symTab;
     for(unsigned int i = 0; i < vec->size(); i++) {
         AstNode* child = (*vec)[i];
         if(child->nodeType() == ANT::Assign) {
@@ -1286,9 +1239,7 @@ void checkAssignments(AstNode* ast) {
                     continue;
                 }
             }
-            //TODO(marcus): provide better information for error
-            std::string replace_me = anode->getRHS()->mtoken.token;
-            semanticError(SemanticErrorType::NotLValue,replace_me);
+            semanticError(SemanticErrorType::NotLValue,child,symTab);
         } else if(child->nodeType() == ANT::BinOp) {
             auto binopn = (BinOpNode*)child;
             auto op = binopn->mop;
@@ -1299,13 +1250,32 @@ void checkAssignments(AstNode* ast) {
                     continue;
                 } else {
                     //Error
-                    std::string replace_me = op;
-                    semanticError(SemanticErrorType::DotOpLhs,replace_me);
+                    semanticError(SemanticErrorType::DotOpLhs,binopn, symTab);
                 }
+            }
+        } else {
+            switch(child->nodeType()) {
+                case ANT::CompileUnit:
+                    scope = getScope(symTab, ((CompileUnitNode*)child)->getFileName());
+                    break;
+                case ANT::FuncDef:
+                    scope = getScope(symTab, ((FuncDefNode*)child)->mfuncname);
+                    break;
+                case ANT::Block:
+                    scope = getScope(symTab, "block"+std::to_string(((BlockNode*)child)->getId()));
+                    break;
+                case ANT::ForLoop:
+                    scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)child)->getId()));
+                    break;
+                case ANT::WhileLoop:
+                    scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)child)->getId()));
+                    break;
+                default:
+                    break;
             }
         }
     }
     for(auto c : (*vec)) {
-        checkAssignments(c);
+        checkAssignments(c, scope);
     }
 }

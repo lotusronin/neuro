@@ -68,6 +68,9 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
         case SemanticType::intlit:
             out = "intlit";
             break;
+        case SemanticType::User:
+            out = "";
+            break;
         default:
             out = "Unrecognized value!";
             break;
@@ -77,7 +80,6 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
-    const char* out = " id: ";
     if(obj.indirection > 0) {
         int i = obj.indirection;
         while(i) {
@@ -87,7 +89,7 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
     }
     os << obj.type;
     if(obj.userid.size() > 0) {
-        os << out << obj.userid;
+        os << obj.userid;
     }
     return os;
 }
