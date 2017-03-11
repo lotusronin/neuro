@@ -315,6 +315,28 @@ TOP:
                 longest_match_type = TokenType::strlit;
             }
             break;
+        case '\'':
+            {
+                int match_len = 1;
+                bool matched = false;
+                while(!matched) {
+                    char c = content[f_idx+match_len];
+                    if(c == 15 || c == 12) {
+                        lineNum++;
+                        colNum = 0;
+                    }
+                    if(c == '\\') {
+                        //TODO(marcus): escaped characters
+                    }
+                    if(c == '\'') {
+                        matched = true;
+                    }
+                    match_len++;
+                }
+                longest_match = match_len;
+                longest_match_type = TokenType::charlit;
+            }
+            break;
         case '+':
             {
                 longest_match_type = TokenType::plus;

@@ -1056,8 +1056,7 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         //consume )
         lexer->lex();
         return opnode;
-    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit) {
-        ////std::cout << "Parsing Const!\n";
+    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit || tok.type == TokenType::charlit) {
         parseConst(lexer, &parent);
     } else if(tok.type == TokenType::id) {
         parseFunccallOrVar(lexer, &parent);

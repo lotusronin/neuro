@@ -358,6 +358,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             } else if(op.compare(">") == 0) {
                 return Builder.CreateICmpUGT(lhsv,rhsv,"gttemp");
             } else if(op.compare("<") == 0) {
+                if(lhs->mtypeinfo.type == SemanticType::Int) {
+                    return Builder.CreateICmpSLT(lhsv,rhsv,"lttemp");
+                }
                 return Builder.CreateICmpULT(lhsv,rhsv,"lttemp");
             } else if(op.compare(">=") == 0) {
                 return Builder.CreateICmpUGE(lhsv,rhsv,"getemp");
@@ -493,6 +496,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto strval = constn->getVal();
                 if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
+                } else if(constn->mtypeinfo.type == SemanticType::Char) {
+                    char c = strval[1]; //TODO(marcus): doesn't work for escaped char lits
+                    val = ConstantInt::get(context, APInt(8,c));
                 } else {
                     int constval = std::stoi(strval);
                     val = ConstantInt::get(context, APInt(32,constval));

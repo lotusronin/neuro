@@ -28,6 +28,7 @@ enum class TokenType {
     floatlit,
     intlit,
     strlit,
+    charlit,
     assignment,
     equality,
     nequality,
