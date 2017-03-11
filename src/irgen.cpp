@@ -337,6 +337,11 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //std::cout << "generating add\n";
                 return Builder.CreateAdd(lhsv,rhsv,"addtemp");
             } else if(op.compare("-") == 0) {
+                if(binop->unaryOp) {
+                    //TODO(marcus): make this work for other sizes
+                    rhsv = ConstantInt::get(context, APInt(32,-1));
+                    return Builder.CreateMul(lhsv,rhsv);
+                }
                 if(lhs->mtypeinfo.indirection) {
                     return Builder.CreateGEP(lhsv,rhsv,"ptr");
                 } else if(rhs->mtypeinfo.indirection) {
@@ -500,13 +505,18 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto varn = (VarNode*)n;
                 auto sym_entry = getFirstEntry(sym, varn->getVarName());
                 auto varloc = (Value*)sym_entry->address;
-                //if(varloc == nullptr) //std::cout << "NULLPTR!!!\n";
-                auto varv = Builder.CreateLoad(varloc,varn->getVarName());
-                val = varv;
+                if(lvalue) {
+                    val = varloc;
+                } else {
+                    //if(varloc == nullptr) //std::cout << "NULLPTR!!!\n";
+                    auto varv = Builder.CreateLoad(varloc,varn->getVarName());
+                    val = varv;
+                }
             }
             break;
         case ANT::FuncCall:
             {
+                std::cout << "generating function call";
                 val = funcCallCodegen(n,sym);
             }
             break;
@@ -635,6 +645,8 @@ void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     auto vardecan = (VarDecAssignNode*) n;
     auto varn = (VarNode*)vardecan->mchildren.at(0);
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
+    //std::cout << "Looking up entry " << varn->getVarName() << '\n';
+    if(!symbol_table_entry) std::cout << "Entry not found\n";
     auto typeinfo = symbol_table_entry->typeinfo;
     //std::cout << typeinfo << '\n';
     auto ir_type = getIRType(typeinfo);
@@ -653,6 +665,7 @@ void assignCodegen(AstNode* n, SymbolTable* sym) {
     auto assignn = (AssignNode*)n;
     auto lhs = assignn->mchildren.at(0);
     bool lval = (lhs->nodeType() != AstNodeType::Var);
+    lval = true;
     auto rhs = assignn->mchildren.at(1);
     Value* val = expressionCodegen(rhs,sym);
     if(lval) {
@@ -716,6 +729,8 @@ void whileloopCodegen(AstNode* n, SymbolTable* sym) {
 
 void forloopCodegen(AstNode* n, SymbolTable* sym) {
     auto forn = (ForLoopNode*) n;
+    auto scope = getScope(sym, "for"+std::to_string(forn->getId()));
+    sym = scope;
     auto inits = forn->getInit();
     auto condition = forn->getConditional();
     auto update = forn->getUpdate();

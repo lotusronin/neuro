@@ -32,6 +32,7 @@ class BinOpNode : public AstNode {
         //TODO(marcus): make this an enum
         std::string mop;
         int mpriority;
+        bool unaryOp;
 };
 
 

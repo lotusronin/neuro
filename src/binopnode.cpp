@@ -9,6 +9,7 @@ BinOpNode::BinOpNode() {
     id = BinOpNode::count;
     BinOpNode::count++;
     BinOpNode::constructed++;
+    unaryOp = false;
 }
 
 BinOpNode::~BinOpNode() {

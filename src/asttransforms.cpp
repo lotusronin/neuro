@@ -229,7 +229,8 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     retType = proto->getType();
                     params = proto->getParameters();
                     for(auto prm : (*params)) {
-                        SemanticType prmtyp = prm->getChildren()->at(0)->getType();
+                        auto prmti = prm->mtypeinfo;
+                        SemanticType prmtyp = prmti.type;
                         p.push_back(std::make_pair(prmtyp,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
@@ -242,7 +243,8 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     retType = func->getType();
                     params = func->getParameters();
                     for(auto prm : (*params)) {
-                        SemanticType prmtyp = prm->getChildren()->at(0)->getType();
+                        auto prmti = prm->mtypeinfo;
+                        SemanticType prmtyp = prmti.type;
                         p.push_back(std::make_pair(prmtyp,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
@@ -603,6 +605,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
                         increaseDerefTypeInfo(t);
                         binopn->mtypeinfo = t;
+                    } else if(op.compare("-") == 0 && binopn->unaryOp) {
+                        //unary negation
+                        typeCheckPass(binopn,symTab);
+                        TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
+                        if(lhs_t.indirection) {
+                            //TODO(marcus): get actual errors!
+                            semanticError(SET::Unknown,binopn,symTab);
+                        }
+                        //TODO(marcus): actually type check
+                        binopn->mtypeinfo = lhs_t;
                     } else {
                         typeCheckPass(binopn,symTab);
                         //typeCheckPass(binopn->LHS(),symTab);

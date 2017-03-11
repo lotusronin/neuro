@@ -995,10 +995,12 @@ AstNode* parseAddrOfIndir(LexerTarget* lexer) {
     ////std::cout << "Parsing AddrOfIndir Expression!\n";
     BinOpNode* opnode = nullptr;
     Token tok = lexer->peek();
-    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda) {
+    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda || tok.type == TokenType::minus) {
         //consume token (@ or & or ! or ~)
         opnode = new BinOpNode();
         opnode->setToken(tok);
+        opnode->unaryOp = true;
+        opnode->mpriority = 5; //TODO(marcus): fix this with a better way for telling binop nodes they are unary
         lexer->lex();
     }
      auto ret = parseMemberAccess(lexer);
@@ -1082,7 +1084,7 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         std::cout << "Next is " << lexer->peek().token << '\n';
         return sizeofn;
     } else {
-        assert(false);
+        //assert(false);
         parse_error(PET::Unknown, tok, lexer);
     }
     return parent.mchildren[0];
