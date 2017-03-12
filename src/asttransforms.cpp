@@ -392,6 +392,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
             case ST::s8:
             case ST::s32:
             case ST::s64:
+            case ST::Char:
                 return true;
                 break;
             default:
@@ -443,6 +444,18 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
                 return true;
             }
         }
+    }
+    
+    if(t2.type == ST::Char) {
+        switch(t1.type) {
+            case ST::intlit:
+            case ST::Int:
+                return true;
+                break;
+            default:
+                return false;
+                break;
+            }
     }
 
     return false;
@@ -524,9 +537,11 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto args = funccall->mchildren;
                     std::vector<TypeInfo> arg_types;
                     arg_types.reserve(sizeof(TypeInfo)*args.size());
+                    typeCheckPass(c,symTab);
                     for(auto a : args) {
-                        typeCheckPass(a,symTab);
-                        arg_types.push_back(getTypeInfo(a,symTab));
+                        //typeCheckPass(a,symTab);
+                        auto tinfo = getTypeInfo(a,symTab);
+                        arg_types.push_back(tinfo);
                     }
                     if(args.size() != funcparams.size()) {
                         //TODO(marcus): will have to support function overloading here
@@ -538,8 +553,22 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //check every arg, against every parameter
                     for(unsigned int i = 0; i < funcparams.size(); i++) {
                         //auto n = args.at(i);
+                        auto param = funcparams.at(i).second;
+                        auto paramt = param->mtypeinfo;
+                        auto argt = arg_types.at(i);
                         //check compatibility
-                        //check for casts
+                        if(!isSameType(paramt,argt)) {
+                            //check for casts
+                            if(canCast(paramt,argt)) {
+                                CastNode* cast = new CastNode();
+                                cast->fromType = argt;
+                                cast->toType = paramt;
+                                cast->addChild(funccall->mchildren.at(i));
+                                funccall->mchildren[i] = cast;
+                            } else {
+                                std::cout << "Error, cannot cast arg of type " << argt << " to " << paramt << '\n';
+                            }
+                        }
                     }
                 }
                 break;

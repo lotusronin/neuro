@@ -16,6 +16,7 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/IR/Verifier.h>
 #include <iostream>
 #include <string>
 #include <assert.h>
@@ -571,11 +572,15 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                         case SemanticType::u16:
                         case SemanticType::u32:
                         case SemanticType::u64:
+                        case SemanticType::intlit:
+                        case SemanticType::Int:
                             switch(cast->fromType.type) {
                                 case SemanticType::u8:
                                 case SemanticType::u16:
                                 case SemanticType::u32:
                                 case SemanticType::u64:
+                                case SemanticType::Char:
+                                case SemanticType::Int:
                                     //convert unsigned to different unsigned
                                     return Builder.CreateZExtOrTrunc(val, getIRType(cast->toType), "cast");
                                     break;
@@ -855,6 +860,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
                 Function* F = functionCodegen(ast, scope);
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
+               //verifyFunction(*F);
                return;
             }
             break;
