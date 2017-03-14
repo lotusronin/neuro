@@ -16,7 +16,7 @@ llvm::Type* getIRType(SemanticType t, std::string ident, int indirection);
 llvm::StructType* getStructIRType(std::string ident);
 llvm::Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue=false);
 llvm::Function* prototypeCodegen(AstNode* n, SymbolTable* sym);
-llvm::Function* functionCodegen(AstNode* n, SymbolTable* sym);
+llvm::Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass=false);
 llvm::Value* funcCallCodegen(AstNode* n, SymbolTable* sym);
 llvm::Value* retCodegen(AstNode* n, SymbolTable* sym);
 llvm::Value* conditionalCodegen(AstNode* n, SymbolTable* sym);

@@ -165,6 +165,10 @@ StructType* getStructIRType(std::string ident) {
 
 Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     PrototypeNode* protonode = (PrototypeNode*) n;
+    Function* defined = module->getFunction(protonode->mfuncname);
+    if(defined) {
+        return defined;
+    }
     std::vector<AstNode*>* vec = protonode->getParameters();
     std::vector<Type*> parameterTypes;
     parameterTypes.reserve(vec->size());
@@ -196,7 +200,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     return F;
 }
 
-Function* functionCodegen(AstNode* n, SymbolTable* sym) {
+Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
     Function* F = module->getFunction(funcnode->mfuncname);
@@ -229,6 +233,11 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym) {
             Arg.setName(name);
             ++idx;
         }
+    }
+
+    if(prepass) {
+        delete vec;
+        return F;
     }
 
     //TODO(marcus): what is entry, can it be used for every function?
@@ -839,6 +848,57 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
     }
 }
 
+void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
+    //check for null
+    if(!ast)
+        return;
+
+    //Handle IR gen for each node type
+    switch(ast->nodeType()) {
+        case ANT::Prototype:
+            {
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                Function* f = prototypeCodegen(ast, scope);
+                return;
+            }
+            break;
+        case ANT::FuncDef:
+            {
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                Function* F = functionCodegen(ast, scope, true);
+               return;
+            }
+            break;
+        case ANT::CompileUnit:
+            {
+                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    prepassGenerateIR(c,scope);
+                }
+                return;
+            }
+            break;
+        case ANT::Program:
+            {
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    prepassGenerateIR(c,sym);
+                }
+                return;
+            }
+            break;
+        default:
+            break;
+    }
+
+    //recurse
+    std::vector<AstNode*>* vec = ast->getChildren();
+    for(auto c : (*vec)) {
+        prepassGenerateIR(c, sym);
+    }
+}
+
 void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
     
     //check for null
@@ -931,6 +991,7 @@ void writeIR(std::string o) {
 
 void generateIR(AstNode* ast) {
     module = new Module("Neuro Program", context);
+    prepassGenerateIR(ast,&progSymTab);
     generateIR_llvm(ast, &progSymTab);
 }
 
