@@ -259,6 +259,9 @@ TOP:
         case '@':
             longest_match_type = TokenType::dereference;
             break;
+        case '~':
+            longest_match_type = TokenType::tilda;
+            break;
         case '0':
         case '1':
         case '2':
@@ -319,16 +322,31 @@ TOP:
             {
                 int match_len = 1;
                 bool matched = false;
+                bool escaped = false;
                 while(!matched) {
                     char c = content[f_idx+match_len];
                     if(c == 15 || c == 12) {
                         lineNum++;
                         colNum = 0;
                     }
-                    if(c == '\\') {
-                        //TODO(marcus): escaped characters
-                    }
-                    if(c == '\'') {
+                    if(escaped) {
+                        switch(c) {
+                            case 'n':
+                            case 'a':
+                            case '0':
+                            case '\\':
+                            case '\'':
+                            case '\"':
+                            case 'r':
+                                break;
+                            default:
+                                std::cout << "Error, malformed character literal. Line " << lineNum << " Col " << colNum << '\n';
+                                return EOFTOKEN;
+                                break;
+                        }
+                    } else if(c == '\\') {
+                        escaped = true;
+                    } else if(c == '\'') {
                         matched = true;
                     }
                     match_len++;
@@ -339,12 +357,22 @@ TOP:
             break;
         case '+':
             {
-                longest_match_type = TokenType::plus;
+                if(remaining[1] == '+') {
+                    longest_match++;
+                    longest_match_type = TokenType::increment;
+                } else {
+                    longest_match_type = TokenType::plus;
+                }
             }
             break;
         case '-':
             {
-                longest_match_type = TokenType::minus;
+                if(remaining[1] == '-') {
+                    longest_match++;
+                    longest_match_type = TokenType::increment;
+                } else {
+                    longest_match_type = TokenType::minus;
+                }
             }
             break;
         case '/':
@@ -395,7 +423,7 @@ TOP:
             break;
         case '%':
             {
-                longest_match_type = TokenType::carrot;
+                longest_match_type = TokenType::mod;
             }
             break;
         case '=':

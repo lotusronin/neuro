@@ -61,6 +61,8 @@ enum class TokenType {
     mod,
     cast,
     ssizeof,
+    increment,
+    decrement,
     eof
 };
 

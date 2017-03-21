@@ -493,6 +493,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //generation first. Maybe its own symbol table?
                 auto childvar = expressionCodegen(lhs,sym);
                 return childvar;
+            } else if(op.compare("!")) {
+                //TODO(marcus): make this work for other types
+                return Builder.CreateICmpEQ(lhsv,ConstantInt::get(context, APInt(32,0)),"lnottmp");
             } else {
                 std::cout << "Unknown binary expression" << op << "\n";
                 return val;
@@ -507,8 +510,42 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
                 } else if(constn->mtypeinfo.type == SemanticType::Char) {
-                    char c = strval[1]; //TODO(marcus): doesn't work for escaped char lits
-                    val = ConstantInt::get(context, APInt(8,c));
+                    char c;
+                    if(strval.size() > 3) {
+                        //we have an escaped character literal
+                        switch(strval[2]) {
+                            case 'n':
+                                c = 10;
+                                break;
+                            case '0':
+                                c = 0;
+                                break;
+                            case 'a':
+                                c = 7;
+                                break;
+                            case '\\':
+                                c = 92;
+                                break;
+                            case '\'':
+                                c = 39;
+                                break;
+                            case '\"':
+                                c = 34;
+                                break;
+                            case 'r':
+                                c = 13;
+                                break;
+                            default:
+                                std::cout << "Error generating char literal " << strval << '\n';
+                                c = 0;
+                                break;
+                        }
+                        val = ConstantInt::get(context, APInt(8,c));
+                    } else {
+                        //we have a normal char literal
+                        c = strval[1];
+                        val = ConstantInt::get(context, APInt(8,c));
+                    }
                 } else {
                     int constval = std::stoi(strval);
                     val = ConstantInt::get(context, APInt(32,constval));

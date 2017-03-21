@@ -995,8 +995,8 @@ AstNode* parseAddrOfIndir(LexerTarget* lexer) {
     ////std::cout << "Parsing AddrOfIndir Expression!\n";
     BinOpNode* opnode = nullptr;
     Token tok = lexer->peek();
-    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda || tok.type == TokenType::minus) {
-        //consume token (@ or & or ! or ~)
+    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda || tok.type == TokenType::minus || tok.type == TokenType::plus) {
+        //consume token (@ or & or ! or ~ or - or +)
         opnode = new BinOpNode();
         opnode->setToken(tok);
         opnode->unaryOp = true;
