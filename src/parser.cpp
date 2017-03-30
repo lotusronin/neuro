@@ -361,6 +361,9 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
             t.userid = tok.token;
             break;
+        case TokenType::tuint:
+            mstype = SemanticType::u32;
+            break;
         default:
             mstype = SemanticType::Typeless;
             break;
@@ -553,6 +556,7 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::id) {
         parse_error(PET::BadPrototypeName, tok, lexer);
     }
+    funcnode->mtoken = tok;
     funcnode->addFuncName(tok.token);
     //consume id
     tok = lexer->lex();

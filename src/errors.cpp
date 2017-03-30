@@ -257,6 +257,26 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
             ERROR("Error: Variable " << name << " used before it was defined!\n");
         }
         break;
+        case SemanticErrorType::DupFuncDef:
+        {
+            ERROR("Duplicate defeinition of function " << ((FuncDefNode*)n)->mfuncname << "\n");
+        }
+        break;
+        case SemanticErrorType::MultipleFuncResolve:
+        {
+            ERROR("Could not resolve function call of function " << ((FuncCallNode*)n)->mfuncname << "\n");
+        }
+        break;
+        case SemanticErrorType::NoResolve:
+        {
+            ERROR("No function match found for " << ((FuncCallNode*)n)->mfuncname << "\n");
+        }
+        break;
+        case SemanticErrorType::NoFunction:
+        {
+            ERROR("No function named " << ((FuncCallNode*)n)->mfuncname << " found\n"); 
+        }
+        break;
         case SemanticErrorType::Unknown:
         {
             ERROR("UNKNOWN ERROR TYPE");

@@ -72,6 +72,9 @@ Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
             //TODO(marcus): intlit might not be i32
             ret = Type::getInt32Ty(context);
             break;
+        case ST::u32:
+            ret = Type::getInt32Ty(context);
+            break;
         case ST::Float:
         case ST::floatlit:
             //TODO(marcus): floatlit might not be float (double?)
@@ -203,9 +206,11 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
     FuncDefNode* funcnode = (FuncDefNode*) n;
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
-    Function* F = module->getFunction(funcnode->mfuncname);
+    std::string mangledName = funcnode->mangledName();
+    Function* F = module->getFunction(mangledName);
     std::vector<AstNode*>* vec = funcnode->getParameters();
     if(!F) {
+        funcnode->mangledName();
         std::vector<Type*> parameterTypes;
         parameterTypes.reserve(vec->size());
        
@@ -219,13 +224,13 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
             parameterTypes.push_back(t);
         }
         
-        auto sym_entries = getEntry(sym, funcnode->mfuncname);
+        auto sym_entries = getEntry(sym, funcnode->mfuncname+std::to_string(funcnode->id));
         auto entry = sym_entries.size() ? sym_entries[0] : nullptr;
         assert(entry != nullptr);
         Type* retType = getIRType(entry->typeinfo);
         
         FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
-        F = Function::Create(FT, Function::ExternalLinkage, funcnode->mfuncname, module);
+        F = Function::Create(FT, Function::ExternalLinkage, mangledName, module);
 
         unsigned int idx = 0;
         for(auto &Arg : F->args()) {
@@ -561,7 +566,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 if(lvalue) {
                     val = varloc;
                 } else {
-                    //if(varloc == nullptr) //std::cout << "NULLPTR!!!\n";
+                    //if(varloc == nullptr) std::cout << "NULLPTR!!!\n";
                     auto varv = Builder.CreateLoad(varloc,varn->getVarName());
                     val = varv;
                 }
@@ -901,7 +906,7 @@ void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
             break;
         case ANT::FuncDef:
             {
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
                 Function* F = functionCodegen(ast, scope, true);
                return;
             }
@@ -954,7 +959,8 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
             break;
         case ANT::FuncDef:
             {
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                std::cout << "Generating FuncDef IR\n";
+                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
                 Function* F = functionCodegen(ast, scope);
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
                //verifyFunction(*F);

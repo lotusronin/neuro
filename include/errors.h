@@ -52,6 +52,10 @@ enum class SemanticErrorType{
     OutLoop,
     NotLValue,
     DotOpLhs,
+    DupFuncDef,
+    MultipleFuncResolve,
+    NoResolve,
+    NoFunction,
     Unknown
 };
 

@@ -6,12 +6,14 @@
 #include <utility>
 #include <string>
 #include "astnode.h"
+#include "astnodetypes.h"
 
 
 struct SymbolTableEntry {
     AstNode* node;
     SemanticType type;
     TypeInfo typeinfo;
+    std::vector<AstNode*> overloads; 
     std::vector<std::pair<SemanticType,AstNode*>> funcParams;
     std::vector<std::pair<TypeInfo,AstNode*>> funcParamsTypeInfo;
     void* address;
@@ -34,6 +36,7 @@ void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n);
 void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name);
 void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name);
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p);
+void addFuncEntry(SymbolTable* s, FuncDefNode* n);
 std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name);
 SymbolTableEntry* getFirstEntry(SymbolTable* s, const std::string& name);
 SymbolTableEntry* getEntryCurrentScope(SymbolTable*s, const std::string& name);

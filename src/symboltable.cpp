@@ -60,6 +60,18 @@ void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name) {
     }
 }
 
+void addFuncEntry(SymbolTable* s, FuncDefNode* n) {
+    auto entry = getFirstEntry(s,n->mfuncname);
+    if(!entry) {
+        //make a new entry
+        entry = new SymbolTableEntry;
+        entry->node = n;
+        entry->type = n->mtypeinfo.type;
+        s->table.insert(std::make_pair(n->mfuncname,entry));
+    }
+    entry->overloads.push_back(n);
+}
+
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p) {
     auto entry = new SymbolTableEntry;
     entry->node = n;
@@ -71,6 +83,7 @@ void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<
         funcname = ((PrototypeNode*)n)->mfuncname;
     } else {
         funcname = ((FuncDefNode*)n)->mfuncname;
+        funcname += std::to_string(((FuncDefNode*)n)->id);
     }
     s->table.insert(std::make_pair(funcname,entry));
 }

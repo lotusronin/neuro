@@ -71,6 +71,9 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
         case SemanticType::User:
             out = "";
             break;
+        case SemanticType::u32:
+            out = "u32";
+            break;
         default:
             out = "Unrecognized value!";
             break;

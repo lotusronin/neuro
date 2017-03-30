@@ -18,6 +18,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
+static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 
 void collapseExpressionChains(AstNode* ast) {
     //TODO(marcus): clean this up.
@@ -67,7 +68,7 @@ void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
             scope = getScope(symTab, ((CompileUnitNode*)ast)->getFileName());
             break;
         case ANT::FuncDef:
-            scope = getScope(symTab, ((FuncDefNode*)ast)->mfuncname);
+            scope = getScope(symTab, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
             break;
         case ANT::Block:
             scope = getScope(symTab, "block"+std::to_string(((BlockNode*)ast)->getId()));
@@ -242,12 +243,34 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     auto func = (FuncDefNode*)c;
                     retType = func->getType();
                     params = func->getParameters();
+                    auto entries = getEntry(symTab,func->mfuncname);
+                    if(entries.size() != 0) {
+                        auto e = entries.at(0);
+                        auto numParams = params->size();
+                        //For every overload
+                        for(auto ol : e->overloads) {
+                            if(numParams == ol->mchildren.size()-1) {
+                                bool repeat = true;
+                                //check for any mismatched param types
+                                for(int i = 0; i < numParams; ++i) {
+                                    if(!isSameType(params->at(i)->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
+                                        repeat = false;
+                                        break;
+                                    }
+                                }
+                                if(repeat) {
+                                    semanticError(SemanticErrorType::DupFuncDef, ol, symTab);
+                                }
+                            }
+                        }
+                    }
                     for(auto prm : (*params)) {
                         auto prmti = prm->mtypeinfo;
                         SemanticType prmtyp = prmti.type;
                         p.push_back(std::make_pair(prmtyp,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
+                    addFuncEntry(symTab, func);
                     delete params;
                 }
                 break;
@@ -476,6 +499,8 @@ static void increaseDerefTypeInfo(TypeInfo& t) {
     return;
 }
 
+bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab);
+
 AstNode* currentFunc = nullptr;
 std::string currentFunc2;
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
@@ -484,7 +509,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncDef:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
-                    auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname);
+                    auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname + std::to_string(((FuncDefNode*)c)->id));
                     currentFunc2 = ((FuncDefNode*)c)->mfuncname;
                     currentFunc = c;
                     typeCheckPass(c,scope);
@@ -538,6 +563,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     std::vector<TypeInfo> arg_types;
                     arg_types.reserve(sizeof(TypeInfo)*args.size());
                     typeCheckPass(c,symTab);
+                    resolveFunction(funccall,symTab);
                     for(auto a : args) {
                         //typeCheckPass(a,symTab);
                         auto tinfo = getTypeInfo(a,symTab);
@@ -695,9 +721,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Return!\n";
                     auto retn = (ReturnNode*)c;
                     auto expr = retn->mchildren.at(0);
-                    typeCheckPass(expr,symTab);
+                    typeCheckPass(c,symTab);
                     TypeInfo ret_typeinfo = getTypeInfo(expr,symTab);
                     std::string name = ((FuncDefNode*)currentFunc)->mfuncname;
+                    name += std::to_string(((FuncDefNode*)currentFunc)->id);
                     //std::string name = currentFunc2;
                     auto entries = getEntry(symTab,name);
                     //TypeInfo func_typeinfo = currentFunc2->mtypeinfo;
@@ -905,7 +932,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncDef:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
-                    std::string name = ((FuncDefNode*)c)->mfuncname;
+                    std::string name = ((FuncDefNode*)c)->mfuncname + std::to_string(((FuncDefNode*)c)->id);
                     //std::cout << "Entering into scope " << name << "\n";
                     auto scope = getScope(symTab, name);
                     variableUseCheck(c,scope);
@@ -1300,7 +1327,7 @@ void checkAssignments(AstNode* ast, SymbolTable* symTab) {
                     scope = getScope(symTab, ((CompileUnitNode*)child)->getFileName());
                     break;
                 case ANT::FuncDef:
-                    scope = getScope(symTab, ((FuncDefNode*)child)->mfuncname);
+                    scope = getScope(symTab, ((FuncDefNode*)child)->mfuncname + std::to_string(((FuncDefNode*)child)->id));
                     break;
                 case ANT::Block:
                     scope = getScope(symTab, "block"+std::to_string(((BlockNode*)child)->getId()));
@@ -1319,4 +1346,64 @@ void checkAssignments(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*vec)) {
         checkAssignments(c, scope);
     }
+}
+
+bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
+    auto funcname = funccall->mfuncname;
+    auto entries = getEntry(symTab,funcname);
+
+    if(entries.size() == 0) {
+        //TODO(marcus): error, no function by that name
+        semanticError(SemanticErrorType::NoFunction, funccall, symTab);
+        return false;
+    }
+    auto e = entries.at(0);
+    FuncDefNode* matchedNode = nullptr;
+    for(auto overload : e->overloads) {
+        FuncDefNode* candidate = nullptr;
+        if(overload->nodeType() == AstNodeType::FuncDef) {
+            candidate = (FuncDefNode*)overload;
+        }
+        auto funcparams = candidate->getParameters();
+
+        if(funcparams->size() != funccall->mchildren.size()) {
+            delete funcparams;
+            continue;
+        }
+        
+        bool matched = true;
+
+        //check every arg, against every parameter
+        for(unsigned int i = 0; i < funcparams->size(); i++) {
+            auto param = funcparams->at(i);
+            auto paramt = param->mtypeinfo;
+            auto argt = funccall->mchildren.at(i)->mtypeinfo;
+
+            if(!isSameType(paramt,argt)) {
+                if(!canCast(paramt,argt)) {
+                    matched = false;
+                    break;
+                }
+            }
+        }
+        if(matched) {
+            if(!matchedNode) {
+                matchedNode = candidate;
+            } else {
+                semanticError(SemanticErrorType::MultipleFuncResolve, funccall, symTab);
+                //std::cout << "Error. Multiple matching functions found.\n";
+            }
+        }
+        delete funcparams;
+    }
+
+    if(matchedNode) {
+        auto mangled = matchedNode->mangledName();
+        std::cout << "Matched: " << mangled << '\n';
+        std::cout << "Replacing function call name\n";
+        funccall->mfuncname = mangled;
+    } else {
+        semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+    }
+    return (matchedNode != nullptr);
 }
