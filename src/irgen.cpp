@@ -128,6 +128,10 @@ Type* generateTypeCodegen(AstNode* n) {
         std::cout << "Error! multiple definitions of type " << sdnode->ident << " exists!\n";
         return ret;
     }
+    
+    if(sdnode->foreign) {
+        return ret;
+    }
 
     //Get members of the type and construct it!
     std::vector<Type*> memberTypes;

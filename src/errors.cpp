@@ -154,6 +154,10 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Malformed variable declaration assignment\n";
             std::cout << "  Token: " << t.token << " is not a '='!\n";
             break;
+        case ParseErrorType::MissForeign:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Expected function or struct declaration\n";
+            std::cout << "  Token: " << t.token << " is not 'fn' or 'struct'!\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;

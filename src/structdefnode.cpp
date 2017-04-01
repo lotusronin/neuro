@@ -7,6 +7,7 @@ StructDefNode::StructDefNode() {
     id = StructDefNode::count;
     std::cout << "StructDefNode made! ID: " << id << "\n";
     StructDefNode::count++;
+    foreign = false;
 }
 
 StructDefNode::~StructDefNode() {

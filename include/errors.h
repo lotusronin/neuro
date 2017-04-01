@@ -36,6 +36,7 @@ enum class ParseErrorType {
     MissEqVarDecAssign,
     MissSemiReturn,
     BadAssign,
+    MissForeign,
     Unknown
 };
 

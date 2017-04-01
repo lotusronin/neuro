@@ -58,6 +58,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent);
 void parseOptargs(LexerTarget* lexer, AstNode* parent);
 void parseOptargs2(LexerTarget* lexer, AstNode* parent);
 void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
+void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent);
 
 bool fileImproted(std::string f) {
     auto iter = importedFiles.find(f);
@@ -155,7 +156,8 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
         //std::cout << "extern token, beginning to match prototype...\n";
-        parsePrototype(lexer, (CompileUnitNode*)parent);
+        parsePrototypeOrStruct(lexer, (CompileUnitNode*)parent);
+        //parsePrototype(lexer, (CompileUnitNode*)parent);
         ////std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::tstruct) {
         parseStructDef(lexer, parent);
@@ -196,6 +198,21 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "Already imported " << newfilename << "\n";
     }
     return;
+}
+
+void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
+    Token tok = lexer->peekNext();
+    if(tok.type == TokenType::fn) {
+        parsePrototype(lexer, parent);
+    } else if(tok.type == TokenType::tstruct) {
+        //consume extern;
+        lexer->lex();
+        parseStructDef(lexer, parent);
+        ((StructDefNode*)(parent->mchildren.back()))->foreign = true;
+        std::cout << "opaque struct found!\n";
+    } else {
+        parse_error(PET::MissForeign, tok, lexer);
+    }
 }
 
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {

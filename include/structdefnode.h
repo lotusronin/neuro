@@ -16,6 +16,7 @@ class StructDefNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         //std::vector<AstNode*> mchildren;
         std::string ident;
+        bool foreign;
     //private:
         int id;
 };
