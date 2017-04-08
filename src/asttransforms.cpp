@@ -816,7 +816,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Prototype:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
-                    auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname);
+                    auto scope = getScope(symTab, ((PrototypeNode*)c)->mfuncname);
                     typeCheckPass(c,scope);
                 }
                 break;
@@ -1358,6 +1358,40 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         return false;
     }
     auto e = entries.at(0);
+
+    //TODO(marcus): Shouold we allow mix of prototypes and mangled funcs of same name?
+    //eg extern foo() and foo()
+    if(e->node->nodeType() == AstNodeType::Prototype) {
+        auto funcparams = ((PrototypeNode*)e->node)->getParameters();
+        if(funcparams->size() != funccall->mchildren.size()) {
+            std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams->size() << '\n';
+            delete funcparams;
+            return false;
+        }
+        bool matched = true;
+
+        //check every arg, against every parameter
+        for(unsigned int i = 0; i < funcparams->size(); i++) {
+            auto param = funcparams->at(i);
+            auto paramt = param->mtypeinfo;
+            auto argt = getTypeInfo(funccall->mchildren.at(i), symTab);
+
+            if(!isSameType(paramt,argt)) {
+                if(!canCast(paramt,argt)) {
+                    std::cout << "types different " << paramt << " and " << argt << '\n';
+                    matched = false;
+                    break;
+                }
+            }
+        }
+        if(!matched) {
+            semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+            return false;
+        }
+        delete funcparams;
+        return true;
+    }
+
     FuncDefNode* matchedNode = nullptr;
     for(auto overload : e->overloads) {
         FuncDefNode* candidate = nullptr;
