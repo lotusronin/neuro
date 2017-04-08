@@ -165,7 +165,7 @@ static void registerTypeDef(StructDefNode* n) {
 void populateTypeList(AstNode* ast, SymbolTable* sym) {
     //We only need to go through the list of top level statements
     //of each program as we won't ever have struct definitions occur in
-    //function definitions, prototypes, etc, so we can skip any of these 
+    //function definitions, prototypes, etc, so we can skip any of these
     //kinds of nodes.
     for(auto c : (*(ast->getChildren()))) {
         switch(c->nodeType()) {
@@ -468,7 +468,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
             }
         }
     }
-    
+
     if(t2.type == ST::Char) {
         switch(t1.type) {
             case ST::intlit:
@@ -649,7 +649,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             auto vardec = (VarDecNode*)member;
                             auto var = (VarNode*)vardec->mchildren[0];
                             if(var->getVarName() == membername) {
-                                binopn->mtypeinfo = var->mtypeinfo; 
+                                binopn->mtypeinfo = var->mtypeinfo;
                                 break;
                             }
                         }
@@ -850,11 +850,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     switch(ast_node_type) {
         case ANT::Const:
             {
-                auto constn = (ConstantNode*)ast;
-                auto t = constn->getType();
-                TypeInfo typeinfo;
-                typeinfo.type = t;
-                return typeinfo;
+                return ((ConstantNode*)ast)->mtypeinfo;
             }
             break;
         case ANT::Var:
@@ -1046,7 +1042,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
                     std::string name = ((FuncCallNode*)c)->mfuncname;
-                    //std::cout << "Looking in symboltable for function " << name << "\n"; 
+                    //std::cout << "Looking in symboltable for function " << name << "\n";
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
                         semanticError(SET::NoFunc, c, symTab);
@@ -1196,7 +1192,7 @@ void deferPass(AstNode* ast) {
             deferStacks.erase(last_stack);
             printDeferStacks();
         }
-        
+
     }
     return;
 }
@@ -1404,7 +1400,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
             delete funcparams;
             continue;
         }
-        
+
         bool matched = true;
 
         //check every arg, against every parameter
