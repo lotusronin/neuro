@@ -143,11 +143,14 @@ void LexerTarget::lexcomment() {
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
             }
         } else if(content[f_idx] == '*') {
-            if(content[f_idx] == '/') {
+            if(content[f_idx+1] == '/') {
                 --comment_depth;
                 colNum += 2;
                 f_idx += 2;
                 //std::cout << "Block comment ends. Depth " << comment_depth << "\n";
+            } else {
+                ++colNum;
+                ++f_idx;
             }
         } else {
             ++colNum;
@@ -404,14 +407,16 @@ TOP:
                  * Check for line comments
                  */
                 else if(remaining[1] == '/') {
+                    int commentIdx = 2;
                     colNum += 2;
                     f_idx += 2;
-                    while(remaining[colNum] != '\n' && remaining[colNum] != '\r') {
+                    while(remaining[commentIdx] != '\n' && remaining[commentIdx] != '\r') {
                         if(content[f_idx] == '\0') {
                             return EOFTOKEN;
                         }
                         colNum++;
                         f_idx++;
+                        commentIdx++;
                     }
                     f_idx++;
                     colNum = 0;
