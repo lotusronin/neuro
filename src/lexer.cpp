@@ -250,8 +250,20 @@ TOP:
         case '}':
             longest_match_type = TokenType::rbrace;
             break;
+        case '[':
+            longest_match_type = TokenType::lsqrbrace;
+            break;
+        case ']':
+            longest_match_type = TokenType::rsqrbrace;
+            break;
         case ':':
-            longest_match_type = TokenType::colon;
+            {
+                longest_match_type = TokenType::colon;
+                if(remaining[1] == ':') {
+                    longest_match++;
+                    longest_match_type = TokenType::dblcolon;
+                }
+            }
             break;
         case ';':
             longest_match_type = TokenType::semicolon;

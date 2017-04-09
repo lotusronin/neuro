@@ -63,6 +63,9 @@ enum class TokenType {
     ssizeof,
     increment,
     decrement,
+    dblcolon,
+    lsqrbrace,
+    rsqrbrace,
     eof
 };
 

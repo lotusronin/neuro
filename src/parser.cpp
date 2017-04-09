@@ -1039,6 +1039,9 @@ AstNode* parseMemberAccess(LexerTarget* lexer) {
     ////std::cout << "Parsing MemberAccess Expression!\n";
     auto ret = parseParenexp(lexer);
     Token tok = lexer->peek();
+    if(tok.type == TokenType::rsqrbrace) {
+        tok = lexer->lex();
+    }
     if(tok.type == TokenType::dot) {
         //consume token
         auto opnode = new BinOpNode();
@@ -1047,6 +1050,20 @@ AstNode* parseMemberAccess(LexerTarget* lexer) {
         auto ret2 = parseMemberAccess(lexer);
         opnode->addChild(ret);
         opnode->addChild(ret2);
+        return opnode;
+    } else if(tok.type == TokenType::lsqrbrace) {
+        //std::cout << "Parsing Array access!\n";
+        auto opnode = new BinOpNode();
+        opnode->setToken(tok);
+        opnode->addChild(ret);
+        //consume [
+        lexer->lex();
+        //parseExpression(lexer, opnode);
+        auto ret2 = parseMemberAccess(lexer);
+        opnode->addChild(ret2);
+        //std::cout << "Expression parsed\n";
+        //std::cout << "Next token is " << lexer->peek().token << '\n';
+        //lexer->lex();
         return opnode;
     }
     return ret;
