@@ -1087,6 +1087,6 @@ void writeObj(std::string o) {
     pass.run(*module);
     dest.flush();
 
-    outs() << "Wrote " << out << "\n";
+    //outs() << "Wrote " << out << "\n";
     return;
 }

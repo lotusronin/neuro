@@ -14,6 +14,7 @@
 bool debug_lexer;
 bool debug_parser;
 bool semantic_error = false;
+bool timedOut = false;
 
 void badargspass() {
     std::cout << "Usage:\n  Neuro <inputfiles>\n";
@@ -24,11 +25,14 @@ void badargspass() {
 void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
     std::string dbgl("-dbgl");
     std::string dbgp("-dbgp");
+    std::string t("-t");
     for(int i = 1; i < argc; i++) {
         if(dbgl.compare(argv[i]) == 0) {
             debug_lexer = true;
         } else if(dbgp.compare(argv[i]) == 0) {
             debug_parser = true;
+        } else if(q.compare(argv[i]) == 0) {
+            quietOut = true;
         } else {
             cmd_args.push_back(argv[i]);
         }
@@ -102,30 +106,33 @@ int main(int argc, char** argv) {
                 dotfileout.close();
                 std::string cmd = "dot -Tpng "+target1.targetName()+".dot -o "+target1.targetName()+".png";
                 std::cout << "Running command: " << cmd << "\n";
-                //system(cmd.c_str());
+                system(cmd.c_str());
             }
 
             auto start_ir = std::chrono::steady_clock::now();
             if(!semantic_error) {
+            //if(false) {
                 std::cout << "Generating IR code\n";
                 //Generate IR code
                 generateIR(ast);
                 std::cout << "IR output:\n";
-                dumpIR();
+                //dumpIR();
 
-                //writeObj(target1.targetName());
-                //linkFile(target1.targetName());
+                writeObj(target1.targetName());
+                linkFile(target1.targetName());
                 //writeIR(target1.targetName());
             }
             auto end_total = std::chrono::steady_clock::now();
             auto diff_total = end_total - start_total;
             auto diff_ir = end_total - start_ir;
+            if(timedOut) {
             std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
             std::cout << "Time for parsing: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_parse).count() << "ms\n";
             std::cout << "Time for semantic passes: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_semantic).count() << "ms\n";
             std::cout << "Time for IR generation: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count() << "ms\n";
             std::cout << "Total Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count() << "ms\n";
             BinOpNode::printDeleted();
+            }
 
             if(false) {
                 SymbolTable* s = getSymtab(f);

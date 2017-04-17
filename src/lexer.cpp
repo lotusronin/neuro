@@ -338,34 +338,40 @@ TOP:
                 int match_len = 1;
                 bool matched = false;
                 bool escaped = false;
-                while(!matched) {
-                    char c = content[f_idx+match_len];
-                    if(c == 15 || c == 12) {
-                        lineNum++;
-                        colNum = 0;
-                    }
-                    if(escaped) {
-                        switch(c) {
-                            case 'n':
-                            case 'a':
-                            case '0':
-                            case '\\':
-                            case '\'':
-                            case '\"':
-                            case 'r':
-                                break;
-                            default:
-                                std::cout << "Error, malformed character literal. Line " << lineNum << " Col " << colNum << '\n';
-                                return EOFTOKEN;
-                                break;
-                        }
-                    } else if(c == '\\') {
-                        escaped = true;
-                    } else if(c == '\'') {
-                        matched = true;
-                    }
-                    match_len++;
+                char c = content[f_idx+match_len];
+                if(c == 15 || c == 12) {
+                    std::cout << "Error, malformed character literal.\n";
+                    return EOFTOKEN;
                 }
+                match_len++;
+                if(c == '\\') {
+                    escaped = true;
+                }
+                c = content[f_idx+match_len];
+                if(escaped) {
+                    switch(c) {
+                        case 'n':
+                        case 'a':
+                        case '0':
+                        case '\\':
+                        case '\'':
+                        case '\"':
+                        case 'r':
+                            match_len++;
+                            break;
+                        default:
+                            std::cout << "Error, malformed character literal. Line " << lineNum << " Col " << colNum << '\n';
+                            return EOFTOKEN;
+                            break;
+                        }
+                    c = content[f_idx+match_len];
+                }
+                if(c != '\'') {
+                    std::cout << "Error, expected a ' in character literal. Line " << lineNum << " Col " << colNum << '\n';
+                    return EOFTOKEN;
+                }
+                matched = true;
+                match_len++;
                 longest_match = match_len;
                 longest_match_type = TokenType::charlit;
             }

@@ -426,9 +426,22 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
 
     if(t2.type == ST::u32) {
         switch(t1.type) {
+            case ST::Int:
             case ST::u64:
             case ST::s32:
             case ST::s64:
+                return true;
+                break;
+            default:
+                return false;
+                break;
+        }
+    }
+
+    if(t2.type == ST::Int) {
+        switch(t1.type) {
+            case ST::u32:
+            case ST::u64:
                 return true;
                 break;
             default:
@@ -472,6 +485,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     if(t2.type == ST::Char) {
         switch(t1.type) {
             case ST::intlit:
+            case ST::u32:
             case ST::Int:
                 return true;
                 break;
@@ -569,12 +583,13 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         auto tinfo = getTypeInfo(a,symTab);
                         arg_types.push_back(tinfo);
                     }
+                    /*
                     if(args.size() != funcparams.size()) {
                         //TODO(marcus): will have to support function overloading here
                         std::cout << "Error fun " << funcname << " expected " << funcparams.size() << " args, ";
                         std::cout <<  args.size() << " given.\n";
                         break;
-                    }
+                    }*/
 
                     //check every arg, against every parameter
                     for(unsigned int i = 0; i < funcparams.size(); i++) {
@@ -1370,7 +1385,8 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         for(unsigned int i = 0; i < funcparams->size(); i++) {
             auto param = funcparams->at(i);
             auto paramt = param->mtypeinfo;
-            auto argt = getTypeInfo(funccall->mchildren.at(i), symTab);
+            auto argn = funccall->mchildren.at(i);
+            auto argt = getTypeInfo(argn,symTab);
 
             if(!isSameType(paramt,argt)) {
                 if(!canCast(paramt,argt)) {
@@ -1407,7 +1423,8 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         for(unsigned int i = 0; i < funcparams->size(); i++) {
             auto param = funcparams->at(i);
             auto paramt = param->mtypeinfo;
-            auto argt = funccall->mchildren.at(i)->mtypeinfo;
+            auto argn = funccall->mchildren.at(i);
+            auto argt = getTypeInfo(argn,symTab);
 
             if(!isSameType(paramt,argt)) {
                 if(!canCast(paramt,argt)) {
