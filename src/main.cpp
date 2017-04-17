@@ -31,8 +31,8 @@ void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
             debug_lexer = true;
         } else if(dbgp.compare(argv[i]) == 0) {
             debug_parser = true;
-        } else if(q.compare(argv[i]) == 0) {
-            quietOut = true;
+        } else if(t.compare(argv[i]) == 0) {
+            timedOut = true;
         } else {
             cmd_args.push_back(argv[i]);
         }
