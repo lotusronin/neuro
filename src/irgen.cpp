@@ -15,7 +15,8 @@
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
-#include <llvm/Bitcode/ReaderWriter.h>
+//#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/IR/Verifier.h>
 #include <iostream>
 #include <string>
@@ -418,7 +419,12 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             } else if(op.compare("&&") == 0) {
                 //TODO(marcus): make this work for other sizes of integers
                 auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"and_res.addr"); 
-                auto zero_val = ConstantInt::get(context, APInt(32,0));
+                Value* zero_val;
+                if(lhsv->getType()->isIntegerTy(1)) {
+                    zero_val = ConstantInt::get(context, APInt(1,0));
+                } else {
+                    zero_val = ConstantInt::get(context, APInt(32,0));
+                }
                 auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
                 Builder.CreateStore(firstval,res);
                 auto enclosingscope = Builder.GetInsertBlock()->getParent();

@@ -6,3 +6,4 @@ Neuro
 *.dot
 *.png
 /build
+*.exe

@@ -685,6 +685,11 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         }
                         //TODO(marcus): actually type check
                         binopn->mtypeinfo = lhs_t;
+                    } else if(op.compare("==") == 0 || op.compare("!=") == 0) {
+                        typeCheckPass(binopn,symTab);
+                        TypeInfo t;
+                        t.type = SemanticType::Bool;
+                        binopn->mtypeinfo = t;
                     } else {
                         typeCheckPass(binopn,symTab);
                         //typeCheckPass(binopn->LHS(),symTab);
