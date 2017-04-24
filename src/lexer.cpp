@@ -538,7 +538,7 @@ TOP:
             size_t index;
             std::string newlines = "\\n";
             std::string newlinec = "\n";
-            while( (index = token.find_first_of(newlines)) != std::string::npos) {
+            while( (index = token.find(newlines)) != std::string::npos) {
                 token.replace(index, newlines.length(), newlinec);
                 index += newlinec.length();
             }
