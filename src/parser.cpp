@@ -723,8 +723,6 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
         parseForLoop(lexer, parent);
     } else if(tok.type == TokenType::swhile) {
         parseWhileLoop(lexer, parent);
-    } else {
-        parse_error(PET::Unknown, tok, lexer);
     }
 
     //std::cout << "Parsing loop body\n";
@@ -1089,7 +1087,7 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         parseExpression(lexer, opnode);
         tok = lexer->peek();
         if(tok.type != TokenType::rparen) {
-            parse_error(PET::Unknown, tok, lexer);
+            parse_error(PET::MissRParen, tok, lexer);
         }
         //consume )
         lexer->lex();
@@ -1101,24 +1099,24 @@ AstNode* parseParenexp(LexerTarget* lexer) {
     } else if(tok.type == TokenType::ssizeof) {
         //consume sizeof
         lexer->lex();
-        std::cout << "parsing sizeof!\n";
-        std::cout << lexer->peek().token << '\n';
+        //std::cout << "parsing sizeof!\n";
+        //std::cout << lexer->peek().token << '\n';
         if(lexer->peek().type != TokenType::lparen) {
-            parse_error(PET::Unknown, tok, lexer);
+            parse_error(PET::MissLParen, tok, lexer);
         }
         //consume (
         lexer->lex();
         //parseType
         auto sizeofn = new SizeOfNode();
-        std::cout << "parsing sizeof Type!\n";
+        //std::cout << "parsing sizeof Type!\n";
         parseType(lexer,sizeofn);
         if(lexer->peek().type != TokenType::rparen) {
-            parse_error(PET::Unknown,tok, lexer);
+            parse_error(PET::MissRParen,tok, lexer);
         }
         //consume )
         lexer->lex();
-        std::cout << "parsing sizeof done!\n";
-        std::cout << "Next is " << lexer->peek().token << '\n';
+        //std::cout << "parsing sizeof done!\n";
+        //std::cout << "Next is " << lexer->peek().token << '\n';
         return sizeofn;
     } else {
         //assert(false);
@@ -1140,13 +1138,14 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
 }
 
 void parseScopedFunccall(LexerTarget* lexer, AstNode* parent) {
-    std::cout << "parsing some scoped function call!\n";
+    //std::cout << "parsing some scoped function call!\n";
     auto scope = std::string(lexer->peek().token);
     //consume id ::
     lexer->lex();
     lexer->lex();
-    if(lexer->peekNext().type ==TokenType::dblcolon) {
-        parse_error(PET::MultipleScope, lexer->peekNext(),lexer);
+    auto tok = lexer->peekNext();
+    if(tok.type ==TokenType::dblcolon) {
+        parse_error(PET::MultipleScope,tok,lexer);
     }
     parseFunccall(lexer,parent);
     ((FuncCallNode*)(parent->mchildren.back()))->scopes = scope;
@@ -1195,7 +1194,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
         //std::cout << __FUNCTION__ << ": token wasn't (, was " << tok.token << '\n';
-        parse_error(PET::Unknown, tok, lexer);
+        parse_error(PET::MissLParen, tok, lexer);
     }
     //consume (
     tok = lexer->lex();
@@ -1205,7 +1204,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         //std::cout << __FUNCTION__ << ": token wasn't ), was " << tok.token << '\n';
-        parse_error(PET::Unknown, tok, lexer);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume ')'
     lexer->lex();

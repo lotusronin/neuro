@@ -38,6 +38,8 @@ enum class ParseErrorType {
     BadAssign,
     MissForeign,
     MultipleScope,
+    MissLParen,
+    MissRParen,
     Unknown
 };
 

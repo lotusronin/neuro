@@ -162,6 +162,14 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Multiple scope resolutions for an expression\n";
             std::cout << "  Token: " << t.token << " is not a valid identifier. Can only have one level of scope resolution.\n";
             break;
+        case ParseErrorType::MissLParen:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Expected Left paren\n";
+            std::cout << "  Token: " << t.token << " is not a '('\n";
+            break;
+        case ParseErrorType::MissRParen:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Expected Right paren\n";
+            std::cout << "  Token: " << t.token << " is not a ')'\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;
