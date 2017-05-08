@@ -568,7 +568,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto entries = getEntry(symTab,funcname);
                     //std::cout << "Type checking function call " << funcname << "\n";
                     if(entries.size() == 0) {
-                        break;
+                        entries = getEntry(symTab,funcname,funccall->scopes);
+                        if(entries.size() == 0) {
+                            break;
+                        }
                     }
                     SymbolTableEntry* e = entries.at(0);
                     auto funcparams = e->funcParams;
@@ -583,13 +586,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         auto tinfo = getTypeInfo(a,symTab);
                         arg_types.push_back(tinfo);
                     }
-                    /*
-                    if(args.size() != funcparams.size()) {
-                        //TODO(marcus): will have to support function overloading here
-                        std::cout << "Error fun " << funcname << " expected " << funcparams.size() << " args, ";
-                        std::cout <<  args.size() << " given.\n";
-                        break;
-                    }*/
 
                     //check every arg, against every parameter
                     for(unsigned int i = 0; i < funcparams.size(); i++) {
@@ -1065,7 +1061,10 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "Looking in symboltable for function " << name << "\n";
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        semanticError(SET::NoFunc, c, symTab);
+                        entry = getEntry(symTab,name,((FuncCallNode*)c)->scopes);
+                        if(entry.size() == 0) {
+                            semanticError(SET::NoFunc, c, symTab);
+                        }
                     } else {
                         //std::cout << "Function found\n";
                     }
@@ -1369,9 +1368,12 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     auto entries = getEntry(symTab,funcname);
 
     if(entries.size() == 0) {
-        //TODO(marcus): error, no function by that name
-        semanticError(SemanticErrorType::NoFunction, funccall, symTab);
-        return false;
+        entries = getEntry(symTab,funcname,funccall->scopes);
+        if(entries.size() == 0) {
+            //TODO(marcus): error, no function by that name
+            semanticError(SemanticErrorType::NoFunction, funccall, symTab);
+            return false;
+        }
     }
     auto e = entries.at(0);
 
@@ -1458,4 +1460,34 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
     }
     return (matchedNode != nullptr);
+}
+
+static void importPrepass(AstNode* ast, SymbolTable* symTab) {
+    auto compileunit = (CompileUnitNode*)ast;
+    auto projectSymtab = symTab->parent;
+    for(auto& i : compileunit->imports) {
+        auto child = projectSymtab->children.find(i);
+        if(child != projectSymtab->children.end()) {
+            std::cout << "Adding " << i << " to the symbol table\n";
+            symTab->imports.insert(std::make_pair(i,child->second));
+        } else {
+            std::cout << "Didn't find " << i << " imported\n";
+        }
+    }
+}
+
+void importPrepass(AstNode* ast) {
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::CompileUnit:
+                {
+                auto scope = getScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                importPrepass(c, scope);
+                }
+                break;
+            default:
+                //std::cout << "unknown ast node type!\n";
+                break;
+        }
+    }
 }

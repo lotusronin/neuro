@@ -85,6 +85,7 @@ int main(int argc, char** argv) {
             populateTypeList(ast);
             resolveSizeOfs(ast);
             checkAssignments(ast);
+            importPrepass(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
             printSymbolTable();

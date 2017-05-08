@@ -19,6 +19,7 @@ class CompileUnitNode : public AstNode {
     //private:
         int id;
         std::string mname;
+        std::vector<std::string> imports;
 };
 
 #endif

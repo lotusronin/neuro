@@ -19,6 +19,7 @@ class FuncCallNode : public AstNode {
         std::string mfuncname;
     //private:
         int id;
+        std::string scopes;
 };
 
 

@@ -158,6 +158,10 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Expected function or struct declaration\n";
             std::cout << "  Token: " << t.token << " is not 'fn' or 'struct'!\n";
             break;
+        case ParseErrorType::MultipleScope:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Multiple scope resolutions for an expression\n";
+            std::cout << "  Token: " << t.token << " is not a valid identifier. Can only have one level of scope resolution.\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;

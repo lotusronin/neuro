@@ -60,7 +60,7 @@ void parseOptargs2(LexerTarget* lexer, AstNode* parent);
 void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
 void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent);
 
-bool fileImproted(std::string f) {
+bool fileImported(std::string f) {
     auto iter = importedFiles.find(f);
     return (iter != importedFiles.end());
 }
@@ -186,11 +186,11 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     //consume ;
     lexer->lex();
 
-    if(!fileImproted(newfilename)) {
+    if(!fileImported(newfilename)) {
+        ((CompileUnitNode*)parent)->imports.push_back(newfilename);
         CompileUnitNode* compunit = importFile(newfilename);
         LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
-        importlex.lex();
-        importlex.lex();
+        importlex.lexFile();
         //std::cout << "\nImporting file: " << newfilename << "\n";
         parseTopLevelStatements(&importlex, compunit);
         program->addChild(compunit);
@@ -1139,6 +1139,19 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+void parseScopedFunccall(LexerTarget* lexer, AstNode* parent) {
+    std::cout << "parsing some scoped function call!\n";
+    auto scope = std::string(lexer->peek().token);
+    //consume id ::
+    lexer->lex();
+    lexer->lex();
+    if(lexer->peekNext().type ==TokenType::dblcolon) {
+        parse_error(PET::MultipleScope, lexer->peekNext(),lexer);
+    }
+    parseFunccall(lexer,parent);
+    ((FuncCallNode*)(parent->mchildren.back()))->scopes = scope;
+}
+
 void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     //get id
     Token tok = lexer->peek();
@@ -1147,6 +1160,8 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     if(tokNext.type == TokenType::lparen) {
         //std::cout << "Parsing FuncCall!\n";
         parseFunccall(lexer, parent);
+    } else if(tokNext.type == TokenType::dblcolon) {
+        parseScopedFunccall(lexer, parent);
     } else {
         ////std::cout << "Parsing Variable!\n";
         //Will not work, have to fix somehow...

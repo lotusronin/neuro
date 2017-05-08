@@ -37,6 +37,7 @@ enum class ParseErrorType {
     MissSemiReturn,
     BadAssign,
     MissForeign,
+    MultipleScope,
     Unknown
 };
 
