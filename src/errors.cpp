@@ -62,10 +62,6 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Invalid import value\n";
             std::cout << "  Token: " << t.token << " Cannot be imported\n";
             break;
-        case ParseErrorType::MissImportSemicolon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing semicolon\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
         case ParseErrorType::MissPrototypeFn:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Expecting fn keyword\n";
             std::cout << "  Token: " << t.token << " is not 'fn'!\n";
@@ -74,17 +70,9 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Bad prototype identifier\n";
             std::cout << "  Token: " << t.token << " is not a valid prototype name!\n";
             break;
-        case ParseErrorType::MissPrototypeLParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing left parentheses\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
         case ParseErrorType::BadFunctionParameter:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Bad function parameter\n";
             std::cout << "  Token: " << t.token << " Expected an identifier or ')'!\n";
-            break;
-        case ParseErrorType::MissOptparamColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: parameter missing colon\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
             break;
         case ParseErrorType::BadTypeIdentifier:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Bad type identifier\n";
@@ -94,61 +82,13 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Bad parameter formation\n";
             std::cout << "  Token: " << t.token << " Expected a ',' or a ')'!\n";
             break;
-        case ParseErrorType::MissPrototypeColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Expecting colon in prototype\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
-            break;
-        case ParseErrorType::MissPrototypeSemicolon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing semicolon\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
         case ParseErrorType::BadVarName:
             std::cout << "File:" << t.line << ":" << t.col << " Error: bad variable name\n";
             std::cout << "  Token: " << t.token << " is not a valid variable identifier!\n";
             break;
-        case ParseErrorType::MissVardecColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing colon in variable declaration\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
-            break;
-        case ParseErrorType::MissPrototypeRParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing right parentheses\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
         case ParseErrorType::IncompleteBlock:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Block was never closed\n";
             std::cout << "  Token: " << t.token << " is not a '}'!\n";
-            break;
-        case ParseErrorType::MissIfLParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in if statement\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissIfRParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in if statement\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::MissLParenFor:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in for loop\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissSemicolonFor1:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop before condition\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::MissSemicolonFor2:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop after condition\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::MissRParenFor:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in for loop\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::MissLParenWhile:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in while loop\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissRParenWhile:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in while loop\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
             break;
         case ParseErrorType::MissEqVarDecAssign:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Malformed variable declaration assignment\n";
@@ -169,6 +109,14 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
         case ParseErrorType::MissRParen:
             std::cout << "File:" << t.line << ":" << t.col << " Error: Expected Right paren\n";
             std::cout << "  Token: " << t.token << " is not a ')'\n";
+            break;
+        case ParseErrorType::MissSemicolon:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Expected semicolon\n";
+            std::cout << "  Token: " << t.token << " is not a ';'\n";
+            break;
+        case ParseErrorType::MissColon:
+            std::cout << "File:" << t.line << ":" << t.col << " Error: Expected colon\n";
+            std::cout << "  Token: " << t.token << " is not a ':'\n";
             break;
        default:
             std::cout << "Unknown Parse Error!\n";
