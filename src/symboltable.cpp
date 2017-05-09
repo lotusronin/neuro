@@ -148,15 +148,15 @@ void printTable(SymbolTable* s) {
     if(s == nullptr) {
         return;
     }
-    //std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
+    std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
     for(auto& e : s->table) {
-        //std::cout << e.first << ": " << e.second->type << "\n";
+        std::cout << e.first << ": " << e.second->type << "\n";
     }
-    //std::cout << "children:\n";
+    std::cout << "children:\n";
     for(auto& c : s->children) {
-        //std::cout << c.first << " ";
+        std::cout << c.first << " ";
     }
-    //std::cout << "\n\n";
+    std::cout << "\n\n";
     for(auto& c : s->children) {
         printTable(c.second);
     }

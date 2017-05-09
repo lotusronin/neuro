@@ -336,7 +336,6 @@ TOP:
         case '\'':
             {
                 int match_len = 1;
-                bool matched = false;
                 bool escaped = false;
                 char c = content[f_idx+match_len];
                 if(c == 15 || c == 12) {
@@ -370,7 +369,6 @@ TOP:
                     std::cout << "Error, expected a ' in character literal. Line " << lineNum << " Col " << colNum << '\n';
                     return EOFTOKEN;
                 }
-                matched = true;
                 match_len++;
                 longest_match = match_len;
                 longest_match_type = TokenType::charlit;

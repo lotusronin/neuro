@@ -491,7 +491,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     lexer->lex();
     //consume :
     Token tok = lexer->lex();
-    Token nextTok = lexer->peekNext();
+    //Token nextTok = lexer->peekNext();
     // id : . type = expression
     // it : . type
     if(tok.type == TokenType::assignment) {
@@ -1303,7 +1303,8 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         //consume id
         lexer->lex();
         //consume :
-        Token tok = lexer->lex();
+        //Token tok = lexer->lex();
+        lexer->lex();
         // it : . type
         
         //std::cout << "var " << tokid.token << " of type " << tok.token << "\n";

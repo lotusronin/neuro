@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
             importPrepass(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
-            printSymbolTable();
+            //printSymbolTable();
             typeCheckPass(ast);
             //printSymbolTable();
             //decorateAst(ast);

@@ -252,7 +252,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                             if(numParams == ol->mchildren.size()-1) {
                                 bool repeat = true;
                                 //check for any mismatched param types
-                                for(int i = 0; i < numParams; ++i) {
+                                for(unsigned int i = 0; i < numParams; ++i) {
                                     if(!isSameType(params->at(i)->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
                                         repeat = false;
                                         break;
@@ -983,8 +983,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::Assign:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
-                    auto lhs = ((AssignNode*)c)->getLHS();
-                    auto rhs = ((AssignNode*)c)->getRHS();
                     variableUseCheck(c,symTab);
                 }
                 break;
@@ -995,7 +993,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
-                        auto tok = c->getChildren()->at(0)->mtoken;
                         semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
                     } else {
                         ////std::cout << "Adding variable declaration entry!\n";
@@ -1010,7 +1007,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
                     std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
-                    auto child_vec = ((VarNode*)(c->getChildren()->at(0)))->getChildren();
                     auto entry = getEntryCurrentScope(symTab,name);
                     if(entry) {
                         semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
@@ -1083,9 +1079,7 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                         //std::cout << "Adding entry to symbol table, Param " << name << '\n';
                         TypeInfo param_typeinfo = param_node->mtypeinfo;
                         //std::cout << "Param type info: " << param_typeinfo << '\n';
-                        //TODO(marcus): deal with user types too!
                         addVarEntry(symTab,param_typeinfo,name);
-                        //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
                     }
                 }
                 break;
@@ -1126,12 +1120,12 @@ void printSymbolTable() {
 
 std::vector<std::vector<AstNode*>> deferStacks;
 void printDeferStacks() {
-    //std::cout << "deferStacks.size = " << deferStacks.size() << "\n";
-    //std::cout << "Sizes: ";
+    std::cout << "deferStacks.size = " << deferStacks.size() << "\n";
+    std::cout << "Sizes: ";
     for(auto& s : deferStacks) {
-        //std::cout << s.size() << " ";
+        std::cout << s.size() << " ";
     }
-    //std::cout << "\n";
+    std::cout << "\n";
 }
 void deferPass(AstNode* ast) {
     auto children = ast->getChildren();
@@ -1147,7 +1141,7 @@ void deferPass(AstNode* ast) {
         } else if(nodetype == AstNodeType::DeferStmt) {
             //std::cout << "Defer Statement! adding to stack!\n";
             deferStacks.back().push_back(c);
-            printDeferStacks();
+            //printDeferStacks();
             deferPass(c);
             //remove defer from list of children
             i = children->erase(i);
@@ -1169,7 +1163,7 @@ void deferPass(AstNode* ast) {
             }
         } else if(nodetype == AstNodeType::RetStmnt) {
             //std::cout << "deferPass: Return Statement Found\n";
-            printDeferStacks();
+            //printDeferStacks();
             //iterate thru all defer stacks, last to first
             for(auto stack_iter = deferStacks.rbegin(); stack_iter != deferStacks.rend(); stack_iter++) {
                 auto def_stack = stack_iter;
@@ -1192,7 +1186,7 @@ void deferPass(AstNode* ast) {
     }
     if(ast->nodeType() == AstNodeType::Block) {
         //std::cout << "deferPass: End of Block is here!\n";
-        printDeferStacks();
+        //printDeferStacks();
         //end of block scope, iterate through all defer statements in last stack
         if(deferStacks.size() > 0) {
             auto defers = deferStacks.back();
@@ -1209,7 +1203,7 @@ void deferPass(AstNode* ast) {
             auto last_stack = --deferStacks.end();
             //std::cout << "erasing last stack\n";
             deferStacks.erase(last_stack);
-            printDeferStacks();
+            //printDeferStacks();
         }
 
     }
@@ -1370,7 +1364,6 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     if(entries.size() == 0) {
         entries = getEntry(symTab,funcname,funccall->scopes);
         if(entries.size() == 0) {
-            //TODO(marcus): error, no function by that name
             semanticError(SemanticErrorType::NoFunction, funccall, symTab);
             return false;
         }

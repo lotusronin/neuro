@@ -63,9 +63,6 @@ enum class TokenType {
     ssizeof,
     increment,
     decrement,
-    dblcolon,
-    lsqrbrace,
-    rsqrbrace,
     eof
 };
 
@@ -74,7 +71,7 @@ struct Token {
     unsigned int col;
     unsigned int line;
     //std::string token;
-    const char* token;
+    char* token;
 };
 
 #endif

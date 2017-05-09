@@ -910,14 +910,14 @@ void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
         case ANT::Prototype:
             {
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
-                Function* f = prototypeCodegen(ast, scope);
+                prototypeCodegen(ast, scope);
                 return;
             }
             break;
         case ANT::FuncDef:
             {
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
-                Function* F = functionCodegen(ast, scope, true);
+                functionCodegen(ast, scope, true);
                return;
             }
             break;
@@ -962,8 +962,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
         case ANT::Prototype:
             {
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
-                Function* f = prototypeCodegen(ast, scope);
-                //f->dump();
+                prototypeCodegen(ast, scope);
                 return;
             }
             break;
@@ -971,7 +970,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
             {
                 std::cout << "Generating FuncDef IR\n";
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
-                Function* F = functionCodegen(ast, scope);
+                functionCodegen(ast, scope);
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
                //verifyFunction(*F);
                return;
