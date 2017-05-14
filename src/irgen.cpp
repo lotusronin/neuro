@@ -184,7 +184,6 @@ StructType* getStructIRType(std::string ident) {
     return ret;
 }
 
-
 Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     PrototypeNode* protonode = (PrototypeNode*) n;
     Function* defined = module->getFunction(protonode->mfuncname);
@@ -264,9 +263,7 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
         return F;
     }
 
-    //TODO(marcus): what is entry, can it be used for every function?
-    //entry is a label for the basic block, llvm makes sure actual label is unique
-    //by appending an number to the end
+    //NOTE(marcus): entry is a label for the basic block, llvm makes sure actual label is unique
     BasicBlock* BB = BasicBlock::Create(context, "entry", F);
     Builder.SetInsertPoint(BB);
 
@@ -414,25 +411,6 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 return Builder.CreateXor(lhsv,ConstantInt::get(context,APInt(32,-1)));
             } else if(op.compare("||") == 0) {
                 //TODO(marcus): make this work for other sizes of integers
-                auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"or_res.addr"); 
-                auto zero_val = ConstantInt::get(context, APInt(32,0));
-                auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
-                Builder.CreateStore(firstval,res);
-                auto enclosingscope = Builder.GetInsertBlock()->getParent();
-                BasicBlock* secBB = BasicBlock::Create(context, "orsecond", enclosingscope);
-                //enclosingscope->getBasicBlockList().push_back(secBB);
-                BasicBlock* endBB = BasicBlock::Create(context, "orend", enclosingscope);
-                //enclosingscope->getBasicBlockList().push_back(endBB);
-                Builder.CreateCondBr(firstval,endBB,secBB);
-                Builder.SetInsertPoint(secBB);
-                auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
-                Builder.CreateStore(secondval,res);
-                Builder.CreateBr(endBB);
-                Builder.SetInsertPoint(endBB);
-                return Builder.CreateLoad(res,"or_res");
-            } else if(op.compare("&&") == 0) {
-                //TODO(marcus): make this work for other sizes of integers
-                auto res = Builder.CreateAlloca(Type::getInt1Ty(context),0,"and_res.addr"); 
                 Value* zero_val;
                 if(lhsv->getType()->isIntegerTy(1)) {
                     zero_val = ConstantInt::get(context, APInt(1,0));
@@ -441,9 +419,20 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 }
                 auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
                 auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
-                auto andedvals = Builder.CreateAnd(firstval,secondval,"anded");
-                Builder.CreateStore(andedvals,res);
-                return Builder.CreateLoad(res,"and_res");
+                auto oredvals = Builder.CreateOr(firstval,secondval,"or_res");
+                return oredvals;
+            } else if(op.compare("&&") == 0) {
+                //TODO(marcus): make this work for other sizes of integers
+                Value* zero_val;
+                if(lhsv->getType()->isIntegerTy(1)) {
+                    zero_val = ConstantInt::get(context, APInt(1,0));
+                } else {
+                    zero_val = ConstantInt::get(context, APInt(32,0));
+                }
+                auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
+                auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
+                auto andedvals = Builder.CreateAnd(firstval,secondval,"and_res");
+                return andedvals;
             } else if(op.compare(".") == 0) {
                 //std::cout << "Generating member access!\n";
                 //std::cout << "Var name " << lhs->mtoken.token << "\n";
@@ -461,12 +450,6 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto structval = expressionCodegen(lhs,sym);
                 auto structtype = structval->getType();
                 //auto structtype = lhsv->getType();
-                if(structtype->isPointerTy()) {
-                    //std::cout << "struct is actually a pointer type!\n";
-                } else {
-                    //std::cout << "struct is not a pointer type\n";
-                }
-                //auto structmembername = rhs->mtoken.token;
                 auto structmembername = ((VarNode*)rhs)->getVarName();
                 //std::cout << "member name is " << structmembername << "\n";
                 auto type_name = structtype->getStructName();
@@ -713,7 +696,10 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     auto typeinfo = symbol_table_entry->typeinfo;
     auto irtype = getIRType(typeinfo);
-    auto alloc = Builder.CreateAlloca(irtype,0,varn->getVarName());
+    Function* func = Builder.GetInsertBlock()->getParent();
+    auto entryBB = &func->getEntryBlock();
+    IRBuilder<> tmpBuilder(entryBB,entryBB->begin());
+    auto alloc = tmpBuilder.CreateAlloca(irtype,0,varn->getVarName());
     symbol_table_entry->address = (void*)alloc;
     return;
 }
@@ -732,7 +718,10 @@ void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     auto typeinfo = symbol_table_entry->typeinfo;
     //std::cout << typeinfo << '\n';
     auto ir_type = getIRType(typeinfo);
-    AllocaInst* alloca = Builder.CreateAlloca(ir_type,0,varn->getVarName());
+    auto func = Builder.GetInsertBlock()->getParent();
+    auto entryBB = &func->getEntryBlock();
+    IRBuilder<> tmpBuilder(entryBB,entryBB->begin());
+    AllocaInst* alloca = tmpBuilder.CreateAlloca(ir_type,0,varn->getVarName());
     symbol_table_entry->address = alloca;
     //TODO(marcus): don't hardcode child accesses
     Value* val = expressionCodegen(vardecan->mchildren.at(1), sym);
@@ -857,17 +846,19 @@ Value* conditionalCodegen(AstNode* n, SymbolTable* sym) {
 
 void loopstmtCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto) {
     BasicBlock* loc;
+    BasicBlock* afterBB;
+    auto enclosingscope = Builder.GetInsertBlock()->getParent();
     if(std::string(n->mtoken.token).compare("break") == 0) {
-        //std::cout << "Generating break! LOOP STATEMENT!\n";
         loc = breakto;
+        afterBB = BasicBlock::Create(context,"afterbreak",enclosingscope);
     } else {
-        //std::cout << "Generating continue! LOOP STATEMENT\n";
         loc = continueto;
+        afterBB = BasicBlock::Create(context,"aftercontinue",enclosingscope);
     }
-    //std::cout << n->mtoken.token << "\n";
 
     if(loc != nullptr) {
         Builder.CreateBr(loc);
+        Builder.SetInsertPoint(afterBB);
     }
     return;
 }
@@ -993,22 +984,6 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
                //verifyFunction(*F);
                return;
-            }
-            break;
-        case ANT::FuncCall:
-            {
-                //TODO(marcus): This is an unused cases.
-                //std::cout << "generating function call\n";
-                funcCallCodegen(ast, sym);
-                return;
-            }
-            break;
-        case ANT::RetStmnt:
-            {
-                //TODO(marcus): This is an unused cases.
-                //std::cout << "generating return!\n";
-                retCodegen(ast, sym);
-                return;
             }
             break;
         case ANT::CompileUnit:

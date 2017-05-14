@@ -140,19 +140,6 @@ int main(int argc, char** argv) {
                 const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
                 genCFile(f,symtab_entries);
             }
-            /**/
-            /**
-            auto start_lex = std::chrono::steady_clock::now();
-            Token tok;
-            while(tok.type != TokenType::eof) {
-                tok = target1.lex();
-                //std::cout << "Token: " << tok.token << " at (" << tok.line << "," << tok.col << ")\n";
-            }/**/
-            /*
-            auto end_lex = std::chrono::steady_clock::now();
-            auto diff_lex = end_lex-start_lex;
-            std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
-            /**/
         }
         return 0;
     }
