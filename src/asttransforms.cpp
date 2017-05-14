@@ -736,9 +736,14 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Return!\n";
                     auto retn = (ReturnNode*)c;
-                    auto expr = retn->mchildren.at(0);
-                    typeCheckPass(c,symTab);
-                    TypeInfo ret_typeinfo = getTypeInfo(expr,symTab);
+                    TypeInfo ret_typeinfo;
+                    ret_typeinfo.type = SemanticType::Void;
+                    AstNode* expr = nullptr;
+                    if(retn->mchildren.size() != 0) {
+                        expr = retn->mchildren.at(0);
+                        typeCheckPass(c,symTab);
+                        ret_typeinfo = getTypeInfo(expr,symTab);
+                    }
                     std::string name = ((FuncDefNode*)currentFunc)->mfuncname;
                     name += std::to_string(((FuncDefNode*)currentFunc)->id);
                     //std::string name = currentFunc2;
@@ -755,6 +760,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             CastNode* cast = new CastNode();
                             cast->fromType = ret_typeinfo;
                             cast->toType = func_typeinfo;
+                            //NOTE(marcus): should never reach here with expr as nullptr
+                            //can't cast void to another type.
                             cast->addChild(expr);
                             retn->mchildren[0] = cast;
                         } else {
@@ -903,6 +910,9 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                 //TODO(marcus): will have to deal with overloads somehow
                 std::string name = ((FuncCallNode*)ast)->mfuncname;
                 auto entries = getEntry(symTab,name);
+                if(entries.size() == 0) {
+                    entries = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
+                }
                 SymbolTableEntry* e = entries.at(0);
                 //TODO(marcus): function entries don't get their typeinfo field set
                 return e->typeinfo;

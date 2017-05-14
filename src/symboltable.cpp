@@ -192,7 +192,7 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name,
         auto scopedToFile = visible->second;
         auto exists = scopedToFile->table.find(name);
         if(exists != scopedToFile->table.end()) {
-            std::cout << "Found " << name << " in scope " << scope << '\n';
+            //std::cout << "Found " << name << " in scope " << scope << '\n';
             ret.push_back(exists->second);
         } else {
             std::cout << "Didn't find function " << name << '\n';

@@ -111,6 +111,19 @@ Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
 
 //TODO(marcus): should probably share this prototype in a header...
 bool isPrimitiveType(ST type);
+
+//TODO(marcus): do a better check for primitive types (pointers?)
+bool isPrimitiveType(TypeInfo t) {
+    bool ret = true;
+    ST type = t.type;
+    switch(type) {
+        case ST::User:
+            ret = false;
+        default:
+            break;
+    }
+    return ret;
+}
 #undef ST
 
 Type* generateTypeCodegen(AstNode* n) {
@@ -142,9 +155,10 @@ Type* generateTypeCodegen(AstNode* n) {
         TypeInfo typeinfo = var->mtypeinfo; 
         SemanticType stype = typeinfo.type;
         int indirection = typeinfo.indirection;
-        if(isPrimitiveType(stype)) {
+        if(isPrimitiveType(typeinfo)) {
             memberTypes.push_back(getIRType(stype,"",indirection));
         } else {
+            //TODO(marcus): make this work for non struct ptrs
             std::string usertypename = typeinfo.userid;
             auto userdeftype = getStructIRType(usertypename);
             userdeftype = (StructType*) getIRPtrType((Type*)userdeftype,indirection);
@@ -405,10 +419,10 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
                 Builder.CreateStore(firstval,res);
                 auto enclosingscope = Builder.GetInsertBlock()->getParent();
-                BasicBlock* secBB = BasicBlock::Create(context, "orsecond");
-                enclosingscope->getBasicBlockList().push_back(secBB);
-                BasicBlock* endBB = BasicBlock::Create(context, "orend");
-                enclosingscope->getBasicBlockList().push_back(endBB);
+                BasicBlock* secBB = BasicBlock::Create(context, "orsecond", enclosingscope);
+                //enclosingscope->getBasicBlockList().push_back(secBB);
+                BasicBlock* endBB = BasicBlock::Create(context, "orend", enclosingscope);
+                //enclosingscope->getBasicBlockList().push_back(endBB);
                 Builder.CreateCondBr(firstval,endBB,secBB);
                 Builder.SetInsertPoint(secBB);
                 auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
@@ -426,18 +440,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                     zero_val = ConstantInt::get(context, APInt(32,0));
                 }
                 auto firstval = Builder.CreateICmpNE(lhsv,zero_val);
-                Builder.CreateStore(firstval,res);
-                auto enclosingscope = Builder.GetInsertBlock()->getParent();
-                BasicBlock* secBB = BasicBlock::Create(context, "andsecond");
-                enclosingscope->getBasicBlockList().push_back(secBB);
-                BasicBlock* endBB = BasicBlock::Create(context, "andend");
-                enclosingscope->getBasicBlockList().push_back(endBB);
-                Builder.CreateCondBr(firstval,secBB,endBB);
-                Builder.SetInsertPoint(secBB);
                 auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
-                Builder.CreateStore(secondval,res);
-                Builder.CreateBr(endBB);
-                Builder.SetInsertPoint(endBB);
+                auto andedvals = Builder.CreateAnd(firstval,secondval,"anded");
+                Builder.CreateStore(andedvals,res);
                 return Builder.CreateLoad(res,"and_res");
             } else if(op.compare(".") == 0) {
                 //std::cout << "Generating member access!\n";
@@ -453,7 +458,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //NOTE(marcus): only way for something to have an address is if we alloca it?
                 //Then we may need to alloca temp variables if part of an expression
                 //generates a struct that we will do address of or member access on.
-                auto structtype = expressionCodegen(lhs,sym)->getType();
+                auto structval = expressionCodegen(lhs,sym);
+                auto structtype = structval->getType();
                 //auto structtype = lhsv->getType();
                 if(structtype->isPointerTy()) {
                     //std::cout << "struct is actually a pointer type!\n";
@@ -718,7 +724,11 @@ void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     auto varn = (VarNode*)vardecan->mchildren.at(0);
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     //std::cout << "Looking up entry " << varn->getVarName() << '\n';
-    if(!symbol_table_entry) std::cout << "Entry not found\n";
+    if(!symbol_table_entry) 
+    {
+        std::cout << "Entry not found\n";
+        std::cout << "Current Symbol Table: " << sym->name << " scope " << sym->scope <<"\n";
+    }
     auto typeinfo = symbol_table_entry->typeinfo;
     //std::cout << typeinfo << '\n';
     auto ir_type = getIRType(typeinfo);
@@ -783,7 +793,7 @@ void whileloopCodegen(AstNode* n, SymbolTable* sym) {
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* whileBB = BasicBlock::Create(context,"while",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"whilebegin",enclosingscope);
-    BasicBlock* endBB = BasicBlock::Create(context,"whileend",enclosingscope);
+    BasicBlock* endBB = BasicBlock::Create(context,"whileend");
 
     Builder.CreateBr(whileBB);
     Builder.SetInsertPoint(whileBB);
@@ -795,6 +805,7 @@ void whileloopCodegen(AstNode* n, SymbolTable* sym) {
     statementCodegen(whilen->getBody(), whileBB, endBB, sym);
     
     Builder.CreateBr(whileBB);
+    enclosingscope->getBasicBlockList().push_back(endBB);
     Builder.SetInsertPoint(endBB);
     return;
 }
@@ -811,8 +822,8 @@ void forloopCodegen(AstNode* n, SymbolTable* sym) {
     BasicBlock* forBB = BasicBlock::Create(context,"for",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"forbegin",enclosingscope);
     BasicBlock* bodyBB = BasicBlock::Create(context,"forbody",enclosingscope);
-    BasicBlock* updateBB = BasicBlock::Create(context,"forupdate",enclosingscope);
-    BasicBlock* endBB = BasicBlock::Create(context,"forend",enclosingscope);
+    BasicBlock* updateBB = BasicBlock::Create(context,"forupdate");
+    BasicBlock* endBB = BasicBlock::Create(context,"forend");
     
     Builder.CreateBr(forBB);
     Builder.SetInsertPoint(forBB);
@@ -824,9 +835,11 @@ void forloopCodegen(AstNode* n, SymbolTable* sym) {
     Builder.SetInsertPoint(bodyBB);
     statementCodegen(loopbody, updateBB, endBB, sym);
     Builder.CreateBr(updateBB);
+    enclosingscope->getBasicBlockList().push_back(updateBB);
     Builder.SetInsertPoint(updateBB);
     statementCodegen(update, updateBB, endBB, sym);
     Builder.CreateBr(beginBB);
+    enclosingscope->getBasicBlockList().push_back(endBB);
     Builder.SetInsertPoint(endBB);
 
 }
@@ -881,13 +894,19 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
                 ifelseCodegen(n, begin, end, sym);
                 break;
         case ANT::WhileLoop:
-                whileloopCodegen(n, sym);
+                {
+                auto scope = getScope(sym, "while"+std::to_string(((WhileLoopNode*)n)->getId()));
+                whileloopCodegen(n, scope);
+                }
                 break;
         case ANT::FuncCall:
                 funcCallCodegen(n, sym);
                 break;
         case ANT::ForLoop:
+                {
+                    //NOTE(marcus): gets for-loop scope in forloopCodegen
                 forloopCodegen(n, sym);
+                }
                 break;
         case ANT::LoopStmt:
                 loopstmtCodegen(n,begin,end);
@@ -1090,7 +1109,10 @@ void writeObj(std::string o) {
     }
 
     pass.run(*module);
+    //std::cout << "OPTIMIZED IR.....\n";
+    //dumpIR();
     dest.flush();
+    //std::cout << "wrote out object file\n";
 
     //outs() << "Wrote " << out << "\n";
     return;
