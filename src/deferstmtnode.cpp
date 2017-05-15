@@ -11,16 +11,6 @@ DeferStmtNode::DeferStmtNode() {
 DeferStmtNode::~DeferStmtNode() {
 }
 
-void DeferStmtNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "defer"<<id<<";\n";
-    outfile << "defer"<<id<<"[label=\"defer\"];\n";
-    for (auto child : mchildren) {
-        outfile << "defer" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType DeferStmtNode::nodeType() {
     return AstNodeType::DeferStmt;
 }

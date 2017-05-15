@@ -10,7 +10,6 @@ class FuncDefNode : public AstNode {
         static int count;
         FuncDefNode();
         ~FuncDefNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addParams(AstNode* node);
         void addChild(AstNode* node);
@@ -19,9 +18,10 @@ class FuncDefNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*>* getParameters();
         AstNode* getFunctionBody();
-        std::vector<AstNode*> mparams;
+        std::string mangledName();
+        //std::vector<AstNode*> mparams;
         std::string mfuncname;
-    private:
+    //private:
         int id;
 };
 

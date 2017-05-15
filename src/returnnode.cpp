@@ -11,15 +11,6 @@ ReturnNode::ReturnNode() {
 ReturnNode::~ReturnNode() {
 }
 
-void ReturnNode::makeGraph(std::ofstream& outfile) {
-    outfile << "return" << id << ";\n";
-    outfile << "return" << id << "[label=\"return\"];\n";
-    for (auto child : mchildren) {
-        outfile << "return" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType ReturnNode::nodeType() {
     return AstNodeType::RetStmnt;
 }

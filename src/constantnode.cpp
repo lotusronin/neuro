@@ -11,15 +11,6 @@ ConstantNode::ConstantNode() {
 ConstantNode::~ConstantNode() {
 }
 
-void ConstantNode::makeGraph(std::ofstream& outfile) {
-    outfile << "constant" << id << ";\n";
-    outfile << "constant" << id << "[label=\"" << mval << "\ntype: " << mstype << "\"];\n";
-    for (auto child : mchildren) {
-        outfile << "constant" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType ConstantNode::nodeType() {
     return AstNodeType::Const;
 }
@@ -42,6 +33,7 @@ std::string ConstantNode::getVal() {
 
 void ConstantNode::setToken(const Token& t) {
     mtoken = t;
+    SemanticType mstype;
     if(t.type == TokenType::intlit) {
         mstype = SemanticType::intlit;
     } else if(t.type == TokenType::floatlit) {
@@ -50,6 +42,8 @@ void ConstantNode::setToken(const Token& t) {
         //TODO(marcus): maybe fix this up?
         mstype = SemanticType::Char;
         mtypeinfo.indirection = 1;
+    } else if(t.type == TokenType::charlit) {
+        mstype = SemanticType::Char;
     }
     mtypeinfo.type = mstype;
 }

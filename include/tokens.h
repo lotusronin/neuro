@@ -28,6 +28,7 @@ enum class TokenType {
     floatlit,
     intlit,
     strlit,
+    charlit,
     assignment,
     equality,
     nequality,
@@ -58,6 +59,13 @@ enum class TokenType {
     carrot,
     tilda,
     mod,
+    cast,
+    ssizeof,
+    increment,
+    decrement,
+    dblcolon,
+    lsqrbrace,
+    rsqrbrace,
     eof
 };
 
@@ -66,7 +74,7 @@ struct Token {
     unsigned int col;
     unsigned int line;
     //std::string token;
-    char* token;
+    const char* token;
 };
 
 #endif

@@ -11,41 +11,32 @@ ForLoopNode::ForLoopNode() {
 ForLoopNode::~ForLoopNode() {
 }
 
-void ForLoopNode::makeGraph(std::ofstream& outfile) {
-    outfile << "forloop" << id << ";\n";
-    outfile << "forloop" << id << "[label=\"for\"];\n";
-    for (auto s : mstatements) {
-        outfile << "forloop" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType ForLoopNode::nodeType() {
     return AstNodeType::ForLoop;
 }
 
 void ForLoopNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 
 std::vector<AstNode*>* ForLoopNode::getChildren() {
-    return &mstatements;
+    return &mchildren;
 }
 
 AstNode* ForLoopNode::getInit() {
-    return mstatements.at(0);
+    return mchildren.at(0);
 }
 
 AstNode* ForLoopNode::getConditional() {
-    return mstatements.at(1);
+    return mchildren.at(1);
 }
 
 AstNode* ForLoopNode::getUpdate() {
-    return mstatements.at(2);
+    return mchildren.at(2);
 }
 
 AstNode* ForLoopNode::getBody() {
-    return mstatements.at(3);
+    return mchildren.at(3);
 }
 
 int ForLoopNode::getId() {

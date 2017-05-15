@@ -9,19 +9,11 @@ BinOpNode::BinOpNode() {
     id = BinOpNode::count;
     BinOpNode::count++;
     BinOpNode::constructed++;
+    unaryOp = false;
 }
 
 BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
-}
-
-void BinOpNode::makeGraph(std::ofstream& outfile) {
-    outfile << "binop" << id << ";\n";
-    outfile << "binop" << id << "[label=\"" << mop << "\ntype: " << mstype << "\"];\n";
-    for (auto child : mchildren) {
-        outfile << "binop" << id << " -> ";
-        child->makeGraph(outfile);
-    }
 }
 
 AstNodeType BinOpNode::nodeType() {
@@ -52,7 +44,7 @@ void BinOpNode::setOp(const std::string& op) {
         mpriority = 1;
     } else if(op.compare("*") == 0 || op.compare("/") == 0 || op.compare("%") == 0) {
         mpriority = 2;
-    } else if(op.compare(".") == 0) {
+    } else if(op.compare(".") == 0 || op.compare("[") == 0) {
         mpriority = 4;
     } else if(op.compare("@") == 0 || op.compare("&") == 0 || op.compare("!") == 0 || op.compare("~") == 0) {
         //TODO(marcus): bitwise & has a lower priority than address-of!!!
@@ -106,6 +98,7 @@ SemanticType BinOpNode::getType() {
     //The . and -> operators don't care about lhs type
     //also this breaks for math operators since it always
     //promotes to the rhs type, instead of largest
+    /*
     if(mpriority == 3) {
         mstype = mchildren[0]->getType();
     } else {
@@ -117,9 +110,9 @@ SemanticType BinOpNode::getType() {
         } else {
             mstype = rhs_type;
         }
-    }
-
-    return mstype;
+    }*/
+    return mtypeinfo.type;
+    //return mstype;
 }
 
 void BinOpNode::printDeleted() {

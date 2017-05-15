@@ -10,15 +10,14 @@ class WhileLoopNode : public AstNode {
         static int count;
         WhileLoopNode();
         ~WhileLoopNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mstatements;
+        //std::vector<AstNode*> mstatements;
         AstNode* getConditional();
         AstNode* getBody();
         int getId();
-    private:
+    //private:
         int id;
 };
 

@@ -1,0 +1,21 @@
+extern fn putchar(c : int) : int;
+extern fn puts(s :*u8) : int;
+
+fn main() : u32 {
+    i := 0;
+    res := i == 0;
+    if(res) {
+        puts("true!");
+    } else {
+        puts("shouldn't be false!");
+    }
+
+    res2 := i == 3;
+    if(res2) {
+        puts("shouldn't be true!");
+    } else {
+        puts("false!");
+    }
+
+    return 0;
+}

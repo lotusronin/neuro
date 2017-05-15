@@ -10,14 +10,13 @@ class IfNode : public AstNode {
         static int count;
         IfNode();
         ~IfNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mstatements;
         AstNode* getConditional();
         AstNode* getThen();
-    private:
+        AstNode* getElse();
+    //private:
         int id;
 };
 

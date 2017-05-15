@@ -1,0 +1,15 @@
+extern fn putchar(c : int) : int;
+extern fn puts(s :*u8) : int;
+
+fn main() : u32 {
+    i := 4;
+    if(i && 0) {
+        puts("Should not print!");
+    }
+
+    if(i && 1) {
+        puts("Should print!");
+    }
+
+    return 0;
+}

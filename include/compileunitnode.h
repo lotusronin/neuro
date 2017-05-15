@@ -10,16 +10,16 @@ class CompileUnitNode : public AstNode {
         static int count;
         CompileUnitNode();
         ~CompileUnitNode();
-        void makeGraph(std::ofstream& outfile);
         void setFileName(std::string name);
         std::string getFileName();
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mchildren;
-    private:
+        //std::vector<AstNode*> mchildren;
+    //private:
         int id;
         std::string mname;
+        std::vector<std::string> imports;
 };
 
 #endif

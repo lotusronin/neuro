@@ -1,24 +1,19 @@
-#ifndef ELSENODE_H
-#define ELSENODE_H
+#ifndef SIZEOFNODE_H
+#define SIZEOFNODE_H
 
 #include <vector>
 #include <string>
 #include "astnode.h"
 
-class ElseNode : public AstNode {
+class SizeOfNode : public AstNode {
     public:
         static int count;
-        ElseNode();
-        ~ElseNode();
-        void makeGraph(std::ofstream& outfile);
+        SizeOfNode();
+        ~SizeOfNode();
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mstatements;
-    private:
         int id;
 };
-
-
 
 #endif

@@ -10,14 +10,12 @@ class AssignNode : public AstNode {
         static int count;
         AssignNode();
         ~AssignNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         AstNode* getLHS();
         AstNode* getRHS();
-        std::vector<AstNode*> mchildren;
-    private:
+        //std::vector<AstNode*> mchildren;
         int id;
 };
 

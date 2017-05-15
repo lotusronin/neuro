@@ -11,29 +11,23 @@ BlockNode::BlockNode() {
 BlockNode::~BlockNode() {
 }
 
-void BlockNode::makeGraph(std::ofstream& outfile) {
-    outfile << "block" << id << ";\n";
-    outfile << "block" << id << "[label=\"block\"];\n";
-    for (auto s : mstatements) {
-        outfile << "block" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType BlockNode::nodeType() {
     return AstNodeType::Block;
 }
 
 void BlockNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    //mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 
 AstNode* BlockNode::lastChild() {
-    return mstatements.back();
+    //return mstatements.back();
+    return mchildren.back();
 }
 
 std::vector<AstNode*>* BlockNode::getChildren() {
-    return &mstatements;
+    //return &mstatements;
+    return &mchildren;
 }
 
 int BlockNode::getId() {

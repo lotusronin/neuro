@@ -10,7 +10,6 @@ class PrototypeNode : public AstNode {
         static int count;
         PrototypeNode();
         ~PrototypeNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addParams(AstNode* node);
         void addChild(AstNode* node);
@@ -18,9 +17,9 @@ class PrototypeNode : public AstNode {
         std::vector<AstNode*>* getChildren();
         std::vector<AstNode*>* getParameters();
         SemanticType getType();
-        std::vector<AstNode*> mparams;
+        //std::vector<AstNode*> mparams;
         std::string mfuncname;
-    private:
+    //private:
         int id;
 };
 

@@ -60,6 +60,18 @@ void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name) {
     }
 }
 
+void addFuncEntry(SymbolTable* s, FuncDefNode* n) {
+    auto entry = getFirstEntry(s,n->mfuncname);
+    if(!entry) {
+        //make a new entry
+        entry = new SymbolTableEntry;
+        entry->node = n;
+        entry->type = n->mtypeinfo.type;
+        s->table.insert(std::make_pair(n->mfuncname,entry));
+    }
+    entry->overloads.push_back(n);
+}
+
 void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p) {
     auto entry = new SymbolTableEntry;
     entry->node = n;
@@ -71,6 +83,7 @@ void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<
         funcname = ((PrototypeNode*)n)->mfuncname;
     } else {
         funcname = ((FuncDefNode*)n)->mfuncname;
+        funcname += std::to_string(((FuncDefNode*)n)->id);
     }
     s->table.insert(std::make_pair(funcname,entry));
 }
@@ -135,15 +148,15 @@ void printTable(SymbolTable* s) {
     if(s == nullptr) {
         return;
     }
-    //std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
+    std::cout << "SymbolTable " << s->name << " (scope " << s->scope << ")\nentries:\n";
     for(auto& e : s->table) {
-        //std::cout << e.first << ": " << e.second->type << "\n";
+        std::cout << e.first << ": " << e.second->type << "\n";
     }
-    //std::cout << "children:\n";
+    std::cout << "children:\n";
     for(auto& c : s->children) {
-        //std::cout << c.first << " ";
+        std::cout << c.first << " ";
     }
-    //std::cout << "\n\n";
+    std::cout << "\n\n";
     for(auto& c : s->children) {
         printTable(c.second);
     }
@@ -160,5 +173,32 @@ const std::vector<SymbolTableEntry*> getFunctionEntries(SymbolTable* s) {
         }
     }
 
+    return ret;
+}
+
+std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name, const std::string& scope) {
+    /* Returns a vector of entries that match the given input string.
+     * If the vector is empty you have a use before define error.
+     * If you have more than one entry you have conflicting globally
+     * imported symbols.
+     */
+    std::vector<SymbolTableEntry*> ret;
+    auto tmp_s = s;
+    while(tmp_s->parent->name != "global") {
+        tmp_s = tmp_s->parent;
+    }
+    auto visible = tmp_s->imports.find(scope+".nro");
+    if(visible != tmp_s->imports.end()) {
+        auto scopedToFile = visible->second;
+        auto exists = scopedToFile->table.find(name);
+        if(exists != scopedToFile->table.end()) {
+            //std::cout << "Found " << name << " in scope " << scope << '\n';
+            ret.push_back(exists->second);
+        } else {
+            std::cout << "Didn't find function " << name << '\n';
+        }
+    } else {
+        std::cout << "Didn't find scope " << scope << '\n';
+    }
     return ret;
 }

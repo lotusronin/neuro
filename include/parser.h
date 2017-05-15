@@ -2,38 +2,7 @@
 #define PARSER_H
 #include "lexer.h"
 #include "astnode.h"
-
-enum class ParseErrorType {
-    BadTopLevelStatement,
-    BadImportName,
-    MissImportSemicolon,
-    MissPrototypeFn,
-    BadPrototypeName,
-    MissPrototypeLParen,
-    BadFunctionParameter,
-    MissOptparamColon,
-    BadTypeIdentifier,
-    BadOptparamTail,
-    MissPrototypeColon,
-    MissPrototypeSemicolon,
-    BadVarName,
-    MissVardecColon,
-    MissPrototypeRParen,
-    BadBlockStart,
-    IncompleteBlock,
-    MissIfLParen,
-    MissIfRParen,
-    MissLParenFor,
-    MissSemicolonFor1,
-    MissSemicolonFor2,
-    MissRParenFor,
-    MissLParenWhile,
-    MissRParenWhile,
-    MissEqVarDecAssign,
-    MissSemiReturn,
-    BadAssign,
-    Unknown
-};
+#include "errors.h"
 
 class Parser {
     public:

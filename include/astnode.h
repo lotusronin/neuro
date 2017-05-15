@@ -63,7 +63,8 @@ enum class AstNodeType {
     LoopStmt,
     Assign,
     Default,
-    Cast
+    Cast,
+    SizeOf
 };
 
 enum class SemanticType {
@@ -102,17 +103,16 @@ class AstNode {
     public:
         AstNode();
         virtual ~AstNode();
-        virtual void makeGraph(std::ofstream& outfile);
         virtual AstNodeType nodeType();
-        virtual SemanticType getType();
+        SemanticType getType();
         TypeInfo* getTypeInfo();
-        virtual void addChild(AstNode* child);
-        virtual AstNode* lastChild();
+        void addChild(AstNode* child);
+        AstNode* lastChild();
         virtual void setToken(Token& t);
-        virtual std::vector<AstNode*>* getChildren();
+        std::vector<AstNode*>* getChildren();
         Token mtoken;
-        SemanticType mstype = SemanticType::Typeless;
         TypeInfo mtypeinfo;
+        std::vector<AstNode*> mchildren;
 };
 
 

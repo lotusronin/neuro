@@ -16,11 +16,9 @@
 #include "forloopnode.h"
 #include "whileloopnode.h"
 #include "returnnode.h"
-#include "typenode.h"
 #include "deferstmtnode.h"
 #include "loopstmtnode.h"
 #include "ifnode.h"
-#include "elsenode.h"
 #include "funccallnode.h"
 #include "varnode.h"
 #include "binopnode.h"
@@ -28,5 +26,6 @@
 #include "assignnode.h"
 #include "structdefnode.h"
 #include "castnode.h"
+#include "sizeofnode.h"
 
 #endif

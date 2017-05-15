@@ -10,13 +10,12 @@ class LoopStmtNode : public AstNode {
         static int count;
         LoopStmtNode();
         ~LoopStmtNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         void setBreak(bool b);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*> mchildren;
-    private:
+        //std::vector<AstNode*> mchildren;
+    //private:
         int id;
         bool isBreak;
 };

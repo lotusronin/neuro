@@ -41,6 +41,7 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent);
 void parseReturnStatement(LexerTarget* lexer, AstNode* parent);
 void parseExpression(LexerTarget* lexer, AstNode* parent);
 AstNode* parseExpression(LexerTarget* lexer);
+AstNode* parseLogicalOr(LexerTarget* lexer);
 AstNode* parseLogicalAnd(LexerTarget* lexer);
 AstNode* parseBitOr(LexerTarget* lexer);
 AstNode* parseBitXor(LexerTarget* lexer);
@@ -57,8 +58,9 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent);
 void parseOptargs(LexerTarget* lexer, AstNode* parent);
 void parseOptargs2(LexerTarget* lexer, AstNode* parent);
 void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
+void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent);
 
-bool fileImproted(std::string f) {
+bool fileImported(std::string f) {
     auto iter = importedFiles.find(f);
     return (iter != importedFiles.end());
 }
@@ -68,116 +70,6 @@ CompileUnitNode* importFile(std::string f) {
     compunit->setFileName(f);
     importedFiles.insert(std::make_pair(f,compunit));
     return compunit;
-}
-
-int parse_error(ParseErrorType type, Token& t) {
-    switch (type) {
-        case ParseErrorType::BadTopLevelStatement:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Bad Top Level Statement\n";
-            std::cout << "  Token: " << t.token << " Is not a valid start of a top level statement\n";
-            break;
-        case ParseErrorType::BadImportName:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Invalid import value\n";
-            std::cout << "  Token: " << t.token << " Cannot be imported\n";
-            break;
-        case ParseErrorType::MissImportSemicolon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing semicolon\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::MissPrototypeFn:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Expecting fn keyword\n";
-            std::cout << "  Token: " << t.token << " is not 'fn'!\n";
-            break;
-        case ParseErrorType::BadPrototypeName:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Bad prototype identifier\n";
-            std::cout << "  Token: " << t.token << " is not a valid prototype name!\n";
-            break;
-        case ParseErrorType::MissPrototypeLParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing left parentheses\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::BadFunctionParameter:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Bad function parameter\n";
-            std::cout << "  Token: " << t.token << " Expected an identifier or ')'!\n";
-            break;
-        case ParseErrorType::MissOptparamColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: parameter missing colon\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
-            break;
-        case ParseErrorType::BadTypeIdentifier:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Bad type identifier\n";
-            std::cout << "  Token: " << t.token << " is not a type!\n";
-            break;
-        case ParseErrorType::BadOptparamTail:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Bad parameter formation\n";
-            std::cout << "  Token: " << t.token << " Expected a ',' or a ')'!\n";
-            break;
-        case ParseErrorType::MissPrototypeColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Expecting colon in prototype\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
-            break;
-        case ParseErrorType::MissPrototypeSemicolon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing semicolon\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::BadVarName:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: bad variable name\n";
-            std::cout << "  Token: " << t.token << " is not a valid variable identifier!\n";
-            break;
-        case ParseErrorType::MissVardecColon:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing colon in variable declaration\n";
-            std::cout << "  Token: " << t.token << " is not a ':'!\n";
-            break;
-        case ParseErrorType::MissPrototypeRParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Prototype missing right parentheses\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::IncompleteBlock:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Block was never closed\n";
-            std::cout << "  Token: " << t.token << " is not a '}'!\n";
-            break;
-        case ParseErrorType::MissIfLParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in if statement\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissIfRParen:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in if statement\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::MissLParenFor:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in for loop\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissSemicolonFor1:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop before condition\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::MissSemicolonFor2:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: missing semicolon in for loop after condition\n";
-            std::cout << "  Token: " << t.token << " is not a ';'!\n";
-            break;
-        case ParseErrorType::MissRParenFor:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in for loop\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::MissLParenWhile:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing opening parentheses in while loop\n";
-            std::cout << "  Token: " << t.token << " is not a '('!\n";
-            break;
-        case ParseErrorType::MissRParenWhile:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Missing closing parentheses in while loop\n";
-            std::cout << "  Token: " << t.token << " is not a ')'!\n";
-            break;
-        case ParseErrorType::MissEqVarDecAssign:
-            std::cout << "File:" << t.line << ":" << t.col << " Error: Malformed variable declaration assignment\n";
-            std::cout << "  Token: " << t.token << " is not a '='!\n";
-            break;
-       default:
-            std::cout << "Unknown Parse Error!\n";
-            break;
-    }
-    exit(-1);
-    return 0;
 }
 
 Parser::Parser(LexerTarget* _lexer) {
@@ -207,11 +99,9 @@ void printSizes() {
     std::cout << "for " << sizeof(ForLoopNode) << '\n';
     std::cout << "while " << sizeof(WhileLoopNode) << '\n';
     std::cout << "return " << sizeof(ReturnNode) << '\n';
-    std::cout << "type " << sizeof(TypeNode) << '\n';
     std::cout << "defer " << sizeof(DeferStmtNode) << '\n';
     std::cout << "loopstmt " << sizeof(LoopStmtNode) << '\n';
     std::cout << "if " << sizeof(IfNode) << '\n';
-    std::cout << "else " << sizeof(ElseNode) << '\n';
     std::cout << "funccall " << sizeof(FuncCallNode) << '\n';
     std::cout << "var " << sizeof(VarNode) << '\n';
     std::cout << "binop " << sizeof(BinOpNode) << '\n';
@@ -221,7 +111,6 @@ void printSizes() {
     std::cout << "cast " << sizeof(CastNode) << '\n';
 }
 
-static int typenode_counter = 0;
 
 AstNode* Parser::parse() {
     //printSizes();
@@ -229,20 +118,7 @@ AstNode* Parser::parse() {
     CompileUnitNode* compunit = importFile(mlexer->targetName());
     program->addChild(compunit);
     //std::cout << "Beginning parse!\n";
-    //mlexer->lex();
-    //mlexer->lex();
     parseTopLevelStatements(mlexer, compunit);
-    
-    //Generate Dot file for debugging
-    /*
-    std::ofstream dotfileout(mlexer->targetName()+".dot",std::ofstream::out);
-    program->makeGraph(dotfileout);
-    dotfileout.close();
-    std::string cmd = "dot -Tpng "+mlexer->targetName()+".dot -o "+mlexer->targetName()+".png";
-    //std::cout << "Running command: " << cmd << "\n";
-    system(cmd.c_str());
-    */
-    //std::cout << "Typenodes constructed = " << typenode_counter  << '\n';
 
     return program;
 }
@@ -264,7 +140,8 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "Function Definitions matched\n";
     } else if(tok.type == TokenType::foreign) {
         //std::cout << "extern token, beginning to match prototype...\n";
-        parsePrototype(lexer, (CompileUnitNode*)parent);
+        parsePrototypeOrStruct(lexer, (CompileUnitNode*)parent);
+        //parsePrototype(lexer, (CompileUnitNode*)parent);
         ////std::cout << "prototype matched\n";
     } else if(tok.type == TokenType::tstruct) {
         parseStructDef(lexer, parent);
@@ -272,7 +149,7 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "File is parsed, no errors detected!\n\n";
         return;
     }else {
-        parse_error(ParseErrorType::BadTopLevelStatement, tok);
+        parse_error(ParseErrorType::BadTopLevelStatement, tok, lexer);
     }
     parseTopLevelStatements(lexer, parent);
 }
@@ -282,22 +159,22 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     //consume import
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
-        parse_error(ParseErrorType::BadImportName, tok);
+        parse_error(ParseErrorType::BadImportName, tok, lexer);
     }
     std::string newfilename = std::string(tok.token)+".nro";
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
-        parse_error(ParseErrorType::MissImportSemicolon, tok);
+        parse_error(ParseErrorType::MissSemicolon, tok, lexer);
     }
     //consume ;
     lexer->lex();
 
-    if(!fileImproted(newfilename)) {
+    if(!fileImported(newfilename)) {
+        ((CompileUnitNode*)parent)->imports.push_back(newfilename);
         CompileUnitNode* compunit = importFile(newfilename);
         LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
-        importlex.lex();
-        importlex.lex();
+        importlex.lexFile();
         //std::cout << "\nImporting file: " << newfilename << "\n";
         parseTopLevelStatements(&importlex, compunit);
         program->addChild(compunit);
@@ -307,43 +184,58 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
+    Token tok = lexer->peekNext();
+    if(tok.type == TokenType::fn) {
+        parsePrototype(lexer, parent);
+    } else if(tok.type == TokenType::tstruct) {
+        //consume extern;
+        lexer->lex();
+        parseStructDef(lexer, parent);
+        ((StructDefNode*)(parent->mchildren.back()))->foreign = true;
+        std::cout << "opaque struct found!\n";
+    } else {
+        parse_error(PET::MissForeign, tok, lexer);
+    }
+}
+
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
     //prototypes -> . extern fn id ( opt_params ) : type ;
     PrototypeNode* protonode = new PrototypeNode();
     //consume extern
     Token tok = lexer->lex();
     if(tok.type != TokenType::fn) {
-        parse_error(PET::MissPrototypeFn, tok);
+        parse_error(PET::MissPrototypeFn, tok, lexer);
     }
     //consume fn
     tok = lexer->lex();
     if(tok.type != TokenType::id) {
-        parse_error(ParseErrorType::BadPrototypeName, tok);
+        parse_error(ParseErrorType::BadPrototypeName, tok, lexer);
     }
     protonode->addFuncName(tok.token);
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        parse_error(ParseErrorType::MissPrototypeLParen, tok);
+        parse_error(ParseErrorType::MissLParen, tok, lexer);
     }
     //consume (
     lexer->lex();
     parseOptparams(lexer, protonode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        parse_error(PET::MissPrototypeRParen, tok);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume )
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
-        parse_error(PET::MissPrototypeColon, tok);
+        parse_error(PET::MissColon, tok, lexer);
     }
     //consume :
     lexer->lex();
     parseType(lexer, protonode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
-        parse_error(PET::MissPrototypeSemicolon, tok);
+        parse_error(PET::MissSemicolon, tok, lexer);
     }
     //consume ;
     tok = lexer->lex();
@@ -357,13 +249,13 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
         return;
     }
     if(tok.type != TokenType::id) {
-        parse_error(ParseErrorType::BadFunctionParameter, tok);
+        parse_error(ParseErrorType::BadFunctionParameter, tok, lexer);
     }
     std::string n = tok.token;
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
-        parse_error(PET::MissOptparamColon, tok);
+        parse_error(PET::MissColon, tok, lexer);
     }
     ParamsNode* param = new ParamsNode();
     parent->addChild(param);
@@ -383,13 +275,13 @@ void parseOptparams2(LexerTarget* lexer, AstNode* parent) {
     //opt_params2 -> id : type | id : type , opt_params2
     Token tok = lexer->peek();
     if(tok.type != TokenType::id) {
-        parse_error(PET::BadOptparamTail, tok);
+        parse_error(PET::BadOptparamTail, tok, lexer);
     }
     std::string n = tok.token;
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::Unknown, tok, lexer);
     }
     //consume :
     lexer->lex();
@@ -428,8 +320,6 @@ static bool isTokenAType(TokenType t) {
 void parseType(LexerTarget* lexer, AstNode* parent) {
     //type -> int | char | float | double | bool | id
     //optional *'s infront of each type name
-    //TypeNode* tnode = new TypeNode();
-    //typenode_counter++;
     Token tok = lexer->peek();
     TypeInfo t;
 
@@ -468,6 +358,10 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         case TokenType::id:
             mstype = SemanticType::User;
             std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
+            t.userid = tok.token;
+            break;
+        case TokenType::tuint:
+            mstype = SemanticType::u32;
             break;
         default:
             mstype = SemanticType::Typeless;
@@ -478,12 +372,12 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     //t.type = tnode->mstype;
     t.type = mstype;
     parent->mtypeinfo = t;
-    parent->mstype = t.type;
+    //parent->mstype = t.type;
     if(isTokenAType(tok.type)) {
         //consume int/char/bool/float/double/void/id
         lexer->lex();
     } else {
-        parse_error(PET::BadTypeIdentifier, tok);
+        parse_error(PET::BadTypeIdentifier, tok, lexer);
     }
     
     //delete tnode;
@@ -506,7 +400,7 @@ void parseVar(LexerTarget* lexer, AstNode* parent) {
     //var -> id
     Token tok = lexer->peek();
     if(tok.type != TokenType::id) {
-        parse_error(PET::BadVarName, tok);
+        parse_error(PET::BadVarName, tok, lexer);
     }
     //consume id
     lexer->lex();
@@ -521,7 +415,7 @@ void parseVarDec(LexerTarget* lexer, AstNode* parent) {
     parseVar(lexer, nullptr);
     Token tok = lexer->peek();
     if(tok.type != TokenType::colon) {
-        parse_error(PET::MissVardecColon, tok);
+        parse_error(PET::MissColon, tok, lexer);
     }
     //consume :
     lexer->lex();
@@ -537,7 +431,7 @@ void parseVarDecAssign(LexerTarget* lexer, AstNode* parent) {
     parseVarDec(lexer, nullptr);
     Token tok = lexer->peek();
     if(tok.type != TokenType::assignment) {
-        parse_error(PET::MissEqVarDecAssign, tok);
+        parse_error(PET::MissEqVarDecAssign, tok, lexer);
     }
     //consume =
     lexer->lex();
@@ -551,15 +445,16 @@ void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
     parent->addChild(anode);
     Token tok = lexer->peek();
     if(tok.type != TokenType::id) {
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::Unknown, tok, lexer);
     }
     VarNode* vnode = new VarNode();
     vnode->addVarName(tok.token);
     anode->addChild(vnode);
     tok = lexer->lex();
     if(tok.type != TokenType::assignment) {
-        parse_error(PET::MissEqVarDecAssign, tok);
+        parse_error(PET::MissEqVarDecAssign, tok, lexer);
     }
+    anode->mtoken = tok;
     //consume =
     lexer->lex();
     parseExpression(lexer, anode);
@@ -596,7 +491,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     lexer->lex();
     //consume :
     Token tok = lexer->lex();
-    Token nextTok = lexer->peekNext();
+    //Token nextTok = lexer->peekNext();
     // id : . type = expression
     // it : . type
     if(tok.type == TokenType::assignment) {
@@ -605,7 +500,9 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         // id : . = expression
         //we have type inferenced declaration assignment
         VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
+        vdecassignnode->mtoken = tok;
         VarNode* vnode = new VarNode();
+        vnode->mtoken = tokid;
         vnode->addVarName(tokid.token);
         vdecassignnode->addChild(vnode);
         parent->addChild(vdecassignnode);
@@ -615,6 +512,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     } else if(tokenTypeIsAType(tok.type)) {
         VarNode* vnode = new VarNode();
         vnode->addVarName(tokid.token);
+        vnode->mtoken = tokid;
         //TODO(marcus): parse type, then find if you're an assignment or declaration
         parseType(lexer, vnode);
         if(lexer->peek().type == TokenType::assignment) {
@@ -622,6 +520,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             //std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
             //we have a declaration and assignment
             VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
+            vdecassignnode->mtoken = lexer->peek();
             vdecassignnode->addChild(vnode);
             parent->addChild(vdecassignnode);
             //consume =
@@ -636,13 +535,9 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             VarDecNode* vdecnode = new VarDecNode();
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
-            //TODO(marcus): clean this up
-            auto typenode = vnode->mchildren.back();
-            vnode->mchildren.erase(--(vnode->mchildren.cend()));
-            vdecnode->addChild(typenode);
         }
     } else {
-        parse_error(PET::MissVardecColon, tok);
+        parse_error(PET::MissColon, tok, lexer);
     }
 }
 
@@ -654,25 +549,26 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     Token tok = lexer->lex();
     //std::cout << tok.token << '\n';
     if(tok.type != TokenType::id) {
-        parse_error(PET::BadPrototypeName, tok);
+        parse_error(PET::BadPrototypeName, tok, lexer);
     }
+    funcnode->mtoken = tok;
     funcnode->addFuncName(tok.token);
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        parse_error(PET::MissPrototypeLParen,tok);
+        parse_error(PET::MissLParen,tok, lexer);
     }
     //consume (
     lexer->lex();
     parseOptparams(lexer, funcnode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        parse_error(PET::MissPrototypeRParen,tok);
+        parse_error(PET::MissRParen,tok, lexer);
     }
     //consume )
     tok = lexer->lex();
     if(tok.type != TokenType::colon) {
-        parse_error(PET::MissPrototypeColon,tok);
+        parse_error(PET::MissColon,tok, lexer);
     }
     //consume :
     lexer->lex();
@@ -686,14 +582,14 @@ void parseBlock(LexerTarget* lexer, AstNode* parent) {
     parent->addChild(blknode);
     Token tok = lexer->peek();
     if(tok.type != TokenType::lbrace) {
-        parse_error(PET::BadBlockStart, tok);
+        parse_error(PET::BadBlockStart, tok, lexer);
     }
     //consume {
     lexer->lex();
     parseStatementList(lexer, blknode);
     tok = lexer->peek();
     if(tok.type == TokenType::eof) {
-        parse_error(PET::IncompleteBlock,tok);
+        parse_error(PET::IncompleteBlock,tok,lexer);
     }
     //consume }
     lexer->lex();
@@ -739,7 +635,18 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         //consume ;
         lexer->lex();
     } else {
-        parseExpression(lexer, parent);
+        AssignNode* anode = new AssignNode();
+        parseExpression(lexer, anode);
+        if(lexer->peek().type == TokenType::assignment) {
+            anode->mtoken = lexer->peek();
+            parent->addChild(anode);
+            //consume =
+            lexer->lex();
+            parseExpression(lexer, anode);
+        } else {
+            parent->addChild(anode->mchildren.at(0));
+            delete anode;
+        }
         //consume ;
         lexer->lex();
     }
@@ -754,14 +661,14 @@ void parseIfblock(LexerTarget* lexer, AstNode* parent) {
     //consume if
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        parse_error(PET::MissIfLParen, tok);
+        parse_error(PET::MissLParen, tok, lexer);
     }
     //consume (
     lexer->lex();
     parseExpression(lexer, ifnode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        parse_error(PET::MissIfRParen, tok);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume )
     lexer->lex();
@@ -777,11 +684,11 @@ void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::selse) {
         return;
     }
-    ElseNode* elsenode = new ElseNode();
-    parent->addChild(elsenode);
+    //ElseNode* elsenode = new ElseNode();
+    //parent->addChild(elsenode);
     //consume else
     lexer->lex();
-    parseStatement(lexer, elsenode);
+    parseStatement(lexer, parent);
 }
 
 void parseLoop(LexerTarget* lexer, AstNode* parent) {
@@ -794,8 +701,6 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
         parseForLoop(lexer, parent);
     } else if(tok.type == TokenType::swhile) {
         parseWhileLoop(lexer, parent);
-    } else {
-        parse_error(PET::Unknown, tok);
     }
 
     //std::cout << "Parsing loop body\n";
@@ -810,7 +715,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     //consume for
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        parse_error(PET::MissLParenFor, tok);
+        parse_error(PET::MissLParen, tok, lexer);
     }
     //consume (
     lexer->lex();
@@ -818,7 +723,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     parseSomeVarDecStmt(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
-        parse_error(PET::MissSemicolonFor1, tok);
+        parse_error(PET::MissSemicolon, tok, lexer);
     }
     //consume ;
     lexer->lex();
@@ -826,7 +731,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
-        parse_error(PET::MissSemicolonFor2, tok);
+        parse_error(PET::MissSemicolon, tok, lexer);
     }
     //consume ;
     lexer->lex();
@@ -834,7 +739,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     parseExpression(lexer, fornode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        parse_error(PET::MissRParenFor, tok);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume )
     lexer->lex();
@@ -848,14 +753,14 @@ void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
     //consume while
     Token tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
-        parse_error(PET::MissLParenWhile, tok);
+        parse_error(PET::MissLParen, tok, lexer);
     }
     //consume (
     lexer->lex();
     parseExpression(lexer, whilenode);
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
-        parse_error(PET::MissRParenWhile, tok);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume )
     lexer->lex();
@@ -877,6 +782,7 @@ void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
     //consume return
     ReturnNode* retnode = new ReturnNode();
     parent->addChild(retnode);
+    retnode->mtoken = lexer->peek();
     Token tok = lexer->lex();
     if(tok.type == TokenType::semicolon) {
         //consume ;
@@ -886,7 +792,7 @@ void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
     parseExpression(lexer, retnode);
     tok = lexer->peek();
     if(tok.type != TokenType::semicolon) {
-        parse_error(PET::MissSemiReturn, tok);
+        parse_error(PET::MissSemicolon, tok, lexer);
     }
     //consume ;
     lexer->lex();
@@ -900,6 +806,24 @@ void parseExpression(LexerTarget* lexer, AstNode* parent) {
 }
 
 AstNode* parseExpression(LexerTarget* lexer) {
+    /*
+     * expr -> orexpr cast type | orexpr
+     */
+    auto child = parseLogicalOr(lexer);
+    Token tok = lexer->peek();
+    if(tok.type == TokenType::cast) {
+        //consume cast
+        lexer->lex();
+        CastNode* cnode = new CastNode();
+        parseType(lexer, cnode);
+        cnode->toType = cnode->mtypeinfo;
+        cnode->addChild(child);
+        return cnode;
+    }
+    return child;
+}
+
+AstNode* parseLogicalOr(LexerTarget* lexer) {
 /* 
  * expr -> exprlogicaland dblbar expr  | exprlogicaland
  */
@@ -1068,10 +992,12 @@ AstNode* parseAddrOfIndir(LexerTarget* lexer) {
     ////std::cout << "Parsing AddrOfIndir Expression!\n";
     BinOpNode* opnode = nullptr;
     Token tok = lexer->peek();
-    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda) {
-        //consume token (@ or & or ! or ~)
+    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda || tok.type == TokenType::minus || tok.type == TokenType::plus) {
+        //consume token (@ or & or ! or ~ or - or +)
         opnode = new BinOpNode();
         opnode->setToken(tok);
+        opnode->unaryOp = true;
+        opnode->mpriority = 5; //TODO(marcus): fix this with a better way for telling binop nodes they are unary
         lexer->lex();
     }
      auto ret = parseMemberAccess(lexer);
@@ -1089,6 +1015,9 @@ AstNode* parseMemberAccess(LexerTarget* lexer) {
     ////std::cout << "Parsing MemberAccess Expression!\n";
     auto ret = parseParenexp(lexer);
     Token tok = lexer->peek();
+    if(tok.type == TokenType::rsqrbrace) {
+        tok = lexer->lex();
+    }
     if(tok.type == TokenType::dot) {
         //consume token
         auto opnode = new BinOpNode();
@@ -1098,8 +1027,36 @@ AstNode* parseMemberAccess(LexerTarget* lexer) {
         opnode->addChild(ret);
         opnode->addChild(ret2);
         return opnode;
+    } else if(tok.type == TokenType::lsqrbrace) {
+        //std::cout << "Parsing Array access!\n";
+        auto opnode = new BinOpNode();
+        opnode->setToken(tok);
+        opnode->addChild(ret);
+        //consume [
+        lexer->lex();
+        //parseExpression(lexer, opnode);
+        auto ret2 = parseMemberAccess(lexer);
+        opnode->addChild(ret2);
+        //std::cout << "Expression parsed\n";
+        //std::cout << "Next token is " << lexer->peek().token << '\n';
+        //lexer->lex();
+        return opnode;
     }
     return ret;
+}
+
+bool tokenTypeIsLiteral(TokenType t) {
+    switch(t) {
+        case TokenType::intlit:
+        case TokenType::floatlit:
+        case TokenType::strlit:
+        case TokenType::charlit:
+            return true;
+            break;
+        default:
+            break;
+    }
+    return false;
 }
 
 AstNode* parseParenexp(LexerTarget* lexer) {
@@ -1122,19 +1079,40 @@ AstNode* parseParenexp(LexerTarget* lexer) {
         parseExpression(lexer, opnode);
         tok = lexer->peek();
         if(tok.type != TokenType::rparen) {
-            parse_error(PET::Unknown, tok);
+            parse_error(PET::MissRParen, tok, lexer);
         }
         //consume )
         lexer->lex();
         return opnode;
-    } else if(tok.type == TokenType::intlit || tok.type == TokenType::floatlit || tok.type == TokenType::strlit) {
-        ////std::cout << "Parsing Const!\n";
+    } else if(tokenTypeIsLiteral(tok.type)) {
         parseConst(lexer, &parent);
     } else if(tok.type == TokenType::id) {
         parseFunccallOrVar(lexer, &parent);
+    } else if(tok.type == TokenType::ssizeof) {
+        //consume sizeof
+        lexer->lex();
+        //std::cout << "parsing sizeof!\n";
+        //std::cout << lexer->peek().token << '\n';
+        if(lexer->peek().type != TokenType::lparen) {
+            parse_error(PET::MissLParen, tok, lexer);
+        }
+        //consume (
+        lexer->lex();
+        //parseType
+        auto sizeofn = new SizeOfNode();
+        //std::cout << "parsing sizeof Type!\n";
+        parseType(lexer,sizeofn);
+        if(lexer->peek().type != TokenType::rparen) {
+            parse_error(PET::MissRParen,tok, lexer);
+        }
+        //consume )
+        lexer->lex();
+        //std::cout << "parsing sizeof done!\n";
+        //std::cout << "Next is " << lexer->peek().token << '\n';
+        return sizeofn;
     } else {
-        assert(false);
-        parse_error(PET::Unknown, tok);
+        //assert(false);
+        parse_error(PET::Unknown, tok, lexer);
     }
     return parent.mchildren[0];
 }
@@ -1151,6 +1129,20 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+void parseScopedFunccall(LexerTarget* lexer, AstNode* parent) {
+    //std::cout << "parsing some scoped function call!\n";
+    auto scope = std::string(lexer->peek().token);
+    //consume id ::
+    lexer->lex();
+    lexer->lex();
+    auto tok = lexer->peekNext();
+    if(tok.type ==TokenType::dblcolon) {
+        parse_error(PET::MultipleScope,tok,lexer);
+    }
+    parseFunccall(lexer,parent);
+    ((FuncCallNode*)(parent->mchildren.back()))->scopes = scope;
+}
+
 void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     //get id
     Token tok = lexer->peek();
@@ -1159,6 +1151,8 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     if(tokNext.type == TokenType::lparen) {
         //std::cout << "Parsing FuncCall!\n";
         parseFunccall(lexer, parent);
+    } else if(tokNext.type == TokenType::dblcolon) {
+        parseScopedFunccall(lexer, parent);
     } else {
         ////std::cout << "Parsing Variable!\n";
         //Will not work, have to fix somehow...
@@ -1167,11 +1161,11 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
         //for now just manually check if it is an id
         if(tok.type != TokenType::id) {
             //unneeded check? do we already know its an id?
-            parse_error(PET::BadVarName, tok);
+            parse_error(PET::BadVarName, tok, lexer);
         }
-        //TODO(marcus): Do we need to give the token to the node?
         VarNode* varnode = new VarNode();
         varnode->addVarName(tok.token);
+        varnode->mtoken = tok;
         if(parent != nullptr) {
             parent->addChild(varnode);
         }
@@ -1184,15 +1178,15 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     // funcname -> id
     Token tok = lexer->peek();
     FuncCallNode* funcallnode = new FuncCallNode();
-    //TODO(marcus): actually give funccall the token
     funcallnode->addFuncName(tok.token);
+    funcallnode->mtoken = tok;
     if(parent != nullptr) {
         parent->addChild(funcallnode);
     }
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
         //std::cout << __FUNCTION__ << ": token wasn't (, was " << tok.token << '\n';
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::MissLParen, tok, lexer);
     }
     //consume (
     tok = lexer->lex();
@@ -1202,7 +1196,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     tok = lexer->peek();
     if(tok.type != TokenType::rparen) {
         //std::cout << __FUNCTION__ << ": token wasn't ), was " << tok.token << '\n';
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::MissRParen, tok, lexer);
     }
     //consume ')'
     lexer->lex();
@@ -1258,7 +1252,7 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::semicolon) {
         //consume ;
         //std::cout << "Token: " << tok.token << "\n";
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::MissSemicolon, tok, lexer);
     }
     //std::cout << "parseLoopStmt finished, no problem\n";
     lexer->lex();
@@ -1274,7 +1268,7 @@ void parseStructDef(LexerTarget* lexer, AstNode* parent) {
     Token tok = lexer->lex();
     if(tok.type != TokenType::id) {
         //No identifier for struct definition
-        parse_error(PET::Unknown, tok);
+        parse_error(PET::Unknown, tok, lexer);
     }
     structdef->setToken(tok);
     structdef->ident = tok.token;
@@ -1282,7 +1276,7 @@ void parseStructDef(LexerTarget* lexer, AstNode* parent) {
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lbrace) {
-        parse_error(PET::Unknown,tok);
+        parse_error(PET::Unknown,tok, lexer);
     }
     //consume {
     lexer->lex();
@@ -1291,7 +1285,7 @@ void parseStructDef(LexerTarget* lexer, AstNode* parent) {
     tok = lexer->peek();
     if(tok.type != TokenType::rbrace) {
         //not a valid struct definition
-        parse_error(PET::Unknown,tok);
+        parse_error(PET::Unknown,tok, lexer);
     }
     //consume }
     lexer->lex();
@@ -1309,7 +1303,8 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         //consume id
         lexer->lex();
         //consume :
-        Token tok = lexer->lex();
+        //Token tok = lexer->lex();
+        lexer->lex();
         // it : . type
         
         //std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
@@ -1320,6 +1315,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         vnode->addVarName(tokid.token);
         vdecnode->addChild(vnode);
         parseType(lexer, vdecnode);
+        vnode->mtypeinfo = vdecnode->mtypeinfo;
         //consume ;
         lexer->lex();
         parent->addChild(vdecnode);

@@ -44,7 +44,9 @@ TokenType keyword_type[] = {
     TokenType::selse,
     TokenType::sbreak,
     TokenType::scontinue,
-    TokenType::tstruct
+    TokenType::tstruct,
+    TokenType::cast,
+    TokenType::ssizeof
 };
 
 const char* keyword_array[] = {
@@ -71,7 +73,9 @@ const char* keyword_array[] = {
     "else",
     "break",
     "continue",
-    "struct"
+    "struct",
+    "cast",
+    "sizeof"
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 
@@ -139,11 +143,14 @@ void LexerTarget::lexcomment() {
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
             }
         } else if(content[f_idx] == '*') {
-            if(content[f_idx] == '/') {
+            if(content[f_idx+1] == '/') {
                 --comment_depth;
                 colNum += 2;
                 f_idx += 2;
                 //std::cout << "Block comment ends. Depth " << comment_depth << "\n";
+            } else {
+                ++colNum;
+                ++f_idx;
             }
         } else {
             ++colNum;
@@ -246,14 +253,29 @@ TOP:
         case '}':
             longest_match_type = TokenType::rbrace;
             break;
+        case '[':
+            longest_match_type = TokenType::lsqrbrace;
+            break;
+        case ']':
+            longest_match_type = TokenType::rsqrbrace;
+            break;
         case ':':
-            longest_match_type = TokenType::colon;
+            {
+                longest_match_type = TokenType::colon;
+                if(remaining[1] == ':') {
+                    longest_match++;
+                    longest_match_type = TokenType::dblcolon;
+                }
+            }
             break;
         case ';':
             longest_match_type = TokenType::semicolon;
             break;
         case '@':
             longest_match_type = TokenType::dereference;
+            break;
+        case '~':
+            longest_match_type = TokenType::tilda;
             break;
         case '0':
         case '1':
@@ -311,14 +333,65 @@ TOP:
                 longest_match_type = TokenType::strlit;
             }
             break;
+        case '\'':
+            {
+                int match_len = 1;
+                bool escaped = false;
+                char c = content[f_idx+match_len];
+                if(c == 15 || c == 12) {
+                    std::cout << "Error, malformed character literal.\n";
+                    return EOFTOKEN;
+                }
+                match_len++;
+                if(c == '\\') {
+                    escaped = true;
+                }
+                c = content[f_idx+match_len];
+                if(escaped) {
+                    switch(c) {
+                        case 'n':
+                        case 'a':
+                        case '0':
+                        case '\\':
+                        case '\'':
+                        case '\"':
+                        case 'r':
+                            match_len++;
+                            break;
+                        default:
+                            std::cout << "Error, malformed character literal. Line " << lineNum << " Col " << colNum << '\n';
+                            return EOFTOKEN;
+                            break;
+                        }
+                    c = content[f_idx+match_len];
+                }
+                if(c != '\'') {
+                    std::cout << "Error, expected a ' in character literal. Line " << lineNum << " Col " << colNum << '\n';
+                    return EOFTOKEN;
+                }
+                match_len++;
+                longest_match = match_len;
+                longest_match_type = TokenType::charlit;
+            }
+            break;
         case '+':
             {
-                longest_match_type = TokenType::plus;
+                if(remaining[1] == '+') {
+                    longest_match++;
+                    longest_match_type = TokenType::increment;
+                } else {
+                    longest_match_type = TokenType::plus;
+                }
             }
             break;
         case '-':
             {
-                longest_match_type = TokenType::minus;
+                if(remaining[1] == '-') {
+                    longest_match++;
+                    longest_match_type = TokenType::increment;
+                } else {
+                    longest_match_type = TokenType::minus;
+                }
             }
             break;
         case '/':
@@ -338,14 +411,16 @@ TOP:
                  * Check for line comments
                  */
                 else if(remaining[1] == '/') {
+                    int commentIdx = 2;
                     colNum += 2;
                     f_idx += 2;
-                    while(remaining[colNum] != '\n' && remaining[colNum] != '\r') {
+                    while(remaining[commentIdx] != '\n' && remaining[commentIdx] != '\r') {
                         if(content[f_idx] == '\0') {
                             return EOFTOKEN;
                         }
                         colNum++;
                         f_idx++;
+                        commentIdx++;
                     }
                     f_idx++;
                     colNum = 0;
@@ -369,7 +444,7 @@ TOP:
             break;
         case '%':
             {
-                longest_match_type = TokenType::carrot;
+                longest_match_type = TokenType::mod;
             }
             break;
         case '=':
@@ -461,7 +536,7 @@ TOP:
             size_t index;
             std::string newlines = "\\n";
             std::string newlinec = "\n";
-            while( (index = token.find_first_of(newlines)) != std::string::npos) {
+            while( (index = token.find(newlines)) != std::string::npos) {
                 token.replace(index, newlines.length(), newlinec);
                 index += newlinec.length();
             }

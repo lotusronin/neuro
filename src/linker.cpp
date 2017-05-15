@@ -4,13 +4,14 @@
 #include <iostream>
 
 std::string win32_getLinkerCmd(std::string file);
+std::string linux_getLinkerCmd(std::string file);
 
 std::string getLinkerCmd(std::string filename) {
 #if _WIN32
     return win32_getLinkerCmd(filename);
 #else
     //TODO(marcus): get this working for Linux
-    return "";
+    return linux_getLinkerCmd(filename);
 #endif
 }
 

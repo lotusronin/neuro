@@ -11,33 +11,28 @@ WhileLoopNode::WhileLoopNode() {
 WhileLoopNode::~WhileLoopNode() {
 }
 
-void WhileLoopNode::makeGraph(std::ofstream& outfile) {
-    outfile << "whileloop" << id << ";\n";
-    outfile << "whileloop" << id << "[label=\"while\"];\n";
-    for (auto s : mstatements) {
-        outfile << "whileloop" << id << " -> ";
-        s->makeGraph(outfile);
-    }
-}
-
 AstNodeType WhileLoopNode::nodeType() {
     return AstNodeType::WhileLoop;
 }
 
 void WhileLoopNode::addChild(AstNode* node) {
-    mstatements.push_back(node);
+    //mstatements.push_back(node);
+    mchildren.push_back(node);
 }
 
 std::vector<AstNode*>* WhileLoopNode::getChildren() {
-    return &mstatements;
+    //return &mstatements;
+    return &mchildren;
 }
 
 AstNode* WhileLoopNode::getConditional() {
-    return mstatements.at(0);
+    //return mstatements.at(0);
+    return mchildren.at(0);
 }
 
 AstNode* WhileLoopNode::getBody() {
-    return mstatements.at(1);
+    //return mstatements.at(1);
+    return mchildren.at(1);
 }
 
 int WhileLoopNode::getId() {

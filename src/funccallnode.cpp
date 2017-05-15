@@ -11,26 +11,18 @@ FuncCallNode::FuncCallNode() {
 FuncCallNode::~FuncCallNode() {
 }
 
-void FuncCallNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "funcCall" << id << ";\n";
-    outfile << "funcCall" << id << "[label=\"" << mfuncname << "()\"];\n";
-    for (auto arg : margs) {
-        outfile << "funcCall" << id << " -> ";
-        arg->makeGraph(outfile);
-    }
-}
-
 AstNodeType FuncCallNode::nodeType() {
     return AstNodeType::FuncCall;
 }
 
 void FuncCallNode::addArgs(AstNode* node) {
-    margs.push_back(node);
+    //margs.push_back(node);
+    mchildren.push_back(node);
 }
 
 void FuncCallNode::addChild(AstNode* node) {
-    margs.push_back(node);
+    //margs.push_back(node);
+    mchildren.push_back(node);
 }
 
 void FuncCallNode::addFuncName(std::string funcname) {
@@ -38,5 +30,6 @@ void FuncCallNode::addFuncName(std::string funcname) {
 }
 
 std::vector<AstNode*>* FuncCallNode::getChildren() {
-    return &margs;
+    //return &margs;
+    return &mchildren;
 }

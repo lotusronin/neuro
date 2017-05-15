@@ -12,7 +12,6 @@ class BinOpNode : public AstNode {
         static int constructed;
         BinOpNode();
         ~BinOpNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
@@ -25,14 +24,15 @@ class BinOpNode : public AstNode {
         int getPriority();
         void setToken(Token& t);
         SemanticType getType();
-        std::vector<AstNode*> mchildren;
+        //std::vector<AstNode*> mchildren;
         static void printDeleted();
         static int deleted;
-    private:
+    //private:
         int id;
         //TODO(marcus): make this an enum
         std::string mop;
         int mpriority;
+        bool unaryOp;
 };
 
 

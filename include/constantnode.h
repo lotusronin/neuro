@@ -10,15 +10,14 @@ class ConstantNode : public AstNode {
         static int count;
         ConstantNode();
         ~ConstantNode();
-        void makeGraph(std::ofstream& outfile);
         AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         void setVal(std::string& val);
         void setToken(const Token& t);
         std::string getVal();
-        std::vector<AstNode*> mchildren;
-    private:
+        //std::vector<AstNode*> mchildren;
+    //private:
         int id;
         std::string mval;
 };

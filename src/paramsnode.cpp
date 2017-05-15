@@ -11,16 +11,6 @@ ParamsNode::ParamsNode() {
 ParamsNode::~ParamsNode() {
 }
 
-void ParamsNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "param"<<id<<";\n";
-    outfile << "param"<<id<<"[label=\""<<mname<<"\"];\n";
-    for (auto child : mchildren) {
-        outfile << "param" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType ParamsNode::nodeType() {
     return AstNodeType::Params;
 }

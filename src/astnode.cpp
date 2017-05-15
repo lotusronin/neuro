@@ -12,25 +12,22 @@ AstNodeType AstNode::nodeType() {
 }
 
 SemanticType AstNode::getType() {
-    return mstype;
-}
-
-void AstNode::makeGraph(std::ofstream& outfile) {
-    std::cout << "makeGraph not called on subclass\n";
+    return mtypeinfo.type;
 }
 
 void AstNode::addChild(AstNode* child) {
-    std::cout << "addChild not called on subclass\n";
+    //std::cout << "addChild not called on subclass\n";
+    mchildren.push_back(child);
 }
 
 AstNode* AstNode::lastChild() {
-    std::cout << "lastChild not called on subclass\n";
-    return nullptr;
+    //std::cout << "lastChild not called on subclass\n";
+    return mchildren.back();
 }
 
 std::vector<AstNode*>* AstNode::getChildren() {
-    std::cout << "getChildren not called on subclass\n";
-    return nullptr;
+    //std::cout << "getChildren not called on subclass\n";
+    return &mchildren;
 }
 
 void AstNode::setToken(Token& t) {
@@ -71,6 +68,12 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
         case SemanticType::intlit:
             out = "intlit";
             break;
+        case SemanticType::User:
+            out = "";
+            break;
+        case SemanticType::u32:
+            out = "u32";
+            break;
         default:
             out = "Unrecognized value!";
             break;
@@ -80,7 +83,6 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
-    const char* out = " id: ";
     if(obj.indirection > 0) {
         int i = obj.indirection;
         while(i) {
@@ -90,7 +92,7 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
     }
     os << obj.type;
     if(obj.userid.size() > 0) {
-        os << out << obj.userid;
+        os << obj.userid;
     }
     return os;
 }

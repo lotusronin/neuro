@@ -11,16 +11,6 @@ CastNode::CastNode() {
 CastNode::~CastNode() {
 }
 
-void CastNode::makeGraph(std::ofstream& outfile) {
-    //implement this
-    outfile << "cast"<<id<<";\n";
-    outfile << "cast"<<id<<"[label=\"cast to " << toType << "\"];\n";
-    for (auto child : mchildren) {
-        outfile << "cast" << id << " -> ";
-        child->makeGraph(outfile);
-    }
-}
-
 AstNodeType CastNode::nodeType() {
     return AstNodeType::Cast;
 }

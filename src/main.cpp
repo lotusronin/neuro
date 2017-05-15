@@ -14,6 +14,7 @@
 bool debug_lexer;
 bool debug_parser;
 bool semantic_error = false;
+bool timedOut = false;
 
 void badargspass() {
     std::cout << "Usage:\n  Neuro <inputfiles>\n";
@@ -24,11 +25,14 @@ void badargspass() {
 void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
     std::string dbgl("-dbgl");
     std::string dbgp("-dbgp");
+    std::string t("-t");
     for(int i = 1; i < argc; i++) {
         if(dbgl.compare(argv[i]) == 0) {
             debug_lexer = true;
         } else if(dbgp.compare(argv[i]) == 0) {
             debug_parser = true;
+        } else if(t.compare(argv[i]) == 0) {
+            timedOut = true;
         } else {
             cmd_args.push_back(argv[i]);
         }
@@ -36,6 +40,7 @@ void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
 }
 
 void linkFile(std::string file);
+void makeDotGraph(std::ofstream& outfile, AstNode* ast);
 
 int main(int argc, char** argv) {
     std::cout << "Welcome to the neuro compiler.\n";
@@ -50,6 +55,10 @@ int main(int argc, char** argv) {
             badargspass();
             return 0;
         }
+
+        std::cout << "Sizeof(AstNode) = " << sizeof(AstNode) << '\n';
+        std::cout << "Sizeof(Token) = " << sizeof(Token) << '\n';
+        std::cout << "Sizeof(TypeInfo) = " << sizeof(TypeInfo) << '\n';
 
         std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 
@@ -74,9 +83,12 @@ int main(int argc, char** argv) {
             checkContinueBreak(ast, 0);
             fixOperatorAssociativity(ast);
             populateTypeList(ast);
+            resolveSizeOfs(ast);
+            checkAssignments(ast);
+            importPrepass(ast);
             populateSymbolTableFunctions(ast);
             variableUseCheck(ast);
-            printSymbolTable();
+            //printSymbolTable();
             typeCheckPass(ast);
             //printSymbolTable();
             //decorateAst(ast);
@@ -87,7 +99,8 @@ int main(int argc, char** argv) {
                 //Generate Dot file for debugging
                 std::ofstream dotfileout(target1.targetName()+".dot",std::ofstream::out);
                 auto start = std::chrono::steady_clock::now();
-                ast->makeGraph(dotfileout);
+                //ast->makeGraph(dotfileout);
+                makeDotGraph(dotfileout,ast);
                 auto end = std::chrono::steady_clock::now();
                 auto diff = end - start;
                 std::cout << "Time for make graph: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff).count() << "ms\n";
@@ -99,6 +112,7 @@ int main(int argc, char** argv) {
 
             auto start_ir = std::chrono::steady_clock::now();
             if(!semantic_error) {
+            //if(false) {
                 std::cout << "Generating IR code\n";
                 //Generate IR code
                 generateIR(ast);
@@ -112,31 +126,20 @@ int main(int argc, char** argv) {
             auto end_total = std::chrono::steady_clock::now();
             auto diff_total = end_total - start_total;
             auto diff_ir = end_total - start_ir;
+            if(timedOut) {
             std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
             std::cout << "Time for parsing: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_parse).count() << "ms\n";
             std::cout << "Time for semantic passes: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_semantic).count() << "ms\n";
             std::cout << "Time for IR generation: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count() << "ms\n";
             std::cout << "Total Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count() << "ms\n";
             BinOpNode::printDeleted();
+            }
 
             if(false) {
                 SymbolTable* s = getSymtab(f);
                 const std::vector<SymbolTableEntry*> symtab_entries = getFunctionEntries(s);
                 genCFile(f,symtab_entries);
             }
-            /**/
-            /**
-            auto start_lex = std::chrono::steady_clock::now();
-            Token tok;
-            while(tok.type != TokenType::eof) {
-                tok = target1.lex();
-                //std::cout << "Token: " << tok.token << " at (" << tok.line << "," << tok.col << ")\n";
-            }/**/
-            /*
-            auto end_lex = std::chrono::steady_clock::now();
-            auto diff_lex = end_lex-start_lex;
-            std::cout << "Lex Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(diff_lex).count() << "ms\n";
-            /**/
         }
         return 0;
     }
