@@ -1480,8 +1480,8 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
 
     if(matchedNode) {
         auto mangled = matchedNode->mangledName();
-        std::cout << "Matched: " << mangled << '\n';
-        std::cout << "Replacing function call name\n";
+        //std::cout << "Matched: " << mangled << '\n';
+        //std::cout << "Replacing function call name\n";
         funccall->mfuncnamemangled = mangled;
     } else {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
@@ -1495,7 +1495,7 @@ static void importPrepass(AstNode* ast, SymbolTable* symTab) {
     for(auto& i : compileunit->imports) {
         auto child = projectSymtab->children.find(i);
         if(child != projectSymtab->children.end()) {
-            std::cout << "Adding " << i << " to the symbol table\n";
+            //std::cout << "Adding " << i << " to the symbol table\n";
             symTab->imports.insert(std::make_pair(i,child->second));
         } else {
             std::cout << "Didn't find " << i << " imported\n";
