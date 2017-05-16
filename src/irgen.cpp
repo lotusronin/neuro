@@ -280,9 +280,14 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
 
 Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
     FuncCallNode* callnode = (FuncCallNode*) n;
-    Function* F = module->getFunction(callnode->mfuncname);
+    Function* F;
+    if(callnode->mfuncnamemangled.size() == 0) {
+        F = module->getFunction(callnode->mfuncname);
+    } else {
+        F = module->getFunction(callnode->mfuncnamemangled);
+    }
     if(!F) {
-        //std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";
+        std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";
         return nullptr;
     }
 
@@ -317,6 +322,8 @@ Value* retCodegen(AstNode* n, SymbolTable* sym) {
     return ret;
 }
 
+TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
+
 #define ANT AstNodeType
 Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
     //TODO(marcus): Returning 0 isn't a great idea in the long run
@@ -342,7 +349,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             auto op = binop->getOp();
             if(op.compare("( )") == 0) {
                 auto child = binop->LHS();
-                return expressionCodegen(child, sym);
+                return expressionCodegen(child, sym, lvalue);
             }
             //std::cout << "generating binop\n";
             auto lhs = binop->LHS();
@@ -437,9 +444,13 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //std::cout << "Generating member access!\n";
                 //std::cout << "Var name " << lhs->mtoken.token << "\n";
                 //std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
-                auto structname = ((VarNode*)lhs)->getVarName();
-                auto sym_entry = getFirstEntry(sym, structname);
-                auto lhsv = (Value*)sym_entry->address;
+                //need to get the address
+                Value* lhsv_ptr;
+                if(lhs->nodeType() == ANT::Var) {
+                    auto structname = ((VarNode*)lhs)->getVarName();
+                    auto sym_entry = getFirstEntry(sym, structname);
+                    lhsv_ptr = (Value*)sym_entry->address;
+                }
                 //FIXME(marcus): need a cleaner way to get address of variables
                 //should use the symbol table instead.
                 //Currently it generates a load of the lefthand side variable
@@ -447,8 +458,10 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //NOTE(marcus): only way for something to have an address is if we alloca it?
                 //Then we may need to alloca temp variables if part of an expression
                 //generates a struct that we will do address of or member access on.
-                auto structval = expressionCodegen(lhs,sym);
-                auto structtype = structval->getType();
+                auto structval = expressionCodegen(lhs,sym,true);
+                lhsv_ptr = structval;
+                auto lhs_typeinfo = getTypeInfo(lhs,sym);
+                auto structtype = getIRType(lhs_typeinfo);
                 //auto structtype = lhsv->getType();
                 auto structmembername = ((VarNode*)rhs)->getVarName();
                 //std::cout << "member name is " << structmembername << "\n";
@@ -461,7 +474,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                         //auto indexval = ConstantInt::get(context,APInt(32,index));
                         //std::cout << "Success, getting element index " << index << "\n";
                         //return Builder.CreateGEP(structtype,lhsv,indexval,structmembername);
-                        auto memberptr = Builder.CreateStructGEP(structtype,lhsv,index,"ptr_"+structmembername);
+                        auto memberptr = Builder.CreateStructGEP(structtype,lhsv_ptr,index,"ptr_"+structmembername);
                         if(lvalue) {
                             return memberptr;
                         }
@@ -573,7 +586,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             break;
         case ANT::FuncCall:
             {
-                std::cout << "generating function call";
+                //std::cout << "generating function call\n";
                 val = funcCallCodegen(n,sym);
             }
             break;
@@ -910,6 +923,38 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
     }
 }
 
+void typeGenerateIR(AstNode* ast, SymbolTable* sym) {
+    switch(ast->nodeType()) {
+        case ANT::CompileUnit:
+            {
+                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    typeGenerateIR(c,scope);
+                }
+                return;
+            }
+            break;
+        case ANT::Program:
+            {
+                std::vector<AstNode*>* vec = ast->getChildren();
+                for(auto c : (*vec)) {
+                    typeGenerateIR(c,sym);
+                }
+                return;
+            }
+            break;
+        case ANT::StructDef:
+            {
+                generateTypeCodegen(ast);
+                return;
+            }
+            break;
+        default:
+            break;
+    }
+}
+
 void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
     //check for null
     if(!ast)
@@ -978,7 +1023,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
             break;
         case ANT::FuncDef:
             {
-                std::cout << "Generating FuncDef IR\n";
+                //std::cout << "Generating FuncDef IR\n";
                 auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
                 functionCodegen(ast, scope);
                statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
@@ -1007,7 +1052,6 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
             break;
         case ANT::StructDef:
             {
-                generateTypeCodegen(ast);
                 return;
             }
             break;
@@ -1037,6 +1081,7 @@ void writeIR(std::string o) {
 
 void generateIR(AstNode* ast) {
     module = new Module("Neuro Program", context);
+    typeGenerateIR(ast,&progSymTab);
     prepassGenerateIR(ast,&progSymTab);
     generateIR_llvm(ast, &progSymTab);
 }

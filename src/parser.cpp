@@ -357,7 +357,6 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             break;
         case TokenType::id:
             mstype = SemanticType::User;
-            std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
             t.userid = tok.token;
             break;
         case TokenType::tuint:

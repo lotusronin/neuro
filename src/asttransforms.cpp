@@ -17,7 +17,7 @@ SymbolTable progSymTab;
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
-static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
+TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 
 void collapseExpressionChains(AstNode* ast) {
@@ -639,18 +639,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         binopn->mtypeinfo = t;
                     } else if(op.compare(".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
-                        typeCheckPass(c,symTab);
-                        //FIXME(marcus): this is broken if the lhs is not a variable
-                        //if . also dereferences then we will need to handle this case
-                        //or maybe the right side is a dereferenced struct ptr, also
-                        //will need to handle that case
-                        if(binopn->LHS()->nodeType() != ANT::Var) {
+                        //get member name
+                        if(binopn->RHS()->nodeType() != ANT::Var) {
+                            std::cout << "RHS of . op was not a variable\n";
                             break;
                         }
-                        auto varname = ((VarNode*)binopn->LHS())->getVarName();
-                        auto entry = getFirstEntry(symTab,varname);
-                        if(!entry) std::cout << "No Entry found for variable" << varname << "\n";
-                        auto lhs_t = entry->typeinfo;
+                        typeCheckPass(c,symTab);
+                        //FIXME(marcus): if . also dereferences then we will need to handle this case
+                        //or maybe the right side is a dereferenced struct ptr, also
+                        //will need to handle that case
+                        auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         auto structtypename = lhs_t.userid;
                         auto membername = ((VarNode*)binopn->RHS())->getVarName();
                         auto tmp = structList.find(structtypename);
@@ -686,6 +684,28 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         TypeInfo t;
                         t.type = SemanticType::Bool;
                         binopn->mtypeinfo = t;
+                        TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
+                        TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
+                        //do compatiblity checking
+                        if(!isSameType(lhs_t,rhs_t)) {
+                            //check for casts
+                            if(canCast(lhs_t,rhs_t)) {
+                                CastNode* cast = new CastNode();
+                                cast->fromType = rhs_t;
+                                cast->toType = lhs_t;
+                                cast->addChild(binopn->RHS());
+                                binopn->setRHS(cast);
+                            } else if(canCast(rhs_t,lhs_t)) {
+                                CastNode* cast = new CastNode();
+                                cast->fromType = lhs_t;
+                                cast->toType = rhs_t;
+                                cast->addChild(binopn->LHS());
+                                binopn->setLHS(cast);
+                            } else {
+                                std::cout << "Error with use of operator " << op << '\n';
+                                semanticError(SET::MissmatchBinop,binopn,symTab);
+                            }
+                        }
                     } else {
                         typeCheckPass(binopn,symTab);
                         //typeCheckPass(binopn->LHS(),symTab);
@@ -868,7 +888,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
     }
 }
 
-static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
+TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     AstNodeType ast_node_type = ast->nodeType();
     switch(ast_node_type) {
         case ANT::Const:
@@ -914,6 +934,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                     entries = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
                 }
                 SymbolTableEntry* e = entries.at(0);
+                return e->node->mtypeinfo;
                 //TODO(marcus): function entries don't get their typeinfo field set
                 return e->typeinfo;
             }
@@ -1035,17 +1056,8 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::BinOp:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
-                    //TODO(marcus): make this work for structs!
                     auto expr = (BinOpNode*)c;
-                    //variableUseCheck(expr,symTab);
-                    auto lhs = expr->LHS();
-                    auto rhs = expr->RHS();
-                    if(lhs) {
-                        variableUseCheck(lhs,symTab);
-                    }
-                    if(rhs) {
-                        variableUseCheck(rhs,symTab);
-                    }
+                    variableUseCheck(expr,symTab);
                 }
                 break;
             case ANT::Var:
@@ -1054,7 +1066,19 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        semanticError(SET::UndefUse, c, symTab);
+                        //NOTE(marcus): once we have type information we need to check that the
+                        //member we want actually exists for that type
+                        bool isStructMember = false;
+                        for(auto& struct_t : userTypesList) {
+                            auto members = struct_t.second;
+                            if(members->find(name) != members->end()) {
+                                isStructMember = true;
+                                break;
+                            }
+                        }
+                        if(!isStructMember) {
+                            semanticError(SET::UndefUse, c, symTab);
+                        }
                     } else {
                         //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
                     }
@@ -1458,7 +1482,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         auto mangled = matchedNode->mangledName();
         std::cout << "Matched: " << mangled << '\n';
         std::cout << "Replacing function call name\n";
-        funccall->mfuncname = mangled;
+        funccall->mfuncnamemangled = mangled;
     } else {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
     }
