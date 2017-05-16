@@ -306,6 +306,10 @@ static bool isTokenAType(TokenType t) {
         case TokenType::tuint:
         case TokenType::tchar:
         case TokenType::tuchar:
+        case TokenType::tushort:
+        case TokenType::tshort:
+        case TokenType::tlongint:
+        case TokenType::tulongint:
         case TokenType::tfloat:
         case TokenType::tdouble:
         case TokenType::tbool:
@@ -361,6 +365,18 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             break;
         case TokenType::tuint:
             mstype = SemanticType::u32;
+            break;
+        case TokenType::tushort:
+            mstype = SemanticType::u16;
+            break;
+        case TokenType::tshort:
+            mstype = SemanticType::s16;
+            break;
+        case TokenType::tlongint:
+            mstype = SemanticType::s64;
+            break;
+        case TokenType::tulongint:
+            mstype = SemanticType::u64;
             break;
         default:
             mstype = SemanticType::Typeless;
