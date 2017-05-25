@@ -83,6 +83,12 @@ def runTests(tests):
         if expected != None:
             exe = srcs.replace('.nro','.exe')
             command = ['./'+exe]
+
+            #If application doesn't exist, exit
+            if not os.path.exists('./'+exe):
+                print("  Fail: Compilation failed")
+                continue
+
             p2 = subprocess.run(command,stdout=subprocess.PIPE)
             if p2.returncode != 0:
                 print("  Fail: Error running program")
@@ -97,6 +103,10 @@ def runTests(tests):
                         diffOutput(expectedOut.splitlines(1), programOut.splitlines(1))
                     except:
                         pass
+                else:
+                    objFile = srcs+'.o'
+                    os.remove('./'+objFile)
+                    os.remove('./'+exe)
 
         #Check for success
         if matchedCompilerOutput and matchedExpectedOutput:

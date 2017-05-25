@@ -130,7 +130,7 @@ void LexerTarget::lexcomment() {
             return;
         }
         
-        while(content[f_idx] == 12 || content[f_idx] == 15) {
+        while(content[f_idx] == 12 || content[f_idx] == 15 || content[f_idx] == '\n') {
             //std::cout << ln << '\n';
             lineNum++;
             colNum = 0;
@@ -149,6 +149,9 @@ void LexerTarget::lexcomment() {
                 colNum += 2;
                 f_idx += 2;
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
+            } else {
+                ++colNum;
+                ++f_idx;
             }
         } else if(content[f_idx] == '*') {
             if(content[f_idx+1] == '/') {
