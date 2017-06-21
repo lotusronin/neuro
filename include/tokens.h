@@ -70,6 +70,10 @@ enum class TokenType {
     dblcolon,
     lsqrbrace,
     rsqrbrace,
+    addassign,
+    subassign,
+    mulassign,
+    divassign,
     eof
 };
 

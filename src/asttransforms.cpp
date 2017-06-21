@@ -1518,3 +1518,40 @@ void importPrepass(AstNode* ast) {
         }
     }
 }
+
+void transformAssignments(AstNode* ast) {
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::Assign:
+                {
+                    auto token = c->mtoken;
+                    auto t = token.type;
+                    auto lhs = ((AssignNode*)c)->getLHS();
+                    auto rhs = ((AssignNode*)c)->getRHS();
+
+                    if(t == TokenType::assignment)
+                        break;
+
+                    auto bop = new BinOpNode();
+                    bop->mtoken = token;
+                    if(t == TokenType::addassign) {
+                        bop->setOp("+");
+                    } else if(t == TokenType::subassign) {
+                        bop->setOp("-");
+                    } else if(t == TokenType::mulassign) {
+                        bop->setOp("*");
+                    } else if(t == TokenType::divassign) {
+                        bop->setOp("/");
+                    }
+
+                    bop->addChild(lhs);
+                    bop->addChild(rhs);
+                    c->mchildren[1] = bop;
+                }
+                break;
+            default:
+                transformAssignments(c);
+                break;
+        }
+    }
+}

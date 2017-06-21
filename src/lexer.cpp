@@ -390,6 +390,9 @@ TOP:
                 if(remaining[1] == '+') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                } else if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::addassign;
                 } else {
                     longest_match_type = TokenType::plus;
                 }
@@ -400,6 +403,9 @@ TOP:
                 if(remaining[1] == '-') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                } else if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::subassign;
                 } else {
                     longest_match_type = TokenType::minus;
                 }
@@ -441,11 +447,19 @@ TOP:
                     return lex_internal();
                 }
                 longest_match_type = TokenType::fslash;
+                if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::divassign;
+                }
             }
             break;
         case '*':
             {
                 longest_match_type = TokenType::star;
+                if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::mulassign;
+                }
             }
             break;
         case '^':
