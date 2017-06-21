@@ -133,6 +133,7 @@ Type* generateTypeCodegen(AstNode* n) {
     //Check to see if we already have an opaque struct defined
     StructType* ret = getStructIRType(sdnode->ident);
     if(ret == nullptr) {
+        std::cout << "Creating Struct Type " << sdnode->ident << '\n';
         ret = StructType::create(context,sdnode->ident);
         irTypeMap.insert(std::pair<std::string,StructType*>(sdnode->ident,ret));
     }
@@ -163,6 +164,7 @@ Type* generateTypeCodegen(AstNode* n) {
             auto userdeftype = getStructIRType(usertypename);
             userdeftype = (StructType*) getIRPtrType((Type*)userdeftype,indirection);
             if(userdeftype == nullptr) {
+                std::cout << "Member is of struct type " << typeinfo.userid << " creating it!\n";
                 userdeftype = StructType::create(context,usertypename);
                 irTypeMap.insert(std::pair<std::string,StructType*>(usertypename,userdeftype));
             }
@@ -190,11 +192,11 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     if(defined) {
         return defined;
     }
-    std::vector<AstNode*>* vec = protonode->getParameters();
+    auto vec = protonode->getParameters();
     std::vector<Type*> parameterTypes;
-    parameterTypes.reserve(vec->size());
+    parameterTypes.reserve(vec.size);
    
-    for(auto c : (*vec)) {
+    for(auto c : (vec)) {
         ParamsNode* param_node = (ParamsNode*)c;
         auto sym_entry = getFirstEntry(sym, param_node->mname);
         assert(sym_entry != nullptr);
@@ -213,11 +215,10 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 
     unsigned int idx = 0;
     for(auto &Arg : F->args()) {
-        std::string name = ((ParamsNode*) (*vec)[idx])->mname;
+        std::string name = ((ParamsNode*) (vec.ptr)[idx])->mname;
         Arg.setName(name);
         ++idx;
     }
-    delete vec;
     return F;
 }
 
@@ -226,40 +227,51 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
     std::string mangledName = funcnode->mangledName();
     Function* F = module->getFunction(mangledName);
-    std::vector<AstNode*>* vec = funcnode->getParameters();
+    auto vec = funcnode->getParameters();
     if(!F) {
         funcnode->mangledName();
         std::vector<Type*> parameterTypes;
-        parameterTypes.reserve(vec->size());
+        parameterTypes.reserve(vec.size);
        
 
-        for(auto c : (*vec)) {
+        for(auto c : vec) {
             ParamsNode* param_node = (ParamsNode*)c;
             auto sym_entry = getFirstEntry(sym, param_node->mname);
             assert(sym_entry != nullptr);
             TypeInfo info = sym_entry->typeinfo;
             Type* t = getIRType(info);
+            if(t == nullptr) {
+                    std::cout << "param type is null!\n" << info << '\n';
+            }
             parameterTypes.push_back(t);
         }
         
         auto sym_entries = getEntry(sym, funcnode->mfuncname+std::to_string(funcnode->id));
         auto entry = sym_entries.size() ? sym_entries[0] : nullptr;
         assert(entry != nullptr);
+        if(entry->overloads.size() > 0) {
+            auto fn = entry->overloads.at(0); //TODO(marcus): fix types/symboltable lookup
+            auto rti = fn->mtypeinfo;
+            //std::cout << "rti is " << rti << '\n';
+            //std::cout << "rti is user " << (rti.type == SemanticType::User) << '\n';
+        }
         Type* retType = getIRType(entry->typeinfo);
-        
+        //std::cout << "retType is " << entry->typeinfo << '\n';
+        if(retType == nullptr) {
+            std::cout << entry->typeinfo << '\n';
+        }
         FunctionType* FT = FunctionType::get(retType, parameterTypes, false);
         F = Function::Create(FT, Function::ExternalLinkage, mangledName, module);
 
         unsigned int idx = 0;
         for(auto &Arg : F->args()) {
-            std::string name = ((ParamsNode*) (*vec)[idx])->mname;
+            std::string name = ((ParamsNode*) (vec.ptr)[idx])->mname;
             Arg.setName(name);
             ++idx;
         }
     }
 
     if(prepass) {
-        delete vec;
         return F;
     }
 
@@ -274,7 +286,6 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
         auto sym_entry = getFirstEntry(sym, Arg.getName());
         sym_entry->address = (void*) alloca;
     }
-    delete vec;
     return F;
 }
 
@@ -1082,6 +1093,7 @@ void writeIR(std::string o) {
 void generateIR(AstNode* ast) {
     module = new Module("Neuro Program", context);
     typeGenerateIR(ast,&progSymTab);
+    //module->dump();
     prepassGenerateIR(ast,&progSymTab);
     generateIR_llvm(ast, &progSymTab);
 }

@@ -221,39 +221,37 @@ SymbolTable* getSymtab(std::string& file) {
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*(ast->getChildren()))) {
         std::vector<std::pair<SemanticType,AstNode*>> p;
-        std::vector<AstNode*>* params;
         SemanticType retType;
         switch(c->nodeType()) {
             case ANT::Prototype:
                 {
                     auto proto = (PrototypeNode*)c;
                     retType = proto->getType();
-                    params = proto->getParameters();
-                    for(auto prm : (*params)) {
+                    auto params = proto->getParameters();
+                    for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
                         SemanticType prmtyp = prmti.type;
                         p.push_back(std::make_pair(prmtyp,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
-                    delete params;
                 }
                 break;
             case ANT::FuncDef:
                 {
                     auto func = (FuncDefNode*)c;
                     retType = func->getType();
-                    params = func->getParameters();
+                    auto params = func->getParameters();
                     auto entries = getEntry(symTab,func->mfuncname);
                     if(entries.size() != 0) {
                         auto e = entries.at(0);
-                        auto numParams = params->size();
+                        auto numParams = params.size;
                         //For every overload
                         for(auto ol : e->overloads) {
                             if(numParams == ol->mchildren.size()-1) {
                                 bool repeat = true;
                                 //check for any mismatched param types
                                 for(unsigned int i = 0; i < numParams; ++i) {
-                                    if(!isSameType(params->at(i)->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
+                                    if(!isSameType(params.ptr[i]->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
                                         repeat = false;
                                         break;
                                     }
@@ -264,14 +262,13 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                             }
                         }
                     }
-                    for(auto prm : (*params)) {
+                    for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
                         SemanticType prmtyp = prmti.type;
                         p.push_back(std::make_pair(prmtyp,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
                     addFuncEntry(symTab, func);
-                    delete params;
                 }
                 break;
             default:
@@ -1408,16 +1405,15 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     //eg extern foo() and foo()
     if(e->node->nodeType() == AstNodeType::Prototype) {
         auto funcparams = ((PrototypeNode*)e->node)->getParameters();
-        if(funcparams->size() != funccall->mchildren.size()) {
-            std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams->size() << '\n';
-            delete funcparams;
+        if(funcparams.size != funccall->mchildren.size()) {
+            std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams.size << '\n';
             return false;
         }
         bool matched = true;
 
         //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams->size(); i++) {
-            auto param = funcparams->at(i);
+        for(unsigned int i = 0; i < funcparams.size; i++) {
+            auto param = funcparams.ptr[i];
             auto paramt = param->mtypeinfo;
             auto argn = funccall->mchildren.at(i);
             auto argt = getTypeInfo(argn,symTab);
@@ -1434,7 +1430,6 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
             semanticError(SemanticErrorType::NoResolve, funccall, symTab);
             return false;
         }
-        delete funcparams;
         return true;
     }
 
@@ -1446,16 +1441,15 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         }
         auto funcparams = candidate->getParameters();
 
-        if(funcparams->size() != funccall->mchildren.size()) {
-            delete funcparams;
+        if(funcparams.size != funccall->mchildren.size()) {
             continue;
         }
 
         bool matched = true;
 
         //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams->size(); i++) {
-            auto param = funcparams->at(i);
+        for(unsigned int i = 0; i < funcparams.size; i++) {
+            auto param = funcparams.ptr[i];
             auto paramt = param->mtypeinfo;
             auto argn = funccall->mchildren.at(i);
             auto argt = getTypeInfo(argn,symTab);
@@ -1475,7 +1469,6 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
                 //std::cout << "Error. Multiple matching functions found.\n";
             }
         }
-        delete funcparams;
     }
 
     if(matchedNode) {

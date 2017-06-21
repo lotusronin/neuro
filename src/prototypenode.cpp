@@ -31,8 +31,10 @@ std::vector<AstNode*>* PrototypeNode::getChildren() {
     return &mchildren;
 }
 
-std::vector<AstNode*>* PrototypeNode::getParameters() {
-    std::vector<AstNode*>* params = new std::vector<AstNode*>(mchildren.begin(),mchildren.end());
+ArrayView PrototypeNode::getParameters() {
+    auto s = mchildren.size();
+    auto p = s ? &mchildren[0] : nullptr;
+    ArrayView params(p,s);
     return params;
 }
 

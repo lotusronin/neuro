@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "astnode.h"
+#include "arrayview.h"
 
 class PrototypeNode : public AstNode {
     public:
@@ -15,7 +16,7 @@ class PrototypeNode : public AstNode {
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*>* getParameters();
+        ArrayView getParameters();
         SemanticType getType();
         //std::vector<AstNode*> mparams;
         std::string mfuncname;
