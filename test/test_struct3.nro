@@ -1,0 +1,44 @@
+import stdio;
+
+struct triangle {
+    v1 : point;
+    v2 : point;
+    v3 : point;
+}
+
+struct point {
+    x : u32;
+    y : u32;
+    z : u32;
+}
+
+fn main() : u32 {
+    foo : triangle;
+    foo.v1 = getPoint(0,0,0);
+    foo.v2 = getPoint(1,0,0);
+    foo.v3 = getPoint(1,1,0);
+    stdio::puts("Triangle coords");
+    p := foo.v1;
+    printPoint(&p);
+    p = foo.v2;
+    printPoint(&p);
+    p = foo.v3;
+    printPoint(&p);
+    return 0;
+}
+
+fn getPoint(x : u32, y : u32, z : u32) : point {
+    p : point;
+    p.x = x;
+    p.y = y;
+    p.z = z;
+}
+
+fn printPoint(p : *point) : void {
+    stdio::printi((@p).x);
+    stdio::putchar(',');
+    stdio::printi((@p).y);
+    stdio::putchar(',');
+    stdio::printi((@p).z);
+    stdio::putchar('\n');
+}

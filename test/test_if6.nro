@@ -1,0 +1,16 @@
+import stdio;
+
+fn main() : u32 {
+    var1 := 4;
+    var2 := 5;
+    if(var1 > 1) {
+        stdio::puts("first if passed");
+        if(var2 > 1) {
+            stdio::puts("second if passed");
+            if(var1 < var2) {
+                stdio::puts("third if passed");
+            }
+        }
+    }
+    return 0;
+}

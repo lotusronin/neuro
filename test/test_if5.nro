@@ -1,0 +1,9 @@
+import stdio;
+
+fn main() : u32 {
+    var1 := 5;
+    var2 := 3;
+    if(var1 > var2)
+        stdio::puts("var1 is greater!");
+    return 0;
+}

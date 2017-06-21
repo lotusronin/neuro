@@ -1,0 +1,23 @@
+import stdio;
+
+struct point {
+    x : u32;
+    y : u32;
+    z : u32;
+}
+
+fn main() : u32 {
+    foo : point;
+    foo.x = 0;
+    foo.y = 1;
+    foo.z = 2;
+    pfoo := &foo;
+    stdio::puts("point at (x,y,z)");
+    stdio::printi((@pfoo).x);
+    stdio::putchar(',');
+    stdio::printi((@pfoo).y);
+    stdio::putchar(',');
+    stdio::printi((@pfoo).z);
+    stdio::putchar('\n');
+    return 0;
+}

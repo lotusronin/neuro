@@ -1,0 +1,11 @@
+import stdio;
+
+fn main() : u32 {
+    stdio::puts("before block comment");
+    /*
+     * //stdio::puts("in block comment");
+     * //stdio::puts("in block comment2");
+     */
+    stdio::puts("after block comment");
+    return 0;
+}

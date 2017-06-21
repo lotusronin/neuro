@@ -1,0 +1,18 @@
+import stdio;
+
+fn main() : u32 {
+    num : u32 = 0;
+    stdio::puts("num is");
+    stdio::printi(num);
+    stdio::putchar('\n');
+    add1(&num);
+    stdio::puts("num is now");
+    stdio::printi(num);
+    stdio::putchar('\n');
+    return 0;
+}
+
+fn add1(x : *u32) : void {
+    @x = @x + 1;
+    return;
+}

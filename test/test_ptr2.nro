@@ -1,0 +1,24 @@
+import stdio;
+
+struct foo {
+    num : u32;
+}
+
+fn main() : u32 {
+    bar : foo;
+    bar.num = 0;
+
+    stdio::puts("bar.num is");
+    stdio::printi(bar.num);
+    stdio::putchar('\n');
+    add1(&bar);
+    stdio::puts("bar.num is now");
+    stdio::printi(bar.num);
+    stdio::putchar('\n');
+    return 0;
+}
+
+fn add1(x : *foo) : void {
+    (@x).num = (@x).num + 1;
+    return;
+}

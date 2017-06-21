@@ -1,0 +1,8 @@
+import stdio;
+
+fn main() : u32 {
+    stdio::puts("before line comment");
+    //stdio::puts("in line comment");
+    stdio::puts("after line comment");
+    return 0;
+}
