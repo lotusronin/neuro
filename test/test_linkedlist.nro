@@ -12,4 +12,5 @@ struct node {
 
 fn main() : u32 {
     llist : linkedlist;
+    return 0;
 }

@@ -182,6 +182,9 @@ StructType* getStructIRType(std::string ident) {
     auto iter = irTypeMap.find(ident);
     if(iter != irTypeMap.end()) {
         ret = iter->second;
+    } else {
+        ret = StructType::create(context,ident);
+        irTypeMap.insert(std::pair<std::string,StructType*>(ident,ret));
     }
     return ret;
 }

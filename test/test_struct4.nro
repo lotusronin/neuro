@@ -1,0 +1,8 @@
+struct foo {
+    self : *foo;
+}
+
+fn main() : u32 {
+bar : foo;
+return 0;
+}

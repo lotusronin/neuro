@@ -220,7 +220,7 @@ SymbolTable* getSymtab(std::string& file) {
 
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*(ast->getChildren()))) {
-        std::vector<std::pair<SemanticType,AstNode*>> p;
+        std::vector<std::pair<TypeInfo,AstNode*>> p;
         SemanticType retType;
         switch(c->nodeType()) {
             case ANT::Prototype:
@@ -230,8 +230,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     auto params = proto->getParameters();
                     for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
-                        SemanticType prmtyp = prmti.type;
-                        p.push_back(std::make_pair(prmtyp,prm));
+                        p.push_back(std::make_pair(prmti,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
                 }
@@ -264,8 +263,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     }
                     for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
-                        SemanticType prmtyp = prmti.type;
-                        p.push_back(std::make_pair(prmtyp,prm));
+                        p.push_back(std::make_pair(prmti,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
                     addFuncEntry(symTab, func);

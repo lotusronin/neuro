@@ -32,6 +32,7 @@ fn getPoint(x : u32, y : u32, z : u32) : point {
     p.x = x;
     p.y = y;
     p.z = z;
+    return p;
 }
 
 fn printPoint(p : *point) : void {
@@ -41,4 +42,5 @@ fn printPoint(p : *point) : void {
     stdio::putchar(',');
     stdio::printi((@p).z);
     stdio::putchar('\n');
+    return;
 }
