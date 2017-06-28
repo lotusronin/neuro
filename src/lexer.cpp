@@ -32,8 +32,12 @@ TokenType keyword_type[] = {
     TokenType::tvoid,
     TokenType::tuchar,
     TokenType::tchar,
+    TokenType::tushort,
+    TokenType::tshort,
     TokenType::tuint,
     TokenType::tint,
+    TokenType::tulongint,
+    TokenType::tlongint,
     TokenType::tfloat,
     TokenType::tdouble,
     TokenType::sif,
@@ -61,8 +65,12 @@ const char* keyword_array[] = {
     "void",
     "u8",
     "s8",
+    "u16",
+    "s16",
     "u32",
     "s32",
+    "u64",
+    "s64",
     "f32",
     "f64",
     "if",
@@ -122,7 +130,7 @@ void LexerTarget::lexcomment() {
             return;
         }
         
-        while(content[f_idx] == 12 || content[f_idx] == 15) {
+        while(content[f_idx] == 12 || content[f_idx] == 15 || content[f_idx] == '\n') {
             //std::cout << ln << '\n';
             lineNum++;
             colNum = 0;
@@ -141,6 +149,9 @@ void LexerTarget::lexcomment() {
                 colNum += 2;
                 f_idx += 2;
                 //std::cout << "Block comment begins. Depth " << comment_depth << "\n";
+            } else {
+                ++colNum;
+                ++f_idx;
             }
         } else if(content[f_idx] == '*') {
             if(content[f_idx+1] == '/') {
@@ -379,6 +390,9 @@ TOP:
                 if(remaining[1] == '+') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                } else if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::addassign;
                 } else {
                     longest_match_type = TokenType::plus;
                 }
@@ -389,6 +403,9 @@ TOP:
                 if(remaining[1] == '-') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                } else if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::subassign;
                 } else {
                     longest_match_type = TokenType::minus;
                 }
@@ -430,11 +447,19 @@ TOP:
                     return lex_internal();
                 }
                 longest_match_type = TokenType::fslash;
+                if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::divassign;
+                }
             }
             break;
         case '*':
             {
                 longest_match_type = TokenType::star;
+                if(remaining[1] == '=') {
+                    longest_match++;
+                    longest_match_type = TokenType::mulassign;
+                }
             }
             break;
         case '^':

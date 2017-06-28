@@ -83,8 +83,8 @@ void genCFile(std::string filename, const std::vector<SymbolTableEntry*>& export
     //std::vector<std::pair<SemanticType,AstNode*>> funcParams;
         auto funcparams = entry->funcParams;
         for(auto p : funcparams) {
-            std::string param_type = typeToString(p.first, p.second);
-            if(!isPrimitiveType(p.first)) {
+            std::string param_type = typeToString(p.first.type, p.second);
+            if(!isPrimitiveType(p.first.type)) {
                 types.insert(param_type);
             }
             std::string param_name = ((ParamsNode*)p.second)->mname;

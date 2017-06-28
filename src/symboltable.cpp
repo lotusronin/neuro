@@ -72,11 +72,12 @@ void addFuncEntry(SymbolTable* s, FuncDefNode* n) {
     entry->overloads.push_back(n);
 }
 
-void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<SemanticType,AstNode*>>& p) {
+void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<std::pair<TypeInfo,AstNode*>>& p) {
     auto entry = new SymbolTableEntry;
     entry->node = n;
     entry->type = t;
     entry->typeinfo.type = t;
+    entry->typeinfo.userid = n->mtypeinfo.userid;
     entry->funcParams = p;
     std::string funcname;
     if(n->nodeType() == AstNodeType::Prototype) {

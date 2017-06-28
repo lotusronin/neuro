@@ -1,0 +1,48 @@
+import stdio;
+
+fn main() : u32 {
+    sizeu8 := sizeof(u8);
+    sizeu16 := sizeof(u16);
+    sizeu32 := sizeof(u32);
+    sizeu64 := sizeof(u64);
+    sizes8 := sizeof(s8);
+    sizes16 := sizeof(s16);
+    sizes32 := sizeof(s32);
+    sizes64 := sizeof(s64);
+    sizef32 := sizeof(f32);
+    sizef64 := sizeof(f64);
+    
+    stdio::puts("Sizeof u8");
+    stdio::printi(sizeu8);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof u16");
+    stdio::printi(sizeu16);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof u32");
+    stdio::printi(sizeu32);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof u64");
+    stdio::printi(sizeu64);
+    stdio::putchar('\n');
+    
+    stdio::puts("Sizeof s8");
+    stdio::printi(sizes8);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof s16");
+    stdio::printi(sizes16);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof s32");
+    stdio::printi(sizes32);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof s64");
+    stdio::printi(sizes64);
+    stdio::putchar('\n');
+    
+    stdio::puts("Sizeof f32");
+    stdio::printi(sizef32);
+    stdio::putchar('\n');
+    stdio::puts("Sizeof f64");
+    stdio::printi(sizef64);
+    stdio::putchar('\n');
+    return 0;
+}

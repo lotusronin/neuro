@@ -39,9 +39,10 @@ SemanticType FuncDefNode::getType() {
     return mtypeinfo.type;
 }
 
-std::vector<AstNode*>* FuncDefNode::getParameters() {
-    //std::vector<AstNode*>* params = new std::vector<AstNode*>(mparams.begin(),mparams.end()-1);
-    std::vector<AstNode*>* params = new std::vector<AstNode*>(mchildren.begin(),mchildren.end()-1);
+ArrayView FuncDefNode::getParameters() {
+    auto s = mchildren.size() - 1;
+    auto p = s ? &mchildren[0] : nullptr;
+    ArrayView params(p,s);
     return params;
 }
 

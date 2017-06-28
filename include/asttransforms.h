@@ -19,6 +19,7 @@ void resolveSizeOfs(AstNode* ast);
 void checkAssignments(AstNode* ast, SymbolTable* symTab);
 void checkAssignments(AstNode* ast);
 void importPrepass(AstNode* root);
+void transformAssignments(AstNode* ast);
 SymbolTable* getSymtab(std::string& file);
 
 #endif

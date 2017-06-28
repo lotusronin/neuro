@@ -1,0 +1,9 @@
+import stdio;
+
+fn main() : u32 {
+    foo := 6;
+    foo /= 2;
+    stdio::printi(foo);
+    stdio::putchar('\n');
+    return 0;
+}

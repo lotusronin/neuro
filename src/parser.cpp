@@ -306,6 +306,10 @@ static bool isTokenAType(TokenType t) {
         case TokenType::tuint:
         case TokenType::tchar:
         case TokenType::tuchar:
+        case TokenType::tushort:
+        case TokenType::tshort:
+        case TokenType::tlongint:
+        case TokenType::tulongint:
         case TokenType::tfloat:
         case TokenType::tdouble:
         case TokenType::tbool:
@@ -357,11 +361,22 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             break;
         case TokenType::id:
             mstype = SemanticType::User;
-            std::cout << "User Defined Type!!! WOOOOOOOOOO\n";
             t.userid = tok.token;
             break;
         case TokenType::tuint:
             mstype = SemanticType::u32;
+            break;
+        case TokenType::tushort:
+            mstype = SemanticType::u16;
+            break;
+        case TokenType::tshort:
+            mstype = SemanticType::s16;
+            break;
+        case TokenType::tlongint:
+            mstype = SemanticType::s64;
+            break;
+        case TokenType::tulongint:
+            mstype = SemanticType::u64;
             break;
         default:
             mstype = SemanticType::Typeless;
@@ -380,15 +395,21 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         parse_error(PET::BadTypeIdentifier, tok, lexer);
     }
     
-    //delete tnode;
-    /*
-    if(parent) {
-        //null check
-        parent->addChild(tnode);
-    } else {
-        delete tnode;
-    }*/
     return;
+}
+
+bool isAssignmentOp(TokenType t) {
+    switch(t) {
+        case TokenType::assignment:
+        case TokenType::addassign:
+        case TokenType::subassign:
+        case TokenType::mulassign:
+        case TokenType::divassign:
+            return true;
+        default:
+            return false;
+    }
+    return false;
 }
 
 /*
@@ -451,7 +472,7 @@ void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
     vnode->addVarName(tok.token);
     anode->addChild(vnode);
     tok = lexer->lex();
-    if(tok.type != TokenType::assignment) {
+    if(!isAssignmentOp(tok.type)) {
         parse_error(PET::MissEqVarDecAssign, tok, lexer);
     }
     anode->mtoken = tok;
@@ -630,14 +651,14 @@ void parseStatement(LexerTarget* lexer, AstNode* parent) {
         parseSomeVarDecStmt(lexer, parent);
         //consume ;
         lexer->lex();
-    } else if(tok.type == TokenType::id && lexer->peekNext().type == TokenType::assignment) {
+    } else if(tok.type == TokenType::id && isAssignmentOp(lexer->peekNext().type)) {
         parseVarAssign(lexer, parent);
         //consume ;
         lexer->lex();
     } else {
         AssignNode* anode = new AssignNode();
         parseExpression(lexer, anode);
-        if(lexer->peek().type == TokenType::assignment) {
+        if(isAssignmentOp(lexer->peek().type)) {
             anode->mtoken = lexer->peek();
             parent->addChild(anode);
             //consume =

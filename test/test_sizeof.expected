@@ -1,0 +1,20 @@
+Sizeof u8
+1
+Sizeof u16
+2
+Sizeof u32
+4
+Sizeof u64
+8
+Sizeof s8
+1
+Sizeof s16
+2
+Sizeof s32
+4
+Sizeof s64
+8
+Sizeof f32
+4
+Sizeof f64
+8

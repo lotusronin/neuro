@@ -9,8 +9,12 @@ enum class TokenType {
     import,
     tchar,
     tuchar,
+    tshort,
+    tushort,
     tint,
     tuint,
+    tlongint,
+    tulongint,
     tbool,
     tfloat,
     tdouble,
@@ -66,6 +70,10 @@ enum class TokenType {
     dblcolon,
     lsqrbrace,
     rsqrbrace,
+    addassign,
+    subassign,
+    mulassign,
+    divassign,
     eof
 };
 

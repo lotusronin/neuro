@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "astnode.h"
+#include "arrayview.h"
 
 class FuncDefNode : public AstNode {
     public:
@@ -16,7 +17,7 @@ class FuncDefNode : public AstNode {
         void addFuncName(std::string funcname);
         SemanticType getType();
         std::vector<AstNode*>* getChildren();
-        std::vector<AstNode*>* getParameters();
+        ArrayView getParameters();
         AstNode* getFunctionBody();
         std::string mangledName();
         //std::vector<AstNode*> mparams;

@@ -1,0 +1,13 @@
+import stdio;
+
+fn main() : u32 {
+    stdio::puts("before block comment");
+    /*
+     * /*
+     *  Nesting block comments
+     *  stdio::puts("in block comment");
+     *  */
+     */
+    stdio::puts("after block comment");
+    return 0;
+}

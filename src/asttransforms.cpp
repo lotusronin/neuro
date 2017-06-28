@@ -17,7 +17,7 @@ SymbolTable progSymTab;
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
-static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
+TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 
 void collapseExpressionChains(AstNode* ast) {
@@ -220,40 +220,37 @@ SymbolTable* getSymtab(std::string& file) {
 
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
     for(auto c : (*(ast->getChildren()))) {
-        std::vector<std::pair<SemanticType,AstNode*>> p;
-        std::vector<AstNode*>* params;
+        std::vector<std::pair<TypeInfo,AstNode*>> p;
         SemanticType retType;
         switch(c->nodeType()) {
             case ANT::Prototype:
                 {
                     auto proto = (PrototypeNode*)c;
                     retType = proto->getType();
-                    params = proto->getParameters();
-                    for(auto prm : (*params)) {
+                    auto params = proto->getParameters();
+                    for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
-                        SemanticType prmtyp = prmti.type;
-                        p.push_back(std::make_pair(prmtyp,prm));
+                        p.push_back(std::make_pair(prmti,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
-                    delete params;
                 }
                 break;
             case ANT::FuncDef:
                 {
                     auto func = (FuncDefNode*)c;
                     retType = func->getType();
-                    params = func->getParameters();
+                    auto params = func->getParameters();
                     auto entries = getEntry(symTab,func->mfuncname);
                     if(entries.size() != 0) {
                         auto e = entries.at(0);
-                        auto numParams = params->size();
+                        auto numParams = params.size;
                         //For every overload
                         for(auto ol : e->overloads) {
                             if(numParams == ol->mchildren.size()-1) {
                                 bool repeat = true;
                                 //check for any mismatched param types
                                 for(unsigned int i = 0; i < numParams; ++i) {
-                                    if(!isSameType(params->at(i)->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
+                                    if(!isSameType(params.ptr[i]->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
                                         repeat = false;
                                         break;
                                     }
@@ -264,14 +261,12 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                             }
                         }
                     }
-                    for(auto prm : (*params)) {
+                    for(auto prm : (params)) {
                         auto prmti = prm->mtypeinfo;
-                        SemanticType prmtyp = prmti.type;
-                        p.push_back(std::make_pair(prmtyp,prm));
+                        p.push_back(std::make_pair(prmti,prm));
                     }
                     addFuncEntry(symTab, retType, c, p);
                     addFuncEntry(symTab, func);
-                    delete params;
                 }
                 break;
             default:
@@ -639,18 +634,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         binopn->mtypeinfo = t;
                     } else if(op.compare(".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
-                        typeCheckPass(c,symTab);
-                        //FIXME(marcus): this is broken if the lhs is not a variable
-                        //if . also dereferences then we will need to handle this case
-                        //or maybe the right side is a dereferenced struct ptr, also
-                        //will need to handle that case
-                        if(binopn->LHS()->nodeType() != ANT::Var) {
+                        //get member name
+                        if(binopn->RHS()->nodeType() != ANT::Var) {
+                            std::cout << "RHS of . op was not a variable\n";
                             break;
                         }
-                        auto varname = ((VarNode*)binopn->LHS())->getVarName();
-                        auto entry = getFirstEntry(symTab,varname);
-                        if(!entry) std::cout << "No Entry found for variable" << varname << "\n";
-                        auto lhs_t = entry->typeinfo;
+                        typeCheckPass(c,symTab);
+                        //FIXME(marcus): if . also dereferences then we will need to handle this case
+                        //or maybe the right side is a dereferenced struct ptr, also
+                        //will need to handle that case
+                        auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         auto structtypename = lhs_t.userid;
                         auto membername = ((VarNode*)binopn->RHS())->getVarName();
                         auto tmp = structList.find(structtypename);
@@ -686,6 +679,28 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         TypeInfo t;
                         t.type = SemanticType::Bool;
                         binopn->mtypeinfo = t;
+                        TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
+                        TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
+                        //do compatiblity checking
+                        if(!isSameType(lhs_t,rhs_t)) {
+                            //check for casts
+                            if(canCast(lhs_t,rhs_t)) {
+                                CastNode* cast = new CastNode();
+                                cast->fromType = rhs_t;
+                                cast->toType = lhs_t;
+                                cast->addChild(binopn->RHS());
+                                binopn->setRHS(cast);
+                            } else if(canCast(rhs_t,lhs_t)) {
+                                CastNode* cast = new CastNode();
+                                cast->fromType = lhs_t;
+                                cast->toType = rhs_t;
+                                cast->addChild(binopn->LHS());
+                                binopn->setLHS(cast);
+                            } else {
+                                std::cout << "Error with use of operator " << op << '\n';
+                                semanticError(SET::MissmatchBinop,binopn,symTab);
+                            }
+                        }
                     } else {
                         typeCheckPass(binopn,symTab);
                         //typeCheckPass(binopn->LHS(),symTab);
@@ -868,7 +883,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
     }
 }
 
-static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
+TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     AstNodeType ast_node_type = ast->nodeType();
     switch(ast_node_type) {
         case ANT::Const:
@@ -914,6 +929,7 @@ static TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                     entries = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
                 }
                 SymbolTableEntry* e = entries.at(0);
+                return e->node->mtypeinfo;
                 //TODO(marcus): function entries don't get their typeinfo field set
                 return e->typeinfo;
             }
@@ -1035,17 +1051,8 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
             case ANT::BinOp:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
-                    //TODO(marcus): make this work for structs!
                     auto expr = (BinOpNode*)c;
-                    //variableUseCheck(expr,symTab);
-                    auto lhs = expr->LHS();
-                    auto rhs = expr->RHS();
-                    if(lhs) {
-                        variableUseCheck(lhs,symTab);
-                    }
-                    if(rhs) {
-                        variableUseCheck(rhs,symTab);
-                    }
+                    variableUseCheck(expr,symTab);
                 }
                 break;
             case ANT::Var:
@@ -1054,7 +1061,19 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
                     std::string name = ((VarNode*)(c))->getVarName();
                     auto entry = getEntry(symTab,name);
                     if(entry.size() == 0) {
-                        semanticError(SET::UndefUse, c, symTab);
+                        //NOTE(marcus): once we have type information we need to check that the
+                        //member we want actually exists for that type
+                        bool isStructMember = false;
+                        for(auto& struct_t : userTypesList) {
+                            auto members = struct_t.second;
+                            if(members->find(name) != members->end()) {
+                                isStructMember = true;
+                                break;
+                            }
+                        }
+                        if(!isStructMember) {
+                            semanticError(SET::UndefUse, c, symTab);
+                        }
                     } else {
                         //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
                     }
@@ -1384,16 +1403,15 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     //eg extern foo() and foo()
     if(e->node->nodeType() == AstNodeType::Prototype) {
         auto funcparams = ((PrototypeNode*)e->node)->getParameters();
-        if(funcparams->size() != funccall->mchildren.size()) {
-            std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams->size() << '\n';
-            delete funcparams;
+        if(funcparams.size != funccall->mchildren.size()) {
+            std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams.size << '\n';
             return false;
         }
         bool matched = true;
 
         //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams->size(); i++) {
-            auto param = funcparams->at(i);
+        for(unsigned int i = 0; i < funcparams.size; i++) {
+            auto param = funcparams.ptr[i];
             auto paramt = param->mtypeinfo;
             auto argn = funccall->mchildren.at(i);
             auto argt = getTypeInfo(argn,symTab);
@@ -1410,7 +1428,6 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
             semanticError(SemanticErrorType::NoResolve, funccall, symTab);
             return false;
         }
-        delete funcparams;
         return true;
     }
 
@@ -1422,16 +1439,15 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         }
         auto funcparams = candidate->getParameters();
 
-        if(funcparams->size() != funccall->mchildren.size()) {
-            delete funcparams;
+        if(funcparams.size != funccall->mchildren.size()) {
             continue;
         }
 
         bool matched = true;
 
         //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams->size(); i++) {
-            auto param = funcparams->at(i);
+        for(unsigned int i = 0; i < funcparams.size; i++) {
+            auto param = funcparams.ptr[i];
             auto paramt = param->mtypeinfo;
             auto argn = funccall->mchildren.at(i);
             auto argt = getTypeInfo(argn,symTab);
@@ -1451,14 +1467,13 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
                 //std::cout << "Error. Multiple matching functions found.\n";
             }
         }
-        delete funcparams;
     }
 
     if(matchedNode) {
         auto mangled = matchedNode->mangledName();
-        std::cout << "Matched: " << mangled << '\n';
-        std::cout << "Replacing function call name\n";
-        funccall->mfuncname = mangled;
+        //std::cout << "Matched: " << mangled << '\n';
+        //std::cout << "Replacing function call name\n";
+        funccall->mfuncnamemangled = mangled;
     } else {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
     }
@@ -1471,7 +1486,7 @@ static void importPrepass(AstNode* ast, SymbolTable* symTab) {
     for(auto& i : compileunit->imports) {
         auto child = projectSymtab->children.find(i);
         if(child != projectSymtab->children.end()) {
-            std::cout << "Adding " << i << " to the symbol table\n";
+            //std::cout << "Adding " << i << " to the symbol table\n";
             symTab->imports.insert(std::make_pair(i,child->second));
         } else {
             std::cout << "Didn't find " << i << " imported\n";
@@ -1490,6 +1505,43 @@ void importPrepass(AstNode* ast) {
                 break;
             default:
                 //std::cout << "unknown ast node type!\n";
+                break;
+        }
+    }
+}
+
+void transformAssignments(AstNode* ast) {
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::Assign:
+                {
+                    auto token = c->mtoken;
+                    auto t = token.type;
+                    auto lhs = ((AssignNode*)c)->getLHS();
+                    auto rhs = ((AssignNode*)c)->getRHS();
+
+                    if(t == TokenType::assignment)
+                        break;
+
+                    auto bop = new BinOpNode();
+                    bop->mtoken = token;
+                    if(t == TokenType::addassign) {
+                        bop->setOp("+");
+                    } else if(t == TokenType::subassign) {
+                        bop->setOp("-");
+                    } else if(t == TokenType::mulassign) {
+                        bop->setOp("*");
+                    } else if(t == TokenType::divassign) {
+                        bop->setOp("/");
+                    }
+
+                    bop->addChild(lhs);
+                    bop->addChild(rhs);
+                    c->mchildren[1] = bop;
+                }
+                break;
+            default:
+                transformAssignments(c);
                 break;
         }
     }
