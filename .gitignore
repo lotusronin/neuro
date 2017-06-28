@@ -9,3 +9,8 @@ Neuro
 *.txt
 *.ll
 *.exe
+*.pdb
+/Debug
+/Release
+/vs_build
+/vs_release_build
