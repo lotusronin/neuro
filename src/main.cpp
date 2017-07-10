@@ -85,9 +85,7 @@ int main(int argc, char** argv) {
             
             std::cout << "Beginning AST transformations and Semantic analysis\n";
             auto start_semantic = std::chrono::steady_clock::now();
-            collapseExpressionChains(ast);
             checkContinueBreak(ast, 0);
-            fixOperatorAssociativity(ast);
             transformAssignments(ast);
             populateTypeList(ast);
             resolveSizeOfs(ast);

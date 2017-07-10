@@ -24,8 +24,6 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent);
 void parseOptparams2(LexerTarget* lexer, AstNode* parent);
 void parseType(LexerTarget* lexer, AstNode* parent);
 void parseVar(LexerTarget* lexer, AstNode* parent);
-void parseVarDec(LexerTarget* lexer, AstNode* parent);
-void parseVarDecAssign(LexerTarget* lexer, AstNode* parent);
 void parseVarAssign(LexerTarget* lexer, AstNode* parent);
 void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent);
 void parseFunctionDef(LexerTarget* lexer, AstNode* parent);
@@ -40,7 +38,6 @@ void parseDeferBlock(LexerTarget* lexer, AstNode* parent);
 void parseWhileLoop(LexerTarget* lexer, AstNode* parent);
 void parseReturnStatement(LexerTarget* lexer, AstNode* parent);
 void parseExpression(LexerTarget* lexer, AstNode* parent);
-AstNode* parseExpression(LexerTarget* lexer);
 AstNode* parseLogicalOr(LexerTarget* lexer);
 AstNode* parseLogicalAnd(LexerTarget* lexer);
 AstNode* parseBitOr(LexerTarget* lexer);
@@ -59,6 +56,7 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent);
 void parseOptargs2(LexerTarget* lexer, AstNode* parent);
 void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
 void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent);
+AstNode* parseExpression(LexerTarget* lexer, int precedence);
 
 bool fileImported(std::string f) {
     auto iter = importedFiles.find(f);
@@ -428,38 +426,6 @@ void parseVar(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
-//TODO(marcus): Uncalled, should we use it
-//or just get rid of it?
-void parseVarDec(LexerTarget* lexer, AstNode* parent) {
-    //vardec -> var : type
-    assert(false);
-    parseVar(lexer, nullptr);
-    Token tok = lexer->peek();
-    if(tok.type != TokenType::colon) {
-        parse_error(PET::MissColon, tok, lexer);
-    }
-    //consume :
-    lexer->lex();
-    parseType(lexer, nullptr);
-    return;
-}
-
-//TODO(marcus): Uncalled, should we use it
-//or just get rid of it?
-void parseVarDecAssign(LexerTarget* lexer, AstNode* parent) {
-    //vardecassign -> vardec = expression
-    assert(false);
-    parseVarDec(lexer, nullptr);
-    Token tok = lexer->peek();
-    if(tok.type != TokenType::assignment) {
-        parse_error(PET::MissEqVarDecAssign, tok, lexer);
-    }
-    //consume =
-    lexer->lex();
-    parseExpression(lexer, nullptr);
-    return;
-}
-
 void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
     //varassign -> var = expression
     AssignNode* anode = new AssignNode();
@@ -534,7 +500,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         VarNode* vnode = new VarNode();
         vnode->addVarName(tokid.token);
         vnode->mtoken = tokid;
-        //TODO(marcus): parse type, then find if you're an assignment or declaration
+        //parse type, then find if you're an assignment or declaration
         parseType(lexer, vnode);
         if(lexer->peek().type == TokenType::assignment) {
             //std::cout << "var declaration is assignment, type given.\n";
@@ -821,321 +787,9 @@ void parseReturnStatement(LexerTarget* lexer, AstNode* parent) {
 }
 
 void parseExpression(LexerTarget* lexer, AstNode* parent) {
-    auto ret = parseExpression(lexer);
+    auto ret = parseExpression(lexer,0);
     parent->addChild(ret);
     return;
-}
-
-AstNode* parseExpression(LexerTarget* lexer) {
-    /*
-     * expr -> orexpr cast type | orexpr
-     */
-    auto child = parseLogicalOr(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::cast) {
-        //consume cast
-        lexer->lex();
-        CastNode* cnode = new CastNode();
-        parseType(lexer, cnode);
-        cnode->toType = cnode->mtypeinfo;
-        cnode->addChild(child);
-        return cnode;
-    }
-    return child;
-}
-
-AstNode* parseLogicalOr(LexerTarget* lexer) {
-/* 
- * expr -> exprlogicaland dblbar expr  | exprlogicaland
- */
-    ////std::cout << "Parsing Expression!\n";
-    auto child = parseLogicalAnd(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::dblbar) {
-        BinOpNode* opnode = new BinOpNode();
-        auto s = std::string("expression");
-        opnode->setToken(tok);
-        opnode->setOp(s);
-        //consume ||
-        lexer->lex();
-        auto child2 = parseExpression(lexer);
-        opnode->addChild(child);
-        opnode->addChild(child2);
-        return opnode;
-    }
-    return child;
-}
-
-AstNode* parseLogicalAnd(LexerTarget* lexer) {
-/* 
- * exprand -> exprbitor dblampersand exprlogicaland  | exprbitor
- */
-    ////std::cout << "Parsing Logical And Expression!\n";
-    auto ret = parseBitOr(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::dblampersand) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume &&
-        lexer->lex();
-        auto ret2 = parseLogicalAnd(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseBitOr(LexerTarget* lexer) {
-/* 
- * exprbitor -> exprxor bar exprbitor  | exprxor
- */
-    ////std::cout << "Parsing Bitwise Or Expression!\n";
-    auto ret = parseBitXor(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::bar) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume |
-        lexer->lex();
-        auto ret2 = parseBitOr(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseBitXor(LexerTarget* lexer) {
-/* 
- * exprxor -> expreqneq carrot exprxor  | expreqneq
- */
-    ////std::cout << "Parsing Bitwise Xor Expression!\n";
-    auto ret = parseEqneq(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::carrot) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume ^
-        lexer->lex();
-        auto ret2 = parseBitXor(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseEqneq(LexerTarget* lexer) {
-/* 
- * expreqneq -> exprglte eqneq expreqneq  | exprglte
- */
-    ////std::cout << "Parsing EqNeq Expression!\n";
-    auto ret = parseGLTE(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::equality || tok.type == TokenType::nequality) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume == or !=
-        lexer->lex();
-        auto ret2 = parseEqneq(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseGLTE(LexerTarget* lexer) {
-/* 
- * exprgtle -> exprplusmin gtelte exprgtle  | exprplusmin
- */
-    ////std::cout << "Parsing GTELTE Expression!\n";
-    auto ret = parsePlusmin(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::ltequal || tok.type == TokenType::gtequal || tok.type == TokenType::greaterthan || tok.type == TokenType::lessthan) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume < or > or <= or >=
-        lexer->lex();
-        auto ret2 = parseGLTE(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parsePlusmin(LexerTarget* lexer) {
-/* 
- * exprplusmin -> multdiv plusmin exprplusmin  | multdiv
- */
-    ////std::cout << "Parsing PlusMin Expression!\n";
-    auto ret = parseMultdiv(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::plus || tok.type == TokenType::minus) {
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        //consume + or -
-        lexer->lex();
-        auto ret2 = parsePlusmin(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseMultdiv(LexerTarget* lexer) {
- /* 
-  * multdiv -> addrofindir starslash multdiv | addrofindir
-  */
-    ////std::cout << "Parsing MultDiv Expression!\n";
-    auto ret = parseAddrOfIndir(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::star || tok.type == TokenType::fslash || tok.type == TokenType::mod) {
-        //consume token
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        lexer->lex();
-        auto ret2 = parseMultdiv(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    }
-    return ret;
-}
-
-AstNode* parseAddrOfIndir(LexerTarget* lexer) {
- /* 
-  * addrof-indir -> &memberaccess | *memberaccess | !memberaccess | ~memberaccess | memberaccess
-  */    
-    ////std::cout << "Parsing AddrOfIndir Expression!\n";
-    BinOpNode* opnode = nullptr;
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::dereference || tok.type == TokenType::ampersand || tok.type == TokenType::exclaim || tok.type == TokenType::tilda || tok.type == TokenType::minus || tok.type == TokenType::plus) {
-        //consume token (@ or & or ! or ~ or - or +)
-        opnode = new BinOpNode();
-        opnode->setToken(tok);
-        opnode->unaryOp = true;
-        opnode->mpriority = 5; //TODO(marcus): fix this with a better way for telling binop nodes they are unary
-        lexer->lex();
-    }
-     auto ret = parseMemberAccess(lexer);
-     if(opnode) {
-         opnode->addChild(ret);
-         return opnode;
-     }
-     return ret;
-}
-
-AstNode* parseMemberAccess(LexerTarget* lexer) {
-    /*
-     * memberaccess -> parenexp dotarrow memberaccess | parenexp
-     */
-    ////std::cout << "Parsing MemberAccess Expression!\n";
-    auto ret = parseParenexp(lexer);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::rsqrbrace) {
-        tok = lexer->lex();
-    }
-    if(tok.type == TokenType::dot) {
-        //consume token
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        lexer->lex();
-        auto ret2 = parseMemberAccess(lexer);
-        opnode->addChild(ret);
-        opnode->addChild(ret2);
-        return opnode;
-    } else if(tok.type == TokenType::lsqrbrace) {
-        //std::cout << "Parsing Array access!\n";
-        auto opnode = new BinOpNode();
-        opnode->setToken(tok);
-        opnode->addChild(ret);
-        //consume [
-        lexer->lex();
-        //parseExpression(lexer, opnode);
-        auto ret2 = parseMemberAccess(lexer);
-        opnode->addChild(ret2);
-        //std::cout << "Expression parsed\n";
-        //std::cout << "Next token is " << lexer->peek().token << '\n';
-        //lexer->lex();
-        return opnode;
-    }
-    return ret;
-}
-
-bool tokenTypeIsLiteral(TokenType t) {
-    switch(t) {
-        case TokenType::intlit:
-        case TokenType::floatlit:
-        case TokenType::strlit:
-        case TokenType::charlit:
-            return true;
-            break;
-        default:
-            break;
-    }
-    return false;
-}
-
-AstNode* parseParenexp(LexerTarget* lexer) {
- /* 
-  * parenexp -> ( expr ) | const | var | funcall
-  */
-    BinOpNode parent;
-    BinOpNode::constructed--;
-    BinOpNode::deleted--;
-    ////std::cout << "Parsing Paren Expression!\n";
-    auto s = std::string("parenexpr");
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::lparen) {
-        BinOpNode* opnode = new BinOpNode();
-        opnode->setToken(tok);
-        s = std::string("( )");
-        opnode->setOp(s);
-        //consume (
-        lexer->lex();
-        parseExpression(lexer, opnode);
-        tok = lexer->peek();
-        if(tok.type != TokenType::rparen) {
-            parse_error(PET::MissRParen, tok, lexer);
-        }
-        //consume )
-        lexer->lex();
-        return opnode;
-    } else if(tokenTypeIsLiteral(tok.type)) {
-        parseConst(lexer, &parent);
-    } else if(tok.type == TokenType::id) {
-        parseFunccallOrVar(lexer, &parent);
-    } else if(tok.type == TokenType::ssizeof) {
-        //consume sizeof
-        lexer->lex();
-        //std::cout << "parsing sizeof!\n";
-        //std::cout << lexer->peek().token << '\n';
-        if(lexer->peek().type != TokenType::lparen) {
-            parse_error(PET::MissLParen, tok, lexer);
-        }
-        //consume (
-        lexer->lex();
-        //parseType
-        auto sizeofn = new SizeOfNode();
-        //std::cout << "parsing sizeof Type!\n";
-        parseType(lexer,sizeofn);
-        if(lexer->peek().type != TokenType::rparen) {
-            parse_error(PET::MissRParen,tok, lexer);
-        }
-        //consume )
-        lexer->lex();
-        //std::cout << "parsing sizeof done!\n";
-        //std::cout << "Next is " << lexer->peek().token << '\n';
-        return sizeofn;
-    } else {
-        //assert(false);
-        parse_error(PET::Unknown, tok, lexer);
-    }
-    return parent.mchildren[0];
 }
 
 void parseConst(LexerTarget* lexer, AstNode* parent) {
@@ -1342,4 +996,289 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         parent->addChild(vdecnode);
     }
     return;
+}
+
+
+int getPrefixPrecedence(TokenType t) {
+    switch(t) {
+        case TokenType::ampersand:
+        case TokenType::tilda:
+        case TokenType::exclaim:
+        case TokenType::dereference:
+        case TokenType::plus:
+        case TokenType::minus:
+            return 11;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+int getInfixPrecedence(TokenType t) {
+    switch(t) {
+        case TokenType::cast:
+            return 1;
+            break;
+        case TokenType::dblbar:
+            return 2;
+            break;
+        case TokenType::dblampersand:
+            return 3;
+            break;
+        case TokenType::bar:
+            return 4;
+            break;
+        case TokenType::carrot:
+            return 5;
+            break;
+        case TokenType::ampersand:
+            return 6;
+            break;
+        case TokenType::equality:
+        case TokenType::nequality:
+            return 7;
+            break;
+        case TokenType::lessthan:
+        case TokenType::ltequal:
+        case TokenType::greaterthan:
+        case TokenType::gtequal:
+            return 8;
+            break;
+        case TokenType::plus:
+        case TokenType::minus:
+            return 9;
+            break;
+        case TokenType::mod:
+        case TokenType::star:
+        case TokenType::fslash:
+            return 10;
+            break;
+        case TokenType::dot:
+        case TokenType::lsqrbrace:
+            return 12;
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
+
+int getNextPrecedence(LexerTarget* lexer) {
+    return getInfixPrecedence(lexer->peek().type);
+}
+
+int isRightAssociative(TokenType t) {
+    return 0;
+}
+
+AstNode* parsePrefix(LexerTarget* lexer) {
+    Token tok = lexer->peek();
+    //consume prefix/unary op token
+    lexer->lex();
+    int precedence = getPrefixPrecedence(tok.type);
+    AstNode* child = parseExpression(lexer, precedence);
+    auto opnode = new BinOpNode();
+    opnode->setToken(tok);
+    opnode->unaryOp = true;
+    opnode->addChild(child);
+    return opnode;
+}
+
+AstNode* parseInfix(LexerTarget* lexer) {
+    Token tok = lexer->peek();
+    //consume infix/binop token
+    lexer->lex();
+
+    //get precedence
+    int precedence = getInfixPrecedence(tok.type);
+    precedence -= isRightAssociative(tok.type);
+
+    AstNode* child = parseExpression(lexer, precedence);
+
+    //make node
+    auto opnode = new BinOpNode();
+    opnode->setToken(tok);
+    opnode->addChild(child);
+    opnode->addChild(child); //when this is returned, the left child will be set
+    return opnode;
+}
+
+AstNode* parseParenGroup(LexerTarget* lexer) {
+    Token t = lexer->peek();
+    //consume (
+    lexer->lex();
+    auto child = parseExpression(lexer, 0);
+    t = lexer->peek();
+    if(t.type != TokenType::rparen) {
+        parse_error(PET::MissRParen, t, lexer);
+    }
+    //consume )
+    lexer->lex();
+    BinOpNode* opnode = new BinOpNode();
+    opnode->setToken(t);
+    auto s = std::string("( )");
+    opnode->setOp(s);
+    opnode->addChild(child);
+    return opnode;
+}
+
+AstNode* parseArrInd(LexerTarget* lexer) {
+    Token tok = lexer->peek();
+    //consume [ token
+    lexer->lex();
+
+    AstNode* child = parseExpression(lexer, 0);
+
+    if(lexer->peek().type != TokenType::rsqrbrace) {
+        std::cout << "Error: expected '[' token!\n";
+        exit(0);
+    }
+
+    //consume ] token
+    lexer->lex();
+
+    //make node
+    auto opnode = new BinOpNode();
+    opnode->setToken(tok);
+    opnode->addChild(child);
+    opnode->addChild(child); //when this is returned, the left child will be set
+    return opnode;
+}
+
+AstNode* parseCast(LexerTarget* lexer, AstNode* child) {
+    //consume cast
+    lexer->lex();
+    CastNode* cnode = new CastNode();
+    parseType(lexer, cnode);
+    cnode->toType = cnode->mtypeinfo;
+    cnode->addChild(child);
+    return cnode;
+}
+
+AstNode* parseExpression(LexerTarget* lexer, int precedence) {
+/*
+ * cast
+ * ||
+ * &&
+ * |
+ * ^
+ * == !=
+ * < > <= >=
+ * + -
+ * / *
+ * & @ ! ~ +
+ * [] . (call)
+ * ( )
+ */
+    Token t = lexer->peek();
+    AstNode* left = nullptr;
+    //determine function/parslette/prefix
+    switch(t.type) {
+        case TokenType::intlit:
+        case TokenType::strlit:
+        case TokenType::charlit:
+        case TokenType::floatlit:
+            {
+                AstNode temp;
+                parseConst(lexer, &temp);
+                left = temp.mchildren.at(0);
+            }
+            break;
+        case TokenType::id:
+            {
+                AstNode temp;
+                parseFunccallOrVar(lexer, &temp);
+                left = temp.mchildren.at(0);
+            }
+            break;
+        case TokenType::ampersand:
+        case TokenType::tilda:
+        case TokenType::exclaim:
+        case TokenType::dereference:
+        case TokenType::plus:
+        case TokenType::minus:
+            {
+                left = parsePrefix(lexer);
+            }
+            break;
+        case TokenType::lparen:
+            {
+                left = parseParenGroup(lexer);
+            }
+            break;
+        case TokenType::ssizeof:
+        {
+            //consume sizeof
+            lexer->lex();
+            if(lexer->peek().type != TokenType::lparen) {
+                parse_error(PET::MissLParen, t, lexer);
+            }
+            //consume (
+            lexer->lex();
+            //parseType
+            auto sizeofn = new SizeOfNode();
+            parseType(lexer,sizeofn);
+            if(lexer->peek().type != TokenType::rparen) {
+                parse_error(PET::MissRParen,t,lexer);
+            }
+            //consume )
+            lexer->lex();
+            left = sizeofn;
+        }
+            break;
+        default:
+            //error
+            std::cout << "Error: expected '[' token!\n";
+            exit(0);
+            break;
+    }
+
+    while(precedence < getNextPrecedence(lexer)) {
+        t = lexer->peek();
+        //determine which infix op to do
+        switch(t.type) {
+            case TokenType::dot:
+            case TokenType::bar:
+            case TokenType::dblbar:
+            case TokenType::ampersand:
+            case TokenType::dblampersand:
+            case TokenType::mod:
+            case TokenType::plus:
+            case TokenType::minus:
+            case TokenType::star:
+            case TokenType::fslash:
+            case TokenType::carrot:
+            case TokenType::equality:
+            case TokenType::nequality:
+            case TokenType::lessthan:
+            case TokenType::ltequal:
+            case TokenType::greaterthan:
+            case TokenType::gtequal:
+                {
+                    BinOpNode* tmpN = (BinOpNode*) parseInfix(lexer);
+                    tmpN->setLHS(left);
+                    left = tmpN;
+                }
+                break;
+            case TokenType::lsqrbrace:
+                {
+                    BinOpNode* tmpN = (BinOpNode*) parseArrInd(lexer);
+                    tmpN->setLHS(left);
+                    left = tmpN;
+                }
+                break;
+            case TokenType::cast:
+                {
+                    auto tmpN = parseCast(lexer, left);
+                    left = tmpN;
+                }
+            break;
+            default:
+                //error
+                exit(0);
+                break;
+        }
+    }
+    return left;
 }

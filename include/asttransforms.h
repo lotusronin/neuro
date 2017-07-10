@@ -4,9 +4,7 @@
 #include "symboltable.h"
 #include "errors.h"
 
-void collapseExpressionChains(AstNode* ast);
 void checkContinueBreak(AstNode* ast, int loopDepth);
-void fixOperatorAssociativity(AstNode* ast);
 void decorateAst(AstNode* ast);
 void typeCheckPass(AstNode* ast);
 void populateSymbolTableFunctions(AstNode* ast);

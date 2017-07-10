@@ -1,0 +1,18 @@
+import stdio;
+
+fn main() : u32 {
+    a := 1;
+    b := 2;
+    c := 3;
+    d := 4;
+    var := a*b+c-d; //should be 1
+    stdio::printi(var);
+    stdio::putchar('\n');
+    var2 := (a+a)*b+c; //should be 7
+    stdio::printi(var2);
+    stdio::putchar('\n');
+    var3 := a+a*b+c; //should be 6
+    stdio::printi(var3);
+    stdio::putchar('\n');
+    return 0;
+}

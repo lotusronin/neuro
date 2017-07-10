@@ -20,36 +20,6 @@ static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 
-void collapseExpressionChains(AstNode* ast) {
-    //TODO(marcus): clean this up.
-    std::vector<AstNode*>* vec = ast->getChildren();
-    for(unsigned int i = 0; i < vec->size(); i++) {
-        AstNode* child = (*vec)[i];
-        if(child->nodeType() == ANT::BinOp) {
-            while(child->nodeType() == ANT::BinOp) {
-                BinOpNode* node = (BinOpNode*)child;
-                std::string op = node->getOp();
-                //string op of largest binop node that is meaningful is '( )' with a length of 3
-                //so anything with a length over that is just a node in the chain
-                bool nonop = (op.size() > 3);
-                //bool nonop = (op.compare("expression") == 0) || (op.compare("multdivexpr") == 0) || (op.compare("parenexpr") == 0) || (op.compare("plusminexpr") == 0) || (op.compare("gtelteexpr") == 0);
-                if(nonop) {
-                    if(node->mchildren.size() == 1) {
-                        (*vec)[i] = node->mchildren[0];
-                        delete node;
-                        child = (*vec)[i];
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    for(auto c : (*vec)) {
-        collapseExpressionChains(c);
-    }
-}
-
 void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
     AstNodeType type = ast->nodeType();
     if(type == AstNodeType::LoopStmt) {
@@ -89,39 +59,6 @@ void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
 
 void checkContinueBreak(AstNode* ast, int loopDepth) {
     checkContinueBreak(ast,loopDepth,&progSymTab);
-}
-
-void fixOperatorAssociativity(AstNode* ast) {
-    std::vector<AstNode*>* children = ast->getChildren();
-    for(unsigned int i = 0; i < children->size(); i++) {
-        auto type = (*children)[i]->nodeType();
-        if(type == ANT::BinOp) {
-            auto child = (BinOpNode*)(*children)[i];
-            //TODO(marcus): should replace this constant with an enum or macro
-            if(child->getPriority() == 3 || child->getPriority() == 5) {
-                //skip () nodes since they only have 1 child
-                //skip &/@ addr-of and deref since they only have 1 child
-                continue;
-            }
-            while(child->RHS()->nodeType() == ANT::BinOp) {
-                auto newChild = (BinOpNode*)child->RHS();
-                if(child->getPriority() == newChild->getPriority()) {
-                    //Rotate tree to the left if it is the same operator
-                    auto oldChildNewRHS = newChild->LHS();
-                    newChild->setLHS(child);
-                    child->setRHS(oldChildNewRHS);
-                    (*children)[i] = newChild;
-                    child = newChild;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-
-    for(auto c : (*children)) {
-        fixOperatorAssociativity(c);
-    }
 }
 
 void decorateAst(AstNode* ast) {
