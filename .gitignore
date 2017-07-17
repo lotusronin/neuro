@@ -14,3 +14,4 @@ Neuro
 /Release
 /vs_build
 /vs_release_build
+callgrind.out.*
