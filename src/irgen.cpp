@@ -361,7 +361,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             {
             auto binop = (BinOpNode*)n;
             auto op = binop->getOp();
-            if(op.compare("( )") == 0) {
+            auto opc = op[0];
+            if(opc == '(') {
                 auto child = binop->LHS();
                 return expressionCodegen(child, sym, lvalue);
             }
@@ -373,14 +374,14 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             auto rhs = binop->RHS();
             Value* lhsv;
             Value* rhsv;
-            if(op.compare(".")) {
+            if(opc != '.') {
                 //don't generate if the op is a member access
                 lhsv = expressionCodegen(lhs, sym);
                 if(rhs) {
                     rhsv = expressionCodegen(rhs, sym);
                 }
             }
-            if(op.compare("+") == 0) {
+            if(opc == '+') {
                 if(lhs->mtypeinfo.indirection) {
                     return Builder.CreateGEP(lhsv,rhsv,"ptr");
                 } else if(rhs->mtypeinfo.indirection) {
@@ -388,7 +389,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 }
                 //std::cout << "generating add\n";
                 return Builder.CreateAdd(lhsv,rhsv,"addtemp");
-            } else if(op.compare("-") == 0) {
+            } else if(opc == '-') {
                 if(binop->unaryOp) {
                     //TODO(marcus): make this work for other sizes
                     rhsv = ConstantInt::get(context, APInt(32,-1));
@@ -400,11 +401,11 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                     return Builder.CreateGEP(rhsv,lhsv,"ptr");
                 }
                 return Builder.CreateSub(lhsv,rhsv,"subtemp");
-            } else if(op.compare("*") == 0) {
+            } else if(opc == '*') {
                 return Builder.CreateMul(lhsv,rhsv,"multtemp");
-            } else if(op.compare("/") == 0) {
+            } else if(opc == '/') {
                 return Builder.CreateUDiv(lhsv,rhsv,"divtemp");
-            } else if(op.compare("%") == 0) {
+            } else if(opc == '%') {
                 //TODO(marcus): support signed and floating remainder
                 return Builder.CreateURem(lhsv,rhsv,"modtemp");
             } else if(op.compare(">") == 0) {
@@ -454,7 +455,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
                 auto andedvals = Builder.CreateAnd(firstval,secondval,"and_res");
                 return andedvals;
-            } else if(op.compare(".") == 0) {
+            } else if(opc == '.') {
                 //std::cout << "Generating member access!\n";
                 //std::cout << "Var name " << lhs->mtoken.token << "\n";
                 //std::cout << "Var name is also..." << ((VarNode*)lhs)->getVarName() << "\n";
@@ -472,10 +473,16 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //NOTE(marcus): only way for something to have an address is if we alloca it?
                 //Then we may need to alloca temp variables if part of an expression
                 //generates a struct that we will do address of or member access on.
-                auto structval = expressionCodegen(lhs,sym,true);
-                lhsv_ptr = structval;
                 auto lhs_typeinfo = getTypeInfo(lhs,sym);
-                auto structtype = getIRType(lhs_typeinfo);
+                Type* structtype;
+                bool getLval = (lhs_typeinfo.indirection == 0); //if ptr, want ptr value, not address
+                auto structval = expressionCodegen(lhs,sym,getLval);
+                lhsv_ptr = structval;
+                if(lhs_typeinfo.indirection == 1) {
+                    //we are just dereferencing a pointer
+                    lhs_typeinfo.indirection = 0;
+                }
+                structtype = getIRType(lhs_typeinfo);
                 //auto structtype = lhsv->getType();
                 auto structmembername = ((VarNode*)rhs)->getVarName();
                 //std::cout << "member name is " << structmembername << "\n";
@@ -502,7 +509,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 }
                 return val;
 
-            } else if(op.compare("@") == 0) {
+            } else if(opc == '@') {
                 //TODO(marcus): we are assuming the expression underneath will be just a variable of
                 //some pointer type
                 auto childvar = expressionCodegen(lhs,sym);
