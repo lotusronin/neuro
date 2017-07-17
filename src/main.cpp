@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
         //std::cout << "Sizeof(Token) = " << sizeof(Token) << '\n';
         //std::cout << "Sizeof(TypeInfo) = " << sizeof(TypeInfo) << '\n';
 
-        std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
+        //std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 
         for (auto f : sources) {
             auto start_total = std::chrono::steady_clock::now();
@@ -83,16 +83,14 @@ int main(int argc, char** argv) {
             auto end_parse = std::chrono::steady_clock::now();
             auto diff_parse = end_parse - start_parse;
             
-            std::cout << "Beginning AST transformations and Semantic analysis\n";
+            //std::cout << "Beginning AST transformations and Semantic analysis\n";
             auto start_semantic = std::chrono::steady_clock::now();
-            checkContinueBreak(ast, 0);
             transformAssignments(ast);
             populateTypeList(ast);
             resolveSizeOfs(ast);
-            checkAssignments(ast);
             importPrepass(ast);
             populateSymbolTableFunctions(ast);
-            variableUseCheck(ast);
+            semanticPass1(ast);
             //printSymbolTable();
             typeCheckPass(ast);
             //printSymbolTable();
@@ -117,7 +115,7 @@ int main(int argc, char** argv) {
             auto start_ir = std::chrono::steady_clock::now();
             auto start_link = start_ir;
             if(!semantic_error) {
-                std::cout << "Generating IR code\n";
+                //std::cout << "Generating IR code\n";
                 //Generate IR code
                 generateIR(ast);
                 if(outputIR) {

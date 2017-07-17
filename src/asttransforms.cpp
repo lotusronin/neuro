@@ -12,26 +12,31 @@ extern bool semantic_error;
 //TODO(marcus): should this be global? is there a better way?
 SymbolTable progSymTab;
 
+//TODO(marcus): Currently this is global. Is there a better way to do this? Maybed a list of types
+//per file?
+//a list of user defined types with a mapping of member name to member index
+std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
+std::unordered_map<std::string,AstNode*> structList;
+
 #define ANT AstNodeType
 #define SET SemanticErrorType
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
-static void variableUseCheck(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 
-void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
+void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
+{
+    /*
+     * This pass checks for:
+     * continue/break being used outside of a loop
+     * initial check that all assignments have lvalues
+     * all variables are used before they are defined
+     * that the . op lhs is a variable, binop, or function call
+     */
     AstNodeType type = ast->nodeType();
-    if(type == AstNodeType::LoopStmt) {
-        if(loopDepth == 0) {
-            semanticError(SET::OutLoop, ast, symTab);
-        }
-    }
-
     int nextLoopDepth = loopDepth;
-    if(type == AstNodeType::ForLoop || type == AstNodeType::WhileLoop) {
-        nextLoopDepth += 1;
-    }
+
     auto scope = symTab;
     switch(type) {
         case ANT::CompileUnit:
@@ -40,25 +45,146 @@ void checkContinueBreak(AstNode* ast, int loopDepth, SymbolTable* symTab) {
         case ANT::FuncDef:
             scope = getScope(symTab, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
             break;
+        case ANT::Prototype:
+            {
+                std::string name = ((PrototypeNode*)ast)->mfuncname;
+                scope = getScope(symTab, name);
+            }
+            break;
         case ANT::Block:
             scope = getScope(symTab, "block"+std::to_string(((BlockNode*)ast)->getId()));
             break;
         case ANT::ForLoop:
+            nextLoopDepth += 1;
             scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)ast)->getId()));
             break;
         case ANT::WhileLoop:
+            nextLoopDepth += 1;
             scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)ast)->getId()));
             break;
+        case ANT::LoopStmt:
+            if(loopDepth == 0) {
+                semanticError(SET::OutLoop, ast, symTab);
+            }
+            break;
+        case ANT::Var:
+            {
+                std::string name = ((VarNode*)(ast))->getVarName();
+                auto entry = getEntry(symTab,name);
+                if(entry.size() == 0) {
+                    //NOTE(marcus): once we have type information we need to check that the
+                    //member we want actually exists for that type
+                    bool isStructMember = false;
+                    for(auto& struct_t : userTypesList) {
+                        auto members = struct_t.second;
+                        if(members->find(name) != members->end()) {
+                            isStructMember = true;
+                            break;
+                        }
+                    }
+                    if(!isStructMember) {
+                        semanticError(SET::UndefUse, ast, symTab);
+                    }
+                }
+            }
+            break;
+        case ANT::VarDec:
+            {
+                std::string name = ((VarNode*)(ast->getChildren()->at(0)))->getVarName();
+                auto entry = getEntryCurrentScope(symTab,name);
+                if(entry) {
+                    semanticError(SET::DupDecl, ast->getChildren()->at(0), symTab);
+                } else {
+                    TypeInfo typeinfo = ((VarNode*)(ast->getChildren()->at(0)))->mtypeinfo;
+                    addVarEntry(symTab, typeinfo, name);
+                }
+            }
+            break;
+        case ANT::VarDecAssign:
+            {
+                std::string name = ((VarNode*)(ast->getChildren()->at(0)))->getVarName();
+                auto entry = getEntryCurrentScope(symTab,name);
+                if(entry) {
+                    semanticError(SET::DupDecl, ast->getChildren()->at(0), symTab);
+                } else {
+                    TypeInfo typeinfo = ((VarNode*)(ast->getChildren()->at(0)))->mtypeinfo;
+                    if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
+                    addVarEntry(symTab, typeinfo, name);
+                    auto rhs = ((VarDecAssignNode*)ast)->getRHS();
+                    semanticPass1(rhs, nextLoopDepth, symTab);
+                    return;
+                }
+            }
+            break;
+        case ANT::Params:
+            {
+                auto param_node = (ParamsNode*)ast;
+                auto name = param_node->mname;
+                auto entry = getEntry(symTab,name);
+                if(entry.size() != 0) {
+                    //TODO(marcus): make this an error
+                    std::cout << "Function param " << name << " was previously declared\n";
+                } else {
+                    TypeInfo param_typeinfo = param_node->mtypeinfo;
+                    addVarEntry(symTab,param_typeinfo,name);
+                }
+            }
+            break;
+        case ANT::FuncCall:
+            {
+                std::string name = ((FuncCallNode*)ast)->mfuncname;
+                auto entry = getEntry(symTab,name);
+                if(entry.size() == 0) {
+                    entry = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
+                    if(entry.size() == 0) {
+                        semanticError(SET::NoFunc, ast, symTab);
+                    }
+                }
+            }
+            break;
+        case ANT::Assign:
+            {
+                auto anode = (AssignNode*)ast;
+                auto lhs = anode->getLHS();
+                if(lhs->nodeType() == ANT::Var) {
+                    break;
+                }
+                if(lhs->nodeType() == ANT::BinOp) {
+                    auto binopn = (BinOpNode*)lhs;
+                    auto op = binopn->mop;
+                    if((op == "@") || (op == ".")) {
+                        break;
+                    }
+                }
+                semanticError(SemanticErrorType::NotLValue,ast,symTab);
+            }
+        case ANT::BinOp:
+            {
+                auto binopn = (BinOpNode*)ast;
+                auto op = binopn->mop;
+                if(op == ".") {
+                    auto lhs = binopn->LHS();
+                    auto lhst = lhs->nodeType();
+                    if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp) {
+                        break;
+                    } else {
+                        //Error
+                        semanticError(SemanticErrorType::DotOpLhs,binopn, symTab);
+                    }
+                }
+            }
         default:
             break;
     }
     for(auto c : (*(ast->getChildren()))) {
-        checkContinueBreak(c, nextLoopDepth, scope);
+        semanticPass1(c, nextLoopDepth, scope);
     }
+    return;
 }
 
-void checkContinueBreak(AstNode* ast, int loopDepth) {
-    checkContinueBreak(ast,loopDepth,&progSymTab);
+void semanticPass1(AstNode* ast) 
+{
+    semanticPass1(ast,0,&progSymTab);
 }
 
 void decorateAst(AstNode* ast) {
@@ -67,12 +193,6 @@ void decorateAst(AstNode* ast) {
         c->getType();
     }
 }
-
-//TODO(marcus): Currently this is global. Is there a better way to do this? Maybed a list of types
-//per file?
-//a list of user defined types with a mapping of member name to member index
-std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
-std::unordered_map<std::string,AstNode*> structList;
 
 static void registerTypeDef(StructDefNode* n) {
     auto type_name = n->ident;
@@ -889,197 +1009,6 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     return error;
 }
 
-void variableUseAndTypeCheck(AstNode* ast) {
-    variableUseCheck(ast);
-}
-
-void variableUseCheck(AstNode* ast) {
-    std::cout << "beginning variable use check!\n";
-    for(auto c : (*(ast->getChildren()))) {
-        auto sc = progSymTab.children.at(((CompileUnitNode*)c)->getFileName());
-        variableUseCheck(c,sc);
-    }
-}
-
-static void variableUseCheck(AstNode* ast, SymbolTable* symTab) {
-    for(auto c : (*(ast->getChildren()))) {
-        switch(c->nodeType()) {
-            case ANT::FuncDef:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
-                    std::string name = ((FuncDefNode*)c)->mfuncname + std::to_string(((FuncDefNode*)c)->id);
-                    //std::cout << "Entering into scope " << name << "\n";
-                    auto scope = getScope(symTab, name);
-                    variableUseCheck(c,scope);
-                }
-                break;
-            case ANT::Block:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
-                    auto scope = getScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
-                    //std::cout << "Entering into scope " << scope->name << "\n";
-                    variableUseCheck(c,scope);
-                }
-                break;
-            case ANT::IfStmt:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " If!\n";
-                    variableUseCheck(c,symTab);
-                }
-                break;
-            case ANT::ForLoop:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
-                    auto scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)c)->getId()));
-                    //std::cout << "Entering into scope " << scope->name << '\n';
-                    variableUseCheck(c,scope);
-                }
-                break;
-            case ANT::WhileLoop:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
-                    auto scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)c)->getId()));
-                    //std::cout << "Entering into scope " << scope->name << '\n';
-                    variableUseCheck(c,scope);
-                }
-                break;
-            case ANT::Assign:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
-                    variableUseCheck(c,symTab);
-                }
-                break;
-            case ANT::VarDec:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDec!\n";
-                    //std::cout << "SymbolTable " << symTab->name << "\n";
-                    std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
-                    auto entry = getEntryCurrentScope(symTab,name);
-                    if(entry) {
-                        semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
-                    } else {
-                        ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
-                        //TODO(marcus): get struct name if the var dec is a user type
-                        addVarEntry(symTab, typeinfo, name);
-                        //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
-                    }
-                }
-                break;
-            case ANT::VarDecAssign:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
-                    std::string name = ((VarNode*)(c->getChildren()->at(0)))->getVarName();
-                    auto entry = getEntryCurrentScope(symTab,name);
-                    if(entry) {
-                        semanticError(SET::DupDecl, c->getChildren()->at(0), symTab);
-                    } else {
-                        ////std::cout << "Adding variable declaration entry!\n";
-                        TypeInfo typeinfo = ((VarNode*)(c->getChildren()->at(0)))->mtypeinfo;
-                        if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
-                        //TODO(marcus): add userid if type is a struct!
-                        addVarEntry(symTab, typeinfo, name);
-                        //addVarEntry(symTab, SemanticType::Typeless, c->getChildren()->at(0));
-                        auto rhs = ((VarDecAssignNode*)c)->getRHS();
-                        variableUseCheck(rhs,symTab);
-                    }
-                }
-                break;
-            case ANT::BinOp:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
-                    auto expr = (BinOpNode*)c;
-                    variableUseCheck(expr,symTab);
-                }
-                break;
-            case ANT::Var:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Var!\n";
-                    std::string name = ((VarNode*)(c))->getVarName();
-                    auto entry = getEntry(symTab,name);
-                    if(entry.size() == 0) {
-                        //NOTE(marcus): once we have type information we need to check that the
-                        //member we want actually exists for that type
-                        bool isStructMember = false;
-                        for(auto& struct_t : userTypesList) {
-                            auto members = struct_t.second;
-                            if(members->find(name) != members->end()) {
-                                isStructMember = true;
-                                break;
-                            }
-                        }
-                        if(!isStructMember) {
-                            semanticError(SET::UndefUse, c, symTab);
-                        }
-                    } else {
-                        //std::cout << "Var Use Check, entry size is... " << entry.size() << '\n';
-                    }
-                }
-                break;
-            case ANT::FuncCall:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
-                    std::string name = ((FuncCallNode*)c)->mfuncname;
-                    //std::cout << "Looking in symboltable for function " << name << "\n";
-                    auto entry = getEntry(symTab,name);
-                    if(entry.size() == 0) {
-                        entry = getEntry(symTab,name,((FuncCallNode*)c)->scopes);
-                        if(entry.size() == 0) {
-                            semanticError(SET::NoFunc, c, symTab);
-                        }
-                    } else {
-                        //std::cout << "Function found\n";
-                    }
-                    variableUseCheck(c,symTab);
-                }
-                break;
-            case ANT::Params:
-                {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
-                    auto param_node = (ParamsNode*)c;
-                    auto name = param_node->mname;
-                    auto entry = getEntry(symTab,name);
-                    if(entry.size() != 0) {
-                        //std::cout << "Function param " << name << " was previously declared\n";
-                    } else {
-                        //std::cout << "Adding entry to symbol table, Param " << name << '\n';
-                        TypeInfo param_typeinfo = param_node->mtypeinfo;
-                        //std::cout << "Param type info: " << param_typeinfo << '\n';
-                        addVarEntry(symTab,param_typeinfo,name);
-                    }
-                }
-                break;
-            case ANT::DeferStmt:
-                {
-                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Defer!\n";
-                    variableUseCheck(c,symTab);
-                }
-                break;
-            case ANT::RetStmnt:
-                {
-                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Return!\n";
-                    variableUseCheck(c,symTab);
-                }
-                break;
-            case ANT::Prototype:
-                {
-                    //std::cout << __FILE__ << ':'<< __FUNCTION__ << " Prototype!\n";
-                    std::string name = ((PrototypeNode*)c)->mfuncname;
-                    //std::cout << "Entering into scope " << name << "\n";
-                    auto scope = getScope(symTab, name);
-                    variableUseCheck(c,scope);
-                }
-                break;
-            case ANT::Type:
-            case ANT::Const:
-                break;
-            default:
-                //std::cout << "Default Case Variable Use Check\n";
-                break;
-        }
-    }
-}
-
 void printSymbolTable() {
     printTable(&progSymTab);
 }
@@ -1257,69 +1186,6 @@ void resolveSizeOfs(AstNode* ast) {
     }
     for(auto c : (*vec)) {
         resolveSizeOfs(c);
-    }
-}
-
-void checkAssignments(AstNode* ast) {
-    checkAssignments(ast,&progSymTab);
-}
-
-void checkAssignments(AstNode* ast, SymbolTable* symTab) {
-    std::vector<AstNode*>* vec = ast->getChildren();
-    auto scope = symTab;
-    for(unsigned int i = 0; i < vec->size(); i++) {
-        AstNode* child = (*vec)[i];
-        if(child->nodeType() == ANT::Assign) {
-            auto anode = (AssignNode*)child;
-            auto lhs = anode->getLHS();
-            if(lhs->nodeType() == ANT::Var) {
-                continue;
-            }
-            if(lhs->nodeType() == ANT::BinOp) {
-                auto binopn = (BinOpNode*)lhs;
-                auto op = binopn->mop;
-                if((op == "@") || (op == ".")) {
-                    continue;
-                }
-            }
-            semanticError(SemanticErrorType::NotLValue,child,symTab);
-        } else if(child->nodeType() == ANT::BinOp) {
-            auto binopn = (BinOpNode*)child;
-            auto op = binopn->mop;
-            if(op == ".") {
-                auto lhs = binopn->LHS();
-                auto lhst = lhs->nodeType();
-                if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp) {
-                    continue;
-                } else {
-                    //Error
-                    semanticError(SemanticErrorType::DotOpLhs,binopn, symTab);
-                }
-            }
-        } else {
-            switch(child->nodeType()) {
-                case ANT::CompileUnit:
-                    scope = getScope(symTab, ((CompileUnitNode*)child)->getFileName());
-                    break;
-                case ANT::FuncDef:
-                    scope = getScope(symTab, ((FuncDefNode*)child)->mfuncname + std::to_string(((FuncDefNode*)child)->id));
-                    break;
-                case ANT::Block:
-                    scope = getScope(symTab, "block"+std::to_string(((BlockNode*)child)->getId()));
-                    break;
-                case ANT::ForLoop:
-                    scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)child)->getId()));
-                    break;
-                case ANT::WhileLoop:
-                    scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)child)->getId()));
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-    for(auto c : (*vec)) {
-        checkAssignments(c, scope);
     }
 }
 
