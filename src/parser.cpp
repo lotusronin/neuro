@@ -127,29 +127,29 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
     //tl_statements -> functiondefs tl_statements 
     //tl_statements -> structdefs tl_statements 
     //tl_statements -> null
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::import) {
-        ////std::cout << "import token, beginning to match import statement...\n";
-        parseImportStatement(lexer, parent);
-        ////std::cout << "import statement matched\n";
-    } else if(tok.type == TokenType::fn) {
-        //std::cout << "Function Definitions Parse\n";
-        parseFunctionDef(lexer, parent);
-        //std::cout << "Function Definitions matched\n";
-    } else if(tok.type == TokenType::foreign) {
-        //std::cout << "extern token, beginning to match prototype...\n";
-        parsePrototypeOrStruct(lexer, (CompileUnitNode*)parent);
-        //parsePrototype(lexer, (CompileUnitNode*)parent);
-        ////std::cout << "prototype matched\n";
-    } else if(tok.type == TokenType::tstruct) {
-        parseStructDef(lexer, parent);
-    } else if(tok.type == TokenType::eof) {
-        //std::cout << "File is parsed, no errors detected!\n\n";
-        return;
-    }else {
-        parse_error(ParseErrorType::BadTopLevelStatement, tok, lexer);
+    while(1) {
+        Token tok = lexer->peek();
+        if(tok.type == TokenType::import) {
+            ////std::cout << "import token, beginning to match import statement...\n";
+            parseImportStatement(lexer, parent);
+            ////std::cout << "import statement matched\n";
+        } else if(tok.type == TokenType::fn) {
+            //std::cout << "Function Definitions Parse\n";
+            parseFunctionDef(lexer, parent);
+            //std::cout << "Function Definitions matched\n";
+        } else if(tok.type == TokenType::foreign) {
+            //std::cout << "extern token, beginning to match prototype...\n";
+            parsePrototypeOrStruct(lexer, (CompileUnitNode*)parent);
+            ////std::cout << "prototype matched\n";
+        } else if(tok.type == TokenType::tstruct) {
+            parseStructDef(lexer, parent);
+        } else if(tok.type == TokenType::eof) {
+            //std::cout << "File is parsed, no errors detected!\n\n";
+            return;
+        }else {
+            parse_error(ParseErrorType::BadTopLevelStatement, tok, lexer);
+        }
     }
-    parseTopLevelStatements(lexer, parent);
 }
 
 void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
@@ -471,6 +471,14 @@ bool tokenTypeIsAType(TokenType t) {
   }
 }
 
+void parseOptType(LexerTarget* lexer, AstNode* parent) {
+    Token t = lexer->peek();
+    if(tokenTypeIsAType(t.type)) {
+        parseType(lexer,parent);
+    }
+    return;
+}
+
 void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     //std::cout << "parsing some sort of var declaration.\n";
     Token tokid = lexer->peek();
@@ -478,6 +486,13 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     lexer->lex();
     //consume :
     Token tok = lexer->lex();
+    VarNode* vnode = new VarNode();
+    vnode->mtoken = tokid;
+    vnode->addVarName(tokid.token);
+
+    parseOptType(lexer,vnode);
+    tok = lexer->peek();
+
     //Token nextTok = lexer->peekNext();
     // id : . type = expression
     // it : . type
@@ -488,41 +503,18 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         //we have type inferenced declaration assignment
         VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
         vdecassignnode->mtoken = tok;
-        VarNode* vnode = new VarNode();
-        vnode->mtoken = tokid;
-        vnode->addVarName(tokid.token);
         vdecassignnode->addChild(vnode);
         parent->addChild(vdecassignnode);
         //consume =
         lexer->lex();
         parseExpression(lexer, vdecassignnode);
-    } else if(tokenTypeIsAType(tok.type)) {
-        VarNode* vnode = new VarNode();
-        vnode->addVarName(tokid.token);
-        vnode->mtoken = tokid;
-        //parse type, then find if you're an assignment or declaration
-        parseType(lexer, vnode);
-        if(lexer->peek().type == TokenType::assignment) {
-            //std::cout << "var declaration is assignment, type given.\n";
-            //std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
-            //we have a declaration and assignment
-            VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
-            vdecassignnode->mtoken = lexer->peek();
-            vdecassignnode->addChild(vnode);
-            parent->addChild(vdecassignnode);
-            //consume =
-            lexer->lex();
-            //std::cout << "after parseType call and =\n";
-            //std::cout << "current: " << lexer->peek().token << " next: " << lexer->peekNext().token << "\n";
-            parseExpression(lexer, vdecassignnode);
-        } else {
+    } else if(tok.type == TokenType::semicolon) {
             //std::cout << "var declaration only\n";
             //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
             //we have a declaration
             VarDecNode* vdecnode = new VarDecNode();
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
-        }
     } else {
         parse_error(PET::MissColon, tok, lexer);
     }
@@ -1115,12 +1107,7 @@ AstNode* parseParenGroup(LexerTarget* lexer) {
     }
     //consume )
     lexer->lex();
-    BinOpNode* opnode = new BinOpNode();
-    opnode->setToken(t);
-    auto s = std::string("( )");
-    opnode->setOp(s);
-    opnode->addChild(child);
-    return opnode;
+    return child;
 }
 
 AstNode* parseArrInd(LexerTarget* lexer) {
