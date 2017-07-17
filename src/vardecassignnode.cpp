@@ -6,6 +6,7 @@ int VarDecAssignNode::count = 0;
 VarDecAssignNode::VarDecAssignNode() {
     id = VarDecAssignNode::count;
     VarDecAssignNode::count++;
+    mchildren.reserve(2);
 }
 
 VarDecAssignNode::~VarDecAssignNode() {

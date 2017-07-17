@@ -10,6 +10,7 @@ BinOpNode::BinOpNode() {
     BinOpNode::count++;
     BinOpNode::constructed++;
     unaryOp = false;
+    mchildren.reserve(2);
 }
 
 BinOpNode::~BinOpNode() {
@@ -28,6 +29,7 @@ void BinOpNode::setOp(const std::string& op) {
     mop = op;
     //TODO(marcus): Not sure I like using constants here, maybe make them enums?
     //FIXME(marcus): I really don't like using constants here. Definitely make them enums.
+    /*
     if(op.compare("||") == 0) {
         mpriority = -7;
     } else if(op.compare("&&") == 0) {
@@ -51,7 +53,8 @@ void BinOpNode::setOp(const std::string& op) {
         mpriority = 5;
     } else {
         mpriority = 3;
-    }
+    }*/
+    mpriority = -1;
 }
 
 std::string BinOpNode::getOp() {
@@ -94,23 +97,6 @@ void BinOpNode::setToken(Token& t) {
 }
 
 SemanticType BinOpNode::getType() {
-    //FIXME(marcus): This is utterly broken.
-    //The . and -> operators don't care about lhs type
-    //also this breaks for math operators since it always
-    //promotes to the rhs type, instead of largest
-    /*
-    if(mpriority == 3) {
-        mstype = mchildren[0]->getType();
-    } else {
-        auto lhs_type = LHS()->getType();
-        auto rhs_type = RHS()->getType();
-
-        if(lhs_type == rhs_type) {
-            mstype = lhs_type;
-        } else {
-            mstype = rhs_type;
-        }
-    }*/
     return mtypeinfo.type;
     //return mstype;
 }
