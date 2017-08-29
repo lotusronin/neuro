@@ -6,6 +6,7 @@ int ReturnNode::count = 0;
 ReturnNode::ReturnNode() {
     id = ReturnNode::count;
     ReturnNode::count++;
+    mchildren.reserve(1);
 }
 
 ReturnNode::~ReturnNode() {
