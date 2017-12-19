@@ -22,6 +22,8 @@ class FuncDefNode : public AstNode {
         std::string mangledName();
         //std::vector<AstNode*> mparams;
         std::string mfuncname;
+        int isOperatorOverload;
+        char* op;
     //private:
         int id;
 };
