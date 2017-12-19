@@ -7,6 +7,9 @@ int FuncDefNode::count = 0;
 FuncDefNode::FuncDefNode() {
     id = FuncDefNode::count;
     FuncDefNode::count++;
+    mchildren.reserve(8);
+    isOperatorOverload = 0;
+    op = nullptr;
 }
 
 FuncDefNode::~FuncDefNode() {

@@ -10,7 +10,8 @@ BinOpNode::BinOpNode() {
     BinOpNode::count++;
     BinOpNode::constructed++;
     unaryOp = false;
-    //mchildren.reserve(2);
+    mchildren.reserve(2);
+    opOverload = nullptr;
 }
 
 BinOpNode::~BinOpNode() {

@@ -33,6 +33,7 @@ class BinOpNode : public AstNode {
         std::string mop;
         int mpriority;
         bool unaryOp;
+        AstNode* opOverload;
 };
 
 
