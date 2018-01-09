@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
                 auto parse_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_parse).count();
                 auto semantic_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_semantic).count();
                 auto ir_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count();
-                auto link_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count();
+                auto link_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_link).count();
                 auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count();
                 std::cout << "Lex Time: " << lex_time << "ms\n";
                 std::cout << "Time for parsing: " << parse_time << "ms\n";
