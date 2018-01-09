@@ -337,6 +337,7 @@ Value* retCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
+Value* opCallCodegen(AstNode* n, SymbolTable* sym);
 
 #define ANT AstNodeType
 Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
@@ -360,6 +361,12 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
         case ANT::BinOp:
             {
             auto binop = (BinOpNode*)n;
+
+            if(binop->opOverload != nullptr) {
+                //we have an overloaded op
+                return opCallCodegen(binop,sym);
+            }
+
             auto op = binop->getOp();
             auto opc = op[0];
             if(opc == '(') {
@@ -713,6 +720,33 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
     return val;
 }
 #undef ANT
+
+Value* opCallCodegen(AstNode* n, SymbolTable* sym) {
+    std::cout << "Generating call for overloaded op\n";
+    BinOpNode* callnode = (BinOpNode*) n;
+    FuncDefNode* funcdef = (FuncDefNode*)callnode->opOverload;
+    auto funcname = funcdef->mangledName();
+    Function* F = module->getFunction(funcname);
+    if(!F) {
+        std::cout << "Function lookup for " << funcname << " not found!\n";
+        return nullptr;
+    }
+
+    std::vector<Value*> args;
+    std::vector<AstNode*>* vec = callnode->getChildren();
+    for(auto c : (*vec)) {
+        auto exprval = expressionCodegen(c, sym);
+        args.push_back(exprval);
+    }
+
+    Value* val;
+    if(F->getReturnType() == Type::getVoidTy(context)) {
+        val = Builder.CreateCall(F, args);
+    } else {
+        val = Builder.CreateCall(F, args, "calltemp");
+    }
+    return val;
+}
 
 void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
     //std::cout << "generating block\n";
@@ -1088,7 +1122,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
 }
 
 void dumpIR() {
-    module->dump();
+    module->print(llvm::errs(),nullptr);
     return;
 }
 

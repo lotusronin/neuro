@@ -18,6 +18,10 @@ SymbolTable progSymTab;
 std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
 std::unordered_map<std::string,AstNode*> structList;
 
+//TODO(marcus): put this in the SymbolTable?
+std::unordered_map<std::string,std::vector<FuncDefNode*>> operatorOverloads;
+static std::string getOperatorName(std::string& op);
+
 #define ANT AstNodeType
 #define SET SemanticErrorType
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
@@ -295,6 +299,17 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncDef:
                 {
                     auto func = (FuncDefNode*)c;
+
+                    if(func->isOperatorOverload == 1) {
+                        std::string op = func->op;
+                        auto opstr = getOperatorName(op);
+                        opstr = "op_"+opstr;
+                        //std::cout << "op is ... " << opstr << '\n';
+                        operatorOverloads.emplace(opstr,std::vector<FuncDefNode*>());
+                        operatorOverloads[opstr].push_back(func);
+                        func->addFuncName(opstr);
+                    }
+
                     retType = func->getType();
                     auto params = func->getParameters();
                     auto entries = getEntry(symTab,func->mfuncname);
@@ -566,6 +581,8 @@ static void increaseDerefTypeInfo(TypeInfo& t) {
 }
 
 bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab);
+static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const TypeInfo& lhst, const TypeInfo& rhst);
+static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst);
 
 AstNode* currentFunc = nullptr;
 std::string currentFunc2;
@@ -764,6 +781,12 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //typeCheckPass(binopn->RHS(),symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
+                        if(isOpOverloadCandidate(lhs_t,rhs_t)) {
+                            auto func = getOpFunction(binopn,symTab,lhs_t,rhs_t);
+                            binopn->mtypeinfo = func->mtypeinfo;
+                            binopn->opOverload = func;
+                            break;
+                        }
 
                         //do compatiblity checking
                         if(isSameType(lhs_t,rhs_t)) {
@@ -1234,6 +1257,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         return true;
     }
 
+    //TODO(marcus): this matches the first overload found, not the best one.
     FuncDefNode* matchedNode = nullptr;
     for(auto overload : e->overloads) {
         FuncDefNode* candidate = nullptr;
@@ -1281,6 +1305,14 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
     }
     return (matchedNode != nullptr);
+}
+
+static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst) {
+    //If either the left or the right side of the operator is a user type we need to look up
+    //an operator overload
+    bool lhs_is_user = ((lhst.type == SemanticType::User) && (lhst.indirection == 0));
+    bool rhs_is_user = ((rhst.type == SemanticType::User) && (rhst.indirection == 0));
+    return (lhs_is_user | rhs_is_user);
 }
 
 static void importPrepass(AstNode* ast, SymbolTable* symTab) {
@@ -1348,4 +1380,68 @@ void transformAssignments(AstNode* ast) {
                 break;
         }
     }
+}
+
+static std::string getOperatorName(std::string& op)
+{
+    if(op == "+") {
+        return "plus";
+    } else if(op == "-") {
+        return "minus";
+    } else if(op == "*") {
+        return "mult";
+    } else if(op == "/") {
+        return "div";
+    }
+    return "noop";
+}
+
+static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const TypeInfo& lhst, const TypeInfo& rhst)
+{
+    //TODO(marcus): searches for the proper op overload for a given node.
+    //TODO(marcus): op overloads are global right now, maybe should be in symbol table?
+    std::string op = funccall->getOp();
+    auto opstr = getOperatorName(op);
+    opstr = "op_"+opstr;
+    std::cout << "Searching for op: " << opstr << '\n';
+    auto res = operatorOverloads.find(opstr);
+
+    //TODO(marcus): we have a user type with no operator overloads for this operator, error out
+    if(res == operatorOverloads.end()) {
+        return nullptr;
+    }
+    //NOTE(marcus): we are copying the vector here, may want to make this better later.
+    auto overloads = res->second;
+    AstNode* bestMatch = nullptr;
+    TypeInfo arg_typeinfo[] = {lhst, rhst};
+    //check overloads for a matching function
+    for(auto func : overloads) {
+        FuncDefNode* candidate = func;
+        auto funcparams = candidate->getParameters();
+
+        bool matched = true;
+
+        //check every arg, against every parameter
+        for(unsigned int i = 0; i < funcparams.size; i++) {
+            auto param = funcparams.ptr[i];
+            auto paramt = param->mtypeinfo;
+            auto argt = arg_typeinfo[i];
+
+            if(!isSameType(paramt,argt)) {
+                if(!canCast(paramt,argt)) {
+                    matched = false;
+                    break;
+                }
+            }
+        }
+        if(matched) {
+            if(!bestMatch) {
+                bestMatch = candidate;
+            } else {
+                //TODO(marcus): this error expects a FuncCallNode, not a binopnode
+                semanticError(SemanticErrorType::MultipleFuncResolve, funccall, symTab);
+            }
+        }
+    }
+    return bestMatch;
 }

@@ -520,6 +520,20 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     }
 }
 
+bool tokenIsOperator(Token& t) {
+    //TODO(marcus): we will want to allow other operators later
+    switch(t.type) {
+        case TokenType::plus:
+        case TokenType::minus:
+        case TokenType::star:
+        case TokenType::fslash:
+            return true;
+            break;
+        default:
+            return false;
+    }
+}
+
 void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //functiondefs -> . fn id ( opt_params ) : type block
     //consume fn
@@ -529,6 +543,17 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //std::cout << tok.token << '\n';
     if(tok.type != TokenType::id) {
         parse_error(PET::BadPrototypeName, tok, lexer);
+    }
+
+    std::string operatorOverload = "op";
+    if(operatorOverload == tok.token) {
+        auto next_tok = lexer->peekNext();
+        if(tokenIsOperator(next_tok)) {
+            //we have an operator overload
+            funcnode->isOperatorOverload = 1;
+            funcnode->op = (char*) next_tok.token;
+            lexer->lex();
+        }
     }
     funcnode->mtoken = tok;
     funcnode->addFuncName(tok.token);
