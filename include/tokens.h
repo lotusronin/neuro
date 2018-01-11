@@ -1,8 +1,6 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
-#include <string>
-
 enum class TokenType {
     fn,
     foreign,
@@ -81,7 +79,6 @@ struct Token {
     TokenType type;
     unsigned int col;
     unsigned int line;
-    //std::string token;
     const char* token;
 };
 

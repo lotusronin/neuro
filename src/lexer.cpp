@@ -191,15 +191,6 @@ void LexerTarget::lexFile() {
     tokenizedFile.push_back(tok);
     tokenizedFile.push_back(EOFTOKEN);
     currentIdx = 0;
-
-    /*
-    std::cout << "Lexer " << sizeof(LexerTarget) << '\n';
-    std::cout << "Token " << sizeof(Token) << '\n';
-    std::cout << "String " << sizeof(std::string) << '\n';
-    std::cout << "const char* " << sizeof(const char*) << '\n';
-    std::cout << "int " << sizeof(int) << '\n';
-    std::cout << "TokenType " << sizeof(TokenType) << '\n';
-    /**/
 }
 
 void printLn(char* s) {

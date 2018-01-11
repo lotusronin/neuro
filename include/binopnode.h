@@ -24,14 +24,11 @@ class BinOpNode : public AstNode {
         int getPriority();
         void setToken(Token& t);
         SemanticType getType();
-        //std::vector<AstNode*> mchildren;
         static void printDeleted();
         static int deleted;
-    //private:
-        int id;
         //TODO(marcus): make this an enum
         std::string mop;
-        int mpriority;
+        int id;
         bool unaryOp;
         AstNode* opOverload;
 };

@@ -4,7 +4,6 @@
 #include "symboltable.h"
 #include "errors.h"
 
-void decorateAst(AstNode* ast);
 void typeCheckPass(AstNode* ast);
 void populateSymbolTableFunctions(AstNode* ast);
 void populateTypeList(AstNode* ast);

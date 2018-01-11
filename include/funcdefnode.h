@@ -20,11 +20,9 @@ class FuncDefNode : public AstNode {
         ArrayView getParameters();
         AstNode* getFunctionBody();
         std::string mangledName();
-        //std::vector<AstNode*> mparams;
         std::string mfuncname;
-        int isOperatorOverload;
         char* op;
-    //private:
+        int isOperatorOverload;
         int id;
 };
 

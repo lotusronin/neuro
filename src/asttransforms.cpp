@@ -191,13 +191,6 @@ void semanticPass1(AstNode* ast)
     semanticPass1(ast,0,&progSymTab);
 }
 
-void decorateAst(AstNode* ast) {
-    for(auto c : (*(ast->getChildren()))) {
-        decorateAst(c);
-        c->getType();
-    }
-}
-
 static void registerTypeDef(StructDefNode* n) {
     auto type_name = n->ident;
     if(userTypesList.find(type_name) != userTypesList.end()) {
@@ -357,8 +350,6 @@ void typeCheckPass(AstNode* ast) {
                 typeCheckPass(c, scope);
                 }
                 break;
-            //case ANT::StructDef:
-                //break;
             default:
                 //std::cout << "unknown ast node type!\n";
                 break;
