@@ -10,12 +10,9 @@ class LoopStmtNode : public AstNode {
         static int count;
         LoopStmtNode();
         ~LoopStmtNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         void setBreak(bool b);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mchildren;
-    //private:
         int id;
         bool isBreak;
 };

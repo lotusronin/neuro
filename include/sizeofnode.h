@@ -10,7 +10,6 @@ class SizeOfNode : public AstNode {
         static int count;
         SizeOfNode();
         ~SizeOfNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         int id;

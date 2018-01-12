@@ -1,18 +1,14 @@
 #include "compileunitnode.h"
-#include <iostream>
 
 int CompileUnitNode::count = 0;
 
 CompileUnitNode::CompileUnitNode() {
     id = CompileUnitNode::count;
     CompileUnitNode::count++;
+    mnodet = AstNodeType::CompileUnit;
 }
 
 CompileUnitNode::~CompileUnitNode() {
-}
-
-AstNodeType CompileUnitNode::nodeType() {
-    return AstNodeType::CompileUnit;
 }
 
 void CompileUnitNode::addChild(AstNode* node) {

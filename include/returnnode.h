@@ -9,11 +9,8 @@ class ReturnNode : public AstNode {
         static int count;
         ReturnNode();
         ~ReturnNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mchildren;
-    //private:
         int id;
 };
 

@@ -73,17 +73,18 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);
 class AstNode {
     public:
         AstNode();
-        virtual ~AstNode();
-        virtual AstNodeType nodeType();
+        ~AstNode();
+        AstNodeType nodeType();
         SemanticType getType();
         TypeInfo* getTypeInfo();
         void addChild(AstNode* child);
         AstNode* lastChild();
-        virtual void setToken(Token& t);
+        void setToken(Token& t);
         std::vector<AstNode*>* getChildren();
         Token mtoken;
         TypeInfo mtypeinfo;
         std::vector<AstNode*> mchildren;
+        AstNodeType mnodet = AstNodeType::Default;
 };
 
 

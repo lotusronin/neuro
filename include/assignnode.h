@@ -10,12 +10,10 @@ class AssignNode : public AstNode {
         static int count;
         AssignNode();
         ~AssignNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         AstNode* getLHS();
         AstNode* getRHS();
-        //std::vector<AstNode*> mchildren;
         int id;
 };
 

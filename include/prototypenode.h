@@ -11,16 +11,12 @@ class PrototypeNode : public AstNode {
         static int count;
         PrototypeNode();
         ~PrototypeNode();
-        AstNodeType nodeType();
-        void addParams(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);
         std::vector<AstNode*>* getChildren();
         ArrayView getParameters();
         SemanticType getType();
-        //std::vector<AstNode*> mparams;
         std::string mfuncname;
-    //private:
         int id;
 };
 

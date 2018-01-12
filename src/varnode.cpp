@@ -1,18 +1,14 @@
 #include "varnode.h"
-#include <iostream>
 
 int VarNode::count = 0;
 
 VarNode::VarNode() {
     id = VarNode::count;
     VarNode::count++;
+    mnodet = AstNodeType::Var;
 }
 
 VarNode::~VarNode() {
-}
-
-AstNodeType VarNode::nodeType() {
-    return AstNodeType::Var;
 }
 
 void VarNode::addChild(AstNode* node) {

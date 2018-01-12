@@ -1,5 +1,4 @@
 #include "vardecassignnode.h"
-#include <iostream>
 
 int VarDecAssignNode::count = 0;
 
@@ -7,13 +6,10 @@ VarDecAssignNode::VarDecAssignNode() {
     id = VarDecAssignNode::count;
     VarDecAssignNode::count++;
     mchildren.reserve(2);
+    mnodet = AstNodeType::VarDecAssign;
 }
 
 VarDecAssignNode::~VarDecAssignNode() {
-}
-
-AstNodeType VarDecAssignNode::nodeType() {
-    return AstNodeType::VarDecAssign;
 }
 
 void VarDecAssignNode::addChild(AstNode* node) {

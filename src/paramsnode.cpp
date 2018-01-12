@@ -1,18 +1,14 @@
 #include "paramsnode.h"
-#include <iostream>
 
 int ParamsNode::count = 0;
 
 ParamsNode::ParamsNode() {
     id = ParamsNode::count;
     ParamsNode::count++;
+    mnodet = AstNodeType::Params;
 }
 
 ParamsNode::~ParamsNode() {
-}
-
-AstNodeType ParamsNode::nodeType() {
-    return AstNodeType::Params;
 }
 
 void ParamsNode::addChild(AstNode* node) {

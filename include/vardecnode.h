@@ -10,13 +10,9 @@ class VarDecNode : public AstNode {
         static int count;
         VarDecNode();
         ~VarDecNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mchildren;
         AstNode* getLHS();
-        AstNode* getRHS();
-    //private:
         int id;
 };
 

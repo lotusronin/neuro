@@ -10,14 +10,11 @@ class ConstantNode : public AstNode {
         static int count;
         ConstantNode();
         ~ConstantNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         void setVal(std::string& val);
         void setToken(const Token& t);
         std::string getVal();
-        //std::vector<AstNode*> mchildren;
-    //private:
         int id;
         std::string mval;
 };

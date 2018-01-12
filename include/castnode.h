@@ -10,13 +10,10 @@ class CastNode : public AstNode {
         static int count;
         CastNode();
         ~CastNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mchildren;
         TypeInfo fromType;
         TypeInfo toType;
-//    private:
         int id;
 };
 

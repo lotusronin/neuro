@@ -1,18 +1,14 @@
 #include "castnode.h"
-#include <iostream>
 
 int CastNode::count = 0;
 
 CastNode::CastNode() {
     id = CastNode::count;
     CastNode::count++;
+    mnodet = AstNodeType::Cast;
 }
 
 CastNode::~CastNode() {
-}
-
-AstNodeType CastNode::nodeType() {
-    return AstNodeType::Cast;
 }
 
 void CastNode::addChild(AstNode* n) {

@@ -1,18 +1,14 @@
 #include "assignnode.h"
-#include <iostream>
 
 int AssignNode::count = 0;
 
 AssignNode::AssignNode() {
     id = AssignNode::count;
     AssignNode::count++;
+    mnodet = AstNodeType::Assign;
 }
 
 AssignNode::~AssignNode() {
-}
-
-AstNodeType AssignNode::nodeType() {
-    return AstNodeType::Assign;
 }
 
 void AssignNode::addChild(AstNode* node) {

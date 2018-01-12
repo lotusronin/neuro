@@ -1,18 +1,15 @@
 #include "loopstmtnode.h"
-#include <iostream>
 
 int LoopStmtNode::count = 0;
 
 LoopStmtNode::LoopStmtNode() {
     id = LoopStmtNode::count;
     LoopStmtNode::count++;
+    mnodet = AstNodeType::LoopStmt;
+    isBreak = false;
 }
 
 LoopStmtNode::~LoopStmtNode() {
-}
-
-AstNodeType LoopStmtNode::nodeType() {
-    return AstNodeType::LoopStmt;
 }
 
 void LoopStmtNode::addChild(AstNode* node) {

@@ -12,14 +12,11 @@ BinOpNode::BinOpNode() {
     unaryOp = false;
     mchildren.reserve(2);
     opOverload = nullptr;
+    mnodet = AstNodeType::BinOp;
 }
 
 BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
-}
-
-AstNodeType BinOpNode::nodeType() {
-    return AstNodeType::BinOp;
 }
 
 void BinOpNode::addChild(AstNode* node) {
@@ -67,7 +64,6 @@ void BinOpNode::setToken(Token& t) {
 
 SemanticType BinOpNode::getType() {
     return mtypeinfo.type;
-    //return mstype;
 }
 
 void BinOpNode::printDeleted() {

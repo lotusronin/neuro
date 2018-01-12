@@ -1,18 +1,14 @@
 #include "ifnode.h"
-#include <iostream>
 
 int IfNode::count = 0;
 
 IfNode::IfNode() {
     id = IfNode::count;
     IfNode::count++;
+    mnodet = AstNodeType::IfStmt;
 }
 
 IfNode::~IfNode() {
-}
-
-AstNodeType IfNode::nodeType() {
-    return AstNodeType::IfStmt;
 }
 
 void IfNode::addChild(AstNode* node) {

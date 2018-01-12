@@ -1,18 +1,14 @@
 #include "deferstmtnode.h"
-#include <iostream>
 
 int DeferStmtNode::count = 0;
 
 DeferStmtNode::DeferStmtNode() {
     id = DeferStmtNode::count;
     DeferStmtNode::count++;
+    mnodet = AstNodeType::DeferStmt;
 }
 
 DeferStmtNode::~DeferStmtNode() {
-}
-
-AstNodeType DeferStmtNode::nodeType() {
-    return AstNodeType::DeferStmt;
 }
 
 void DeferStmtNode::addChild(AstNode* node) {

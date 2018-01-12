@@ -10,14 +10,11 @@ class WhileLoopNode : public AstNode {
         static int count;
         WhileLoopNode();
         ~WhileLoopNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mstatements;
         AstNode* getConditional();
         AstNode* getBody();
         int getId();
-    //private:
         int id;
 };
 

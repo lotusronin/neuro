@@ -1,5 +1,4 @@
 #include "vardecnode.h"
-#include <iostream>
 
 int VarDecNode::count = 0;
 
@@ -7,13 +6,10 @@ VarDecNode::VarDecNode() {
     id = VarDecNode::count;
     VarDecNode::count++;
     mchildren.reserve(1);
+    mnodet = AstNodeType::VarDec;
 }
 
 VarDecNode::~VarDecNode() {
-}
-
-AstNodeType VarDecNode::nodeType() {
-    return AstNodeType::VarDec;
 }
 
 void VarDecNode::addChild(AstNode* node) {
@@ -26,8 +22,4 @@ std::vector<AstNode*>* VarDecNode::getChildren() {
 
 AstNode* VarDecNode::getLHS() {
     return mchildren.at(0);
-}
-
-AstNode* VarDecNode::getRHS() {
-    return mchildren.at(1);
 }

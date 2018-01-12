@@ -10,22 +10,13 @@ FuncDefNode::FuncDefNode() {
     mchildren.reserve(8);
     isOperatorOverload = 0;
     op = nullptr;
+    mnodet = AstNodeType::FuncDef;
 }
 
 FuncDefNode::~FuncDefNode() {
 }
 
-AstNodeType FuncDefNode::nodeType() {
-    return AstNodeType::FuncDef;
-}
-
-void FuncDefNode::addParams(AstNode* node) {
-    //mparams.push_back(node);
-    mchildren.push_back(node);
-}
-
 void FuncDefNode::addChild(AstNode* node) {
-    //mparams.push_back(node);
     mchildren.push_back(node);
 }
 
@@ -34,7 +25,6 @@ void FuncDefNode::addFuncName(std::string funcname) {
 }
 
 std::vector<AstNode*>* FuncDefNode::getChildren() {
-    //return &mparams;
     return &mchildren;
 }
 

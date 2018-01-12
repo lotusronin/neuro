@@ -10,13 +10,10 @@ class ParamsNode : public AstNode {
         static int count;
         ParamsNode();
         ~ParamsNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         void addParamName(std::string name);
         std::vector<AstNode*>* getChildren();
-        //std::vector<AstNode*> mchildren;
         std::string mname;
-    //private:
         int id;
 };
 

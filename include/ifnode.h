@@ -10,13 +10,11 @@ class IfNode : public AstNode {
         static int count;
         IfNode();
         ~IfNode();
-        AstNodeType nodeType();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
         AstNode* getConditional();
         AstNode* getThen();
         AstNode* getElse();
-    //private:
         int id;
 };
 

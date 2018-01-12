@@ -8,7 +8,7 @@ AstNode::~AstNode() {
 }
 
 AstNodeType AstNode::nodeType() {
-    return AstNodeType::Default;
+    return mnodet;
 }
 
 SemanticType AstNode::getType() {

@@ -1,22 +1,14 @@
 #include "prototypenode.h"
-#include <iostream>
 
 int PrototypeNode::count = 0;
 
 PrototypeNode::PrototypeNode() {
     id = PrototypeNode::count;
     PrototypeNode::count++;
+    mnodet = AstNodeType::Prototype;
 }
 
 PrototypeNode::~PrototypeNode() {
-}
-
-AstNodeType PrototypeNode::nodeType() {
-    return AstNodeType::Prototype;
-}
-
-void PrototypeNode::addParams(AstNode* node) {
-    mchildren.push_back(node);
 }
 
 void PrototypeNode::addChild(AstNode* node) {

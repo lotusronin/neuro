@@ -6,13 +6,10 @@ int ConstantNode::count = 0;
 ConstantNode::ConstantNode() {
     id = ConstantNode::count;
     ConstantNode::count++;
+    mnodet = AstNodeType::Const;
 }
 
 ConstantNode::~ConstantNode() {
-}
-
-AstNodeType ConstantNode::nodeType() {
-    return AstNodeType::Const;
 }
 
 void ConstantNode::addChild(AstNode* node) {
@@ -33,7 +30,7 @@ std::string ConstantNode::getVal() {
 
 void ConstantNode::setToken(const Token& t) {
     mtoken = t;
-    SemanticType mstype;
+    SemanticType mstype = SemanticType::Typeless;
     if(t.type == TokenType::intlit) {
         mstype = SemanticType::intlit;
     } else if(t.type == TokenType::floatlit) {

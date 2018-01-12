@@ -1,18 +1,14 @@
 #include "forloopnode.h"
-#include <iostream>
 
 int ForLoopNode::count = 0;
 
 ForLoopNode::ForLoopNode() {
     id = ForLoopNode::count;
     ForLoopNode::count++;
+    mnodet = AstNodeType::ForLoop;
 }
 
 ForLoopNode::~ForLoopNode() {
-}
-
-AstNodeType ForLoopNode::nodeType() {
-    return AstNodeType::ForLoop;
 }
 
 void ForLoopNode::addChild(AstNode* node) {

@@ -11,8 +11,6 @@ class FuncDefNode : public AstNode {
         static int count;
         FuncDefNode();
         ~FuncDefNode();
-        AstNodeType nodeType();
-        void addParams(AstNode* node);
         void addChild(AstNode* node);
         void addFuncName(std::string funcname);
         SemanticType getType();

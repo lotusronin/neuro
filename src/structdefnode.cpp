@@ -1,5 +1,4 @@
 #include "structdefnode.h"
-#include <iostream>
 
 int StructDefNode::count = 0;
 
@@ -7,13 +6,10 @@ StructDefNode::StructDefNode() {
     id = StructDefNode::count;
     StructDefNode::count++;
     foreign = false;
+    mnodet = AstNodeType::StructDef;
 }
 
 StructDefNode::~StructDefNode() {
-}
-
-AstNodeType StructDefNode::nodeType() {
-    return AstNodeType::StructDef;
 }
 
 void StructDefNode::addChild(AstNode* node) {

@@ -1,14 +1,10 @@
 #include "programnode.h"
-#include <iostream>
 
 ProgramNode::ProgramNode() {
+    mnodet = AstNodeType::Program;
 }
 
 ProgramNode::~ProgramNode() {
-}
-
-AstNodeType ProgramNode::nodeType() {
-    return AstNodeType::Program;
 }
 
 void ProgramNode::addChild(AstNode* node) {
