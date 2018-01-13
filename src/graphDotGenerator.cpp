@@ -25,39 +25,43 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::CompileUnit:
             {
-                id = ((CompileUnitNode*)ast)->id;
+                auto compunit = static_cast<CompileUnitNode*>(ast);
+                id = compunit->id;
                 outfile << "CompilationUnit"<<id<<";\n";
-                outfile << "CompilationUnit"<<id<<"[label=\"" << ((CompileUnitNode*)ast)->mname << "\"];\n";
+                outfile << "CompilationUnit"<<id<<"[label=\"" << compunit->mname << "\"];\n";
                 header = "CompilationUnit";
             }
             break;
         case ANT::Prototype:
             {
-                id = ((PrototypeNode*)ast)->id;
+                auto proto = static_cast<PrototypeNode*>(ast);
+                id = proto->id;
                 outfile << "prototype" << id << ";\n";
-                outfile << "prototype" << id << "[label=\"extern fn "<<((PrototypeNode*)ast)->mfuncname<<"\"];\n";
+                outfile << "prototype" << id << "[label=\"extern fn "<<proto->mfuncname<<"\"];\n";
                 header = "prototype";
             }
             break;
         case ANT::Params:
             {
-                id = ((ParamsNode*)ast)->id;
+                auto param = static_cast<ParamsNode*>(ast);
+                id = param->id;
                 outfile << "param"<<id<<";\n";
-                outfile << "param"<<id<<"[label=\""<<((ParamsNode*)ast)->mname<<"\"];\n";
+                outfile << "param"<<id<<"[label=\""<<param->mname<<"\"];\n";
                 header = "param";
             }
             break;
         case ANT::Var:
             {
-                id = ((VarNode*)ast)->id;
+                auto varn = static_cast<VarNode*>(ast);
+                id = varn->id;
                 outfile << "var"<<id<<";\n";
-                outfile << "var"<<id<<"[label=\""<<((VarNode*)ast)->mname<<"\"];\n";
+                outfile << "var"<<id<<"[label=\""<<varn->mname<<"\"];\n";
                 header = "var";
             }
             break;
         case ANT::VarDec:
             {
-                id = ((VarDecNode*)ast)->id;
+                id = static_cast<VarDecNode*>(ast)->id;
                 outfile << "vardec" << id << ";\n";
                 outfile << "vardec" << id << "[label=\"vardec\"];\n";
                 header = "vardec";
@@ -65,7 +69,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::VarDecAssign:
             {
-                id = ((VarDecAssignNode*)ast)->id;
+                id = static_cast<VarDecAssignNode*>(ast)->id;
                 outfile << "vardecassign" << id << ";\n";
                 outfile << "vardecassign" << id << "[label=\"vardecassign\"];\n";
                 header = "vardecassign";
@@ -73,23 +77,25 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::FuncDef:
             {
-                id = ((FuncDefNode*)ast)->id;
+                auto func = static_cast<FuncDefNode*>(ast);
+                id = func->id;
                 outfile << "funcDef" << id << ";\n";
-                outfile << "funcDef" << id << "[label=\"fn "<<((FuncDefNode*)ast)->mfuncname<<"\ntype: "<<((FuncDefNode*)ast)->mtypeinfo.type<<"\"];\n";
+                outfile << "funcDef" << id << "[label=\"fn "<<func->mfuncname<<"\ntype: "<<func->mtypeinfo.type<<"\"];\n";
                 header = "funcDef";
             }
             break;
         case ANT::StructDef:
             {
-                id = ((StructDefNode*)ast)->id;
+                auto structn = static_cast<StructDefNode*>(ast);
+                id = structn->id;
                 outfile << "struct"<<id<<";\n";
-                outfile << "struct"<<id<<"[label=\"struct " <<  ((StructDefNode*)ast)->ident << "\"];\n";
+                outfile << "struct"<<id<<"[label=\"struct " <<  structn->ident << "\"];\n";
                 header = "struct";
             }
             break;
         case ANT::Block:
             {
-                id = ((BlockNode*)ast)->id;
+                id = static_cast<BlockNode*>(ast)->id;
                 outfile << "block" << id << ";\n";
                 outfile << "block" << id << "[label=\"block\"];\n";
                 header = "block";
@@ -97,7 +103,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::IfStmt:
             {
-                id = ((IfNode*)ast)->id;
+                id = static_cast<IfNode*>(ast)->id;
                 outfile << "if" << id << ";\n";
                 outfile << "if" << id << "[label=\"if\"];\n";
                 header = "if";
@@ -105,7 +111,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::ForLoop:
             {
-                id = ((ForLoopNode*)ast)->id;
+                id = static_cast<ForLoopNode*>(ast)->id;
                 outfile << "forloop" << id << ";\n";
                 outfile << "forloop" << id << "[label=\"for\"];\n";
                 header = "forloop";
@@ -113,7 +119,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::DeferStmt:
             {
-                id = ((DeferStmtNode*)ast)->id;
+                id = static_cast<DeferStmtNode*>(ast)->id;
                 outfile << "defer"<<id<<";\n";
                 outfile << "defer"<<id<<"[label=\"defer\"];\n";
                 header = "defer";
@@ -121,7 +127,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::WhileLoop:
             {
-                id = ((WhileLoopNode*)ast)->id;
+                id = static_cast<WhileLoopNode*>(ast)->id;
                 outfile << "whileloop" << id << ";\n";
                 outfile << "whileloop" << id << "[label=\"while\"];\n";
                 header = "whileloop";
@@ -129,7 +135,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::RetStmnt:
             {
-                id = ((ReturnNode*)ast)->id;
+                id = static_cast<ReturnNode*>(ast)->id;
                 outfile << "return" << id << ";\n";
                 outfile << "return" << id << "[label=\"return\"];\n";
                 header = "return";
@@ -137,33 +143,37 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::BinOp:
             {
-                id = ((BinOpNode*)ast)->id;
+                auto binop = static_cast<BinOpNode*>(ast);
+                id = binop->id;
                 outfile << "binop" << id << ";\n";
-                outfile << "binop" << id << "[label=\"" << ((BinOpNode*)ast)->mop << "\ntype: " << ((BinOpNode*)ast)->mtypeinfo.type << "\"];\n";
+                outfile << "binop" << id << "[label=\"" << binop->mop << "\ntype: " << binop->mtypeinfo.type << "\"];\n";
                 header =  "binop";
             }
             break;
         case ANT::FuncCall:
             {
-                id = ((FuncCallNode*)ast)->id;
+                auto call = static_cast<FuncCallNode*>(ast);
+                id = call->id;
                 outfile << "funcCall" << id << ";\n";
-                outfile << "funcCall" << id << "[label=\"" << ((FuncCallNode*)ast)->mfuncname << "()\"];\n";
+                outfile << "funcCall" << id << "[label=\"" << call->mfuncname << "()\"];\n";
                 header = "funcCall";
             }
             break;
         case ANT::Const:
             {
-                id = ((ConstantNode*)ast)->id;
+                auto constn = static_cast<ConstantNode*>(ast);
+                id = constn->id;
                 outfile << "constant" << id << ";\n";
-                outfile << "constant" << id << "[label=\"" << ((ConstantNode*)ast)->mval << "\ntype: " << ((ConstantNode*)ast)->mtypeinfo << "\"];\n";
+                outfile << "constant" << id << "[label=\"" << constn->mval << "\ntype: " << constn->mtypeinfo << "\"];\n";
                 header = "constant";
             }
             break;
         case ANT::LoopStmt:
             {
-                id = ((LoopStmtNode*)ast)->id;
+                auto stmt = static_cast<LoopStmtNode*>(ast);
+                id = stmt->id;
                 outfile << "loopStmt" << id << ";\n";
-                if(((LoopStmtNode*)ast)->isBreak) {
+                if(stmt->isBreak) {
                     outfile << "loopStmt" << id << "[label=\"break\"];\n";
                 } else {
                     outfile << "loopStmt" << id << "[label=\"continue\"];\n";
@@ -173,7 +183,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::Assign:
             {
-                id = ((AssignNode*)ast)->id;
+                id = static_cast<AssignNode*>(ast)->id;
                 outfile << "assign" << id << ";\n";
                 outfile << "assign" << id << "[label=\"=\"];\n";
                 header = "assign";
@@ -181,9 +191,10 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::Cast:
             {
-                id = ((CastNode*)ast)->id;
+                auto cast = static_cast<CastNode*>(ast);
+                id = cast->id;
                 outfile << "cast"<<id<<";\n";
-                outfile << "cast"<<id<<"[label=\"cast to " << ((CastNode*)ast)->toType << "\"];\n";
+                outfile << "cast"<<id<<"[label=\"cast to " << cast->toType << "\"];\n";
                 header = "cast";
             }
             break;

@@ -44,27 +44,27 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
     auto scope = symTab;
     switch(type) {
         case ANT::CompileUnit:
-            scope = getScope(symTab, ((CompileUnitNode*)ast)->getFileName());
+            scope = getScope(symTab, static_cast<CompileUnitNode*>(ast)->getFileName());
             break;
         case ANT::FuncDef:
-            scope = getScope(symTab, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
+            scope = getScope(symTab, static_cast<FuncDefNode*>(ast)->mfuncname + std::to_string(static_cast<FuncDefNode*>(ast)->id));
             break;
         case ANT::Prototype:
             {
-                std::string name = ((PrototypeNode*)ast)->mfuncname;
+                std::string name = static_cast<PrototypeNode*>(ast)->mfuncname;
                 scope = getScope(symTab, name);
             }
             break;
         case ANT::Block:
-            scope = getScope(symTab, "block"+std::to_string(((BlockNode*)ast)->getId()));
+            scope = getScope(symTab, "block"+std::to_string(static_cast<BlockNode*>(ast)->getId()));
             break;
         case ANT::ForLoop:
             nextLoopDepth += 1;
-            scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)ast)->getId()));
+            scope = getScope(symTab, "for"+std::to_string(static_cast<ForLoopNode*>(ast)->getId()));
             break;
         case ANT::WhileLoop:
             nextLoopDepth += 1;
-            scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)ast)->getId()));
+            scope = getScope(symTab, "while"+std::to_string(static_cast<WhileLoopNode*>(ast)->getId()));
             break;
         case ANT::LoopStmt:
             if(loopDepth == 0) {
@@ -73,7 +73,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::Var:
             {
-                std::string name = ((VarNode*)(ast))->getVarName();
+                std::string name = static_cast<VarNode*>(ast)->getVarName();
                 auto entry = getEntry(symTab,name);
                 if(entry.size() == 0) {
                     //NOTE(marcus): once we have type information we need to check that the
@@ -94,27 +94,27 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::VarDec:
             {
-                std::string name = ((VarNode*)(ast->getChildren()->at(0)))->getVarName();
+                std::string name = static_cast<VarNode*>(ast->getChildren()->at(0))->getVarName();
                 auto entry = getEntryCurrentScope(symTab,name);
                 if(entry) {
                     semanticError(SET::DupDecl, ast->getChildren()->at(0), symTab);
                 } else {
-                    TypeInfo typeinfo = ((VarNode*)(ast->getChildren()->at(0)))->mtypeinfo;
+                    TypeInfo typeinfo = static_cast<VarNode*>(ast->getChildren()->at(0))->mtypeinfo;
                     addVarEntry(symTab, typeinfo, name);
                 }
             }
             break;
         case ANT::VarDecAssign:
             {
-                std::string name = ((VarNode*)(ast->getChildren()->at(0)))->getVarName();
+                std::string name = static_cast<VarNode*>(ast->getChildren()->at(0))->getVarName();
                 auto entry = getEntryCurrentScope(symTab,name);
                 if(entry) {
                     semanticError(SET::DupDecl, ast->getChildren()->at(0), symTab);
                 } else {
-                    TypeInfo typeinfo = ((VarNode*)(ast->getChildren()->at(0)))->mtypeinfo;
+                    TypeInfo typeinfo = static_cast<VarNode*>(ast->getChildren()->at(0))->mtypeinfo;
                     if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
                     addVarEntry(symTab, typeinfo, name);
-                    auto rhs = ((VarDecAssignNode*)ast)->getRHS();
+                    auto rhs = static_cast<VarDecAssignNode*>(ast)->getRHS();
                     semanticPass1(rhs, nextLoopDepth, symTab);
                     return;
                 }
@@ -122,7 +122,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::Params:
             {
-                auto param_node = (ParamsNode*)ast;
+                auto param_node = static_cast<ParamsNode*>(ast);
                 auto name = param_node->mname;
                 auto entry = getEntry(symTab,name);
                 if(entry.size() != 0) {
@@ -136,10 +136,10 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::FuncCall:
             {
-                std::string name = ((FuncCallNode*)ast)->mfuncname;
+                std::string name = static_cast<FuncCallNode*>(ast)->mfuncname;
                 auto entry = getEntry(symTab,name);
                 if(entry.size() == 0) {
-                    entry = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
+                    entry = getEntry(symTab,name,static_cast<FuncCallNode*>(ast)->scopes);
                     if(entry.size() == 0) {
                         semanticError(SET::NoFunc, ast, symTab);
                     }
@@ -148,13 +148,13 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::Assign:
             {
-                auto anode = (AssignNode*)ast;
+                auto anode = static_cast<AssignNode*>(ast);
                 auto lhs = anode->getLHS();
                 if(lhs->nodeType() == ANT::Var) {
                     break;
                 }
                 if(lhs->nodeType() == ANT::BinOp) {
-                    auto binopn = (BinOpNode*)lhs;
+                    auto binopn = static_cast<BinOpNode*>(lhs);
                     auto op = binopn->mop;
                     if((op == "@") || (op == ".")) {
                         break;
@@ -164,7 +164,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             }
         case ANT::BinOp:
             {
-                auto binopn = (BinOpNode*)ast;
+                auto binopn = static_cast<BinOpNode*>(ast);
                 auto op = binopn->mop;
                 if(op == ".") {
                     auto lhs = binopn->LHS();
@@ -207,8 +207,8 @@ static void registerTypeDef(StructDefNode* n) {
             //definitions.
             continue;
         }
-        auto vdec = (VarDecNode*) c;
-        auto v = (VarNode*) vdec->getLHS();
+        auto vdec = static_cast<VarDecNode*>(c);
+        auto v = static_cast<VarNode*>(vdec->getLHS());
         std::string member_name = v->getVarName();
         member_map->insert(std::make_pair(member_name,index));
         ++index;
@@ -228,7 +228,7 @@ void populateTypeList(AstNode* ast, SymbolTable* sym) {
                 break;
             case ANT::StructDef:
                 //parse definition!
-                registerTypeDef((StructDefNode*)c);
+                registerTypeDef(static_cast<StructDefNode*>(c));
                 break;
             default:
                 continue;
@@ -241,7 +241,7 @@ void populateTypeList(AstNode* ast) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
                 {
-                    auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                    auto scope = addNewScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
                     populateTypeList(c, scope);
                 }
                 break;
@@ -257,7 +257,7 @@ void populateSymbolTableFunctions(AstNode* ast) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
                 {
-                auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                auto scope = addNewScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
                 populateSymbolTableFunctions(c, scope);
                 }
                 break;
@@ -279,7 +279,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
         switch(c->nodeType()) {
             case ANT::Prototype:
                 {
-                    auto proto = (PrototypeNode*)c;
+                    auto proto = static_cast<PrototypeNode*>(c);
                     retType = proto->getType();
                     auto params = proto->getParameters();
                     for(auto prm : (params)) {
@@ -291,7 +291,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::FuncDef:
                 {
-                    auto func = (FuncDefNode*)c;
+                    auto func = static_cast<FuncDefNode*>(c);
 
                     if(func->isOperatorOverload == 1) {
                         std::string op = func->op;
@@ -346,7 +346,7 @@ void typeCheckPass(AstNode* ast) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
                 {
-                auto scope = addNewScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                auto scope = addNewScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
                 typeCheckPass(c, scope);
                 }
                 break;
@@ -582,9 +582,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
         switch(c->nodeType()) {
             case ANT::FuncDef:
                 {
+                    auto fundef = static_cast<FuncDefNode*>(c);
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
-                    auto scope = getScope(symTab, ((FuncDefNode*)c)->mfuncname + std::to_string(((FuncDefNode*)c)->id));
-                    currentFunc2 = ((FuncDefNode*)c)->mfuncname;
+                    auto scope = getScope(symTab, fundef->mfuncname + std::to_string(fundef->id));
+                    currentFunc2 = fundef->mfuncname;
                     currentFunc = c;
                     typeCheckPass(c,scope);
                     currentFunc2 = "";
@@ -596,21 +597,21 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Block!\n";
                     //std::cout << "Block ID " << ((BlockNode*)c)->getId() << '\n';
-                    auto scope = getScope(symTab, "block"+std::to_string(((BlockNode*)c)->getId()));
+                    auto scope = getScope(symTab, "block"+std::to_string(static_cast<BlockNode*>(c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::ForLoop:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
-                    auto scope = getScope(symTab, "for"+std::to_string(((ForLoopNode*)c)->getId()));
+                    auto scope = getScope(symTab, "for"+std::to_string(static_cast<ForLoopNode*>(c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::WhileLoop:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
-                    auto scope = getScope(symTab, "while"+std::to_string(((WhileLoopNode*)c)->getId()));
+                    auto scope = getScope(symTab, "while"+std::to_string(static_cast<WhileLoopNode*>(c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
@@ -623,7 +624,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncCall:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
-                    auto funccall = (FuncCallNode*)c;
+                    auto funccall = static_cast<FuncCallNode*>(c);
                     std::string funcname = funccall->mfuncname;
                     auto entries = getEntry(symTab,funcname);
                     //std::cout << "Type checking function call " << funcname << "\n";
@@ -672,7 +673,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Cast:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Cast!\n";
-                    auto cnode = (CastNode*)c;
+                    auto cnode = static_cast<CastNode*>(c);
                     typeCheckPass(c,symTab);
                     TypeInfo t = getTypeInfo(cnode->mchildren.at(0),symTab);
                     cnode->fromType = t;
@@ -682,7 +683,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
                     //TODO(marcus): support operator overloading
-                    auto binopn = (BinOpNode*)c;
+                    auto binopn = static_cast<BinOpNode*>(c);
                     std::string op = binopn->getOp();
 
                     if(op.compare("( )") == 0) {
@@ -710,13 +711,13 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //will need to handle that case
                         auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         auto structtypename = lhs_t.userid;
-                        auto membername = ((VarNode*)binopn->RHS())->getVarName();
+                        auto membername = static_cast<VarNode*>(binopn->RHS())->getVarName();
                         auto tmp = structList.find(structtypename);
                         if(tmp == structList.end()) std::cout << "Error, struct not found...\n";
                         auto strdef = tmp->second;
                         for(auto member : strdef->mchildren) {
-                            auto vardec = (VarDecNode*)member;
-                            auto var = (VarNode*)vardec->mchildren[0];
+                            auto vardec = static_cast<VarDecNode*>(member);
+                            auto var = static_cast<VarNode*>(vardec->mchildren[0]);
                             if(var->getVarName() == membername) {
                                 binopn->mtypeinfo = var->mtypeinfo;
                                 break;
@@ -821,7 +822,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::RetStmnt:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Return!\n";
-                    auto retn = (ReturnNode*)c;
+                    auto retn = static_cast<ReturnNode*>(c);
                     TypeInfo ret_typeinfo;
                     ret_typeinfo.type = SemanticType::Void;
                     AstNode* expr = nullptr;
@@ -830,8 +831,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         typeCheckPass(c,symTab);
                         ret_typeinfo = getTypeInfo(expr,symTab);
                     }
-                    std::string name = ((FuncDefNode*)currentFunc)->mfuncname;
-                    name += std::to_string(((FuncDefNode*)currentFunc)->id);
+                    std::string name = static_cast<FuncDefNode*>(currentFunc)->mfuncname;
+                    name += std::to_string(static_cast<FuncDefNode*>(currentFunc)->id);
                     //std::string name = currentFunc2;
                     auto entries = getEntry(symTab,name);
                     //TypeInfo func_typeinfo = currentFunc2->mtypeinfo;
@@ -861,7 +862,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Assign:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Assign!\n";
-                    auto assignn = (AssignNode*)c;
+                    auto assignn = static_cast<AssignNode*>(c);
                     auto lhs = assignn->getLHS();
                     auto rhs = assignn->getRHS();
                     typeCheckPass(c,symTab);
@@ -888,15 +889,16 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::VarDecAssign:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
-                    auto lhs = ((VarDecAssignNode*)c)->getLHS();
-                    auto rhs = ((VarDecAssignNode*)c)->getRHS();
+                    auto vdeca = static_cast<VarDecAssignNode*>(c);
+                    auto lhs = vdeca->getLHS();
+                    auto rhs = vdeca->getRHS();
                     typeCheckPass(c, symTab);
                     TypeInfo lhs_typeinfo = getTypeInfo(c, symTab);
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
 
                     if(lhs_typeinfo.type == SemanticType::Infer) {
                         //std::cout << "Inferred type!\n";
-                        std::string varname = ((VarNode*)lhs)->getVarName();
+                        std::string varname = static_cast<VarNode*>(lhs)->getVarName();
                         //std::cout << "Inferring type for var " << varname << '\n';
                         //std::cout << rhs_typeinfo << '\n';
                         updateVarEntry(symTab,rhs_typeinfo,varname);
@@ -912,7 +914,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             cast->fromType = rhs_typeinfo;
                             cast->toType = lhs_typeinfo;
                             cast->addChild(rhs);
-                            ((VarDecAssignNode*)c)->mchildren[1] = cast;
+                            vdeca->mchildren[1] = cast;
                         } else {
                             semanticError(SET::MissmatchVarDecAssign,c,symTab);
                         }
@@ -925,7 +927,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Prototype:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
-                    auto scope = getScope(symTab, ((PrototypeNode*)c)->mfuncname);
+                    auto scope = getScope(symTab, static_cast<PrototypeNode*>(c)->mfuncname);
                     typeCheckPass(c,scope);
                 }
                 break;
@@ -959,12 +961,12 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
     switch(ast_node_type) {
         case ANT::Const:
             {
-                return ((ConstantNode*)ast)->mtypeinfo;
+                return static_cast<ConstantNode*>(ast)->mtypeinfo;
             }
             break;
         case ANT::Var:
             {
-                std::string name = ((VarNode*)ast)->getVarName();
+                std::string name = static_cast<VarNode*>(ast)->getVarName();
                 auto entries = getEntry(symTab,name);
                 if(entries.size() > 0) {
                     SymbolTableEntry* e = entries.at(0);
@@ -977,7 +979,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDec:
             {
-                std::string name = ((VarNode*)((VarDecNode*)ast)->getLHS())->getVarName();
+                std::string name = static_cast<VarNode*>(static_cast<VarDecNode*>(ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -985,7 +987,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDecAssign:
             {
-                std::string name = ((VarNode*)((VarDecAssignNode*)ast)->getLHS())->getVarName();
+                std::string name = static_cast<VarNode*>(static_cast<VarDecAssignNode*>(ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -994,10 +996,10 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::FuncCall:
             {
                 //TODO(marcus): will have to deal with overloads somehow
-                std::string name = ((FuncCallNode*)ast)->mfuncname;
+                std::string name = static_cast<FuncCallNode*>(ast)->mfuncname;
                 auto entries = getEntry(symTab,name);
                 if(entries.size() == 0) {
-                    entries = getEntry(symTab,name,((FuncCallNode*)ast)->scopes);
+                    entries = getEntry(symTab,name,static_cast<FuncCallNode*>(ast)->scopes);
                 }
                 SymbolTableEntry* e = entries.at(0);
                 return e->node->mtypeinfo;
@@ -1007,12 +1009,12 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::BinOp:
             {
-                auto binopn = (BinOpNode*)ast;
+                auto binopn = static_cast<BinOpNode*>(ast);
                 return binopn->mtypeinfo;
             }
         case ANT::Cast:
             {
-                auto castnode = (CastNode*)ast;
+                auto castnode = static_cast<CastNode*>(ast);
                 return castnode->toType;
             }
         default:
@@ -1063,7 +1065,7 @@ void deferPass(AstNode* ast) {
             if(deferStacks.size() > 0) {
                 auto defers = deferStacks.back();
                 for(auto deferstmt = defers.rbegin(); deferstmt != defers.rend(); deferstmt++) {
-                    auto defer_node = (DeferStmtNode*)*deferstmt;
+                    auto defer_node = static_cast<DeferStmtNode*>(*deferstmt);
                     //TODO(marcus): don't hardcode child access
                     auto to_insert = defer_node->mchildren.back();
                     i = children->insert(i,to_insert);
@@ -1077,7 +1079,7 @@ void deferPass(AstNode* ast) {
             for(auto stack_iter = deferStacks.rbegin(); stack_iter != deferStacks.rend(); stack_iter++) {
                 auto def_stack = stack_iter;
                 for(auto deferstmt = def_stack->rbegin(); deferstmt != def_stack->rend(); deferstmt++) {
-                    auto defer_node = (DeferStmtNode*)*deferstmt;
+                    auto defer_node = static_cast<DeferStmtNode*>(*deferstmt);
                     //if(defer_node == nullptr) { //std::cout << "ERROR!!! NULLPTR!!!\n"; }
                     //TODO(marcus): don't hardcode child access
                     ////std::cout << defer_node->mchildren.size() << "IS THE SIZE\n";
@@ -1100,7 +1102,7 @@ void deferPass(AstNode* ast) {
         if(deferStacks.size() > 0) {
             auto defers = deferStacks.back();
             for(auto deferstmt = defers.rbegin(); deferstmt != defers.rend(); deferstmt++) {
-                auto defer_node = (DeferStmtNode*)*deferstmt;
+                auto defer_node = static_cast<DeferStmtNode*>(*deferstmt);
                 //TODO(marcus): don't hardcode child access
                 auto to_insert = defer_node->mchildren.back();
                 auto last_iter = children->end()--;
@@ -1219,7 +1221,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     //TODO(marcus): Shouold we allow mix of prototypes and mangled funcs of same name?
     //eg extern foo() and foo()
     if(e->node->nodeType() == AstNodeType::Prototype) {
-        auto funcparams = ((PrototypeNode*)e->node)->getParameters();
+        auto funcparams = static_cast<PrototypeNode*>(e->node)->getParameters();
         if(funcparams.size != funccall->mchildren.size()) {
             std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams.size << '\n';
             return false;
@@ -1253,7 +1255,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     for(auto overload : e->overloads) {
         FuncDefNode* candidate = nullptr;
         if(overload->nodeType() == AstNodeType::FuncDef) {
-            candidate = (FuncDefNode*)overload;
+            candidate = static_cast<FuncDefNode*>(overload);
         }
         auto funcparams = candidate->getParameters();
 
@@ -1307,7 +1309,7 @@ static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst) {
 }
 
 static void importPrepass(AstNode* ast, SymbolTable* symTab) {
-    auto compileunit = (CompileUnitNode*)ast;
+    auto compileunit = static_cast<CompileUnitNode*>(ast);
     auto projectSymtab = symTab->parent;
     for(auto& i : compileunit->imports) {
         auto child = projectSymtab->children.find(i);
@@ -1325,7 +1327,7 @@ void importPrepass(AstNode* ast) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
                 {
-                auto scope = getScope(&progSymTab, ((CompileUnitNode*)c)->getFileName());
+                auto scope = getScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
                 importPrepass(c, scope);
                 }
                 break;
@@ -1343,8 +1345,8 @@ void transformAssignments(AstNode* ast) {
                 {
                     auto token = c->mtoken;
                     auto t = token.type;
-                    auto lhs = ((AssignNode*)c)->getLHS();
-                    auto rhs = ((AssignNode*)c)->getRHS();
+                    auto lhs = static_cast<AssignNode*>(c)->getLHS();
+                    auto rhs = static_cast<AssignNode*>(c)->getRHS();
 
                     if(t == TokenType::assignment)
                         break;

@@ -128,7 +128,7 @@ bool isPrimitiveType(TypeInfo t) {
 
 Type* generateTypeCodegen(AstNode* n) {
     //std::cout << "Generating User Defined Type!\n";
-    StructDefNode* sdnode = (StructDefNode*)n;
+    StructDefNode* sdnode = static_cast<StructDefNode*>(n);
     //std::cout << "Type: " << sdnode->ident << "\n";
     //Check to see if we already have an opaque struct defined
     StructType* ret = getStructIRType(sdnode->ident);
@@ -152,7 +152,7 @@ Type* generateTypeCodegen(AstNode* n) {
     std::vector<Type*> memberTypes;
 
     for(auto c : *(n->getChildren())) {
-        auto var = (VarDecNode*)c;
+        auto var = static_cast<VarDecNode*>(c);
         TypeInfo typeinfo = var->mtypeinfo; 
         SemanticType stype = typeinfo.type;
         int indirection = typeinfo.indirection;
@@ -190,7 +190,7 @@ StructType* getStructIRType(std::string ident) {
 }
 
 Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
-    PrototypeNode* protonode = (PrototypeNode*) n;
+    PrototypeNode* protonode = static_cast<PrototypeNode*>(n);
     Function* defined = module->getFunction(protonode->mfuncname);
     if(defined) {
         return defined;
@@ -200,7 +200,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
     parameterTypes.reserve(vec.size);
    
     for(auto c : (vec)) {
-        ParamsNode* param_node = (ParamsNode*)c;
+        ParamsNode* param_node = static_cast<ParamsNode*>(c);
         auto sym_entry = getFirstEntry(sym, param_node->mname);
         assert(sym_entry != nullptr);
         TypeInfo info = sym_entry->typeinfo;
@@ -218,7 +218,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 
     unsigned int idx = 0;
     for(auto &Arg : F->args()) {
-        std::string name = ((ParamsNode*) (vec.ptr)[idx])->mname;
+        std::string name = static_cast<ParamsNode*>((vec.ptr)[idx])->mname;
         Arg.setName(name);
         ++idx;
     }
@@ -226,7 +226,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
-    FuncDefNode* funcnode = (FuncDefNode*) n;
+    FuncDefNode* funcnode = static_cast<FuncDefNode*>(n);
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
     std::string mangledName = funcnode->mangledName();
     Function* F = module->getFunction(mangledName);
@@ -238,7 +238,7 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
        
 
         for(auto c : vec) {
-            ParamsNode* param_node = (ParamsNode*)c;
+            ParamsNode* param_node = static_cast<ParamsNode*>(c);
             auto sym_entry = getFirstEntry(sym, param_node->mname);
             assert(sym_entry != nullptr);
             TypeInfo info = sym_entry->typeinfo;
@@ -268,7 +268,7 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
 
         unsigned int idx = 0;
         for(auto &Arg : F->args()) {
-            std::string name = ((ParamsNode*) (vec.ptr)[idx])->mname;
+            std::string name = static_cast<ParamsNode*>((vec.ptr)[idx])->mname;
             Arg.setName(name);
             ++idx;
         }
@@ -287,13 +287,13 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
         AllocaInst *alloca = Builder.CreateAlloca(Arg.getType(),0,Arg.getName()+".addr");
         Builder.CreateStore(&Arg, alloca);
         auto sym_entry = getFirstEntry(sym, Arg.getName());
-        sym_entry->address = (void*) alloca;
+        sym_entry->address = static_cast<void*>(alloca);
     }
     return F;
 }
 
 Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
-    FuncCallNode* callnode = (FuncCallNode*) n;
+    FuncCallNode* callnode = static_cast<FuncCallNode*>(n);
     Function* F;
     if(callnode->mfuncnamemangled.size() == 0) {
         F = module->getFunction(callnode->mfuncname);
@@ -324,7 +324,7 @@ Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
 
 Value* retCodegen(AstNode* n, SymbolTable* sym) {
     //std::cout << "Generating return statement\n";
-    ReturnNode* retnode = (ReturnNode*) n;
+    ReturnNode* retnode = static_cast<ReturnNode*>(n);
     auto pchildren = retnode->getChildren();
     Value* ret = nullptr;
     if(pchildren->size() > 0) {
@@ -360,7 +360,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
     switch(n->nodeType()) {
         case ANT::BinOp:
             {
-            auto binop = (BinOpNode*)n;
+            auto binop = static_cast<BinOpNode*>(n);
 
             if(binop->opOverload != nullptr) {
                 //we have an overloaded op
@@ -469,9 +469,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //need to get the address
                 Value* lhsv_ptr;
                 if(lhs->nodeType() == ANT::Var) {
-                    auto structname = ((VarNode*)lhs)->getVarName();
+                    auto structname = static_cast<VarNode*>(lhs)->getVarName();
                     auto sym_entry = getFirstEntry(sym, structname);
-                    lhsv_ptr = (Value*)sym_entry->address;
+                    lhsv_ptr = static_cast<Value*>(sym_entry->address);
                 }
                 //FIXME(marcus): need a cleaner way to get address of variables
                 //should use the symbol table instead.
@@ -491,7 +491,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 }
                 structtype = getIRType(lhs_typeinfo);
                 //auto structtype = lhsv->getType();
-                auto structmembername = ((VarNode*)rhs)->getVarName();
+                auto structmembername = static_cast<VarNode*>(rhs)->getVarName();
                 //std::cout << "member name is " << structmembername << "\n";
                 auto type_name = structtype->getStructName();
                 auto memberlist = userTypesList.find(type_name.str());
@@ -530,9 +530,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //which has been allocated on the stack.
                 if(lhs->nodeType() == AstNodeType::Var) {
                     //std::cout << "We have a var to take the address of!\n";
-                    auto varname = ((VarNode*)lhs)->getVarName();
+                    auto varname = static_cast<VarNode*>(lhs)->getVarName();
                     auto sym_entry = getFirstEntry(sym,varname);
-                    return (Value*)sym_entry->address;
+                    return static_cast<Value*>(sym_entry->address);
                 }
                 //TODO(marcus): this is wrong but will need to fix storing of variables for IR
                 //generation first. Maybe its own symbol table?
@@ -550,7 +550,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
         case ANT::Const:
             {
                 //std::cout << "generating constant!\n";
-                auto constn = (ConstantNode*)n;
+                auto constn = static_cast<ConstantNode*>(n);
                 auto strval = constn->getVal();
                 if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
@@ -600,9 +600,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
         case ANT::Var:
             {
                 //std::cout << "generating varload!\n";
-                auto varn = (VarNode*)n;
+                auto varn = static_cast<VarNode*>(n);
                 auto sym_entry = getFirstEntry(sym, varn->getVarName());
-                auto varloc = (Value*)sym_entry->address;
+                auto varloc = static_cast<Value*>(sym_entry->address);
                 if(lvalue) {
                     val = varloc;
                 } else {
@@ -620,7 +620,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             break;
         case ANT::Cast:
             {
-                CastNode* cast = (CastNode*)n;
+                CastNode* cast = static_cast<CastNode*>(n);
                 val = expressionCodegen(cast->mchildren[0], sym);
                 //TODO(marcus): make sure casts work for all types
                 if(cast->fromType.indirection > 0) {
@@ -723,8 +723,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
 
 Value* opCallCodegen(AstNode* n, SymbolTable* sym) {
     std::cout << "Generating call for overloaded op\n";
-    BinOpNode* callnode = (BinOpNode*) n;
-    FuncDefNode* funcdef = (FuncDefNode*)callnode->opOverload;
+    BinOpNode* callnode = static_cast<BinOpNode*>(n);
+    FuncDefNode* funcdef = static_cast<FuncDefNode*>(callnode->opOverload);
     auto funcname = funcdef->mangledName();
     Function* F = module->getFunction(funcname);
     if(!F) {
@@ -750,7 +750,7 @@ Value* opCallCodegen(AstNode* n, SymbolTable* sym) {
 
 void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
     //std::cout << "generating block\n";
-    auto scope = getScope(sym, "block"+std::to_string(((BlockNode*)n)->getId()));
+    auto scope = getScope(sym, "block"+std::to_string(static_cast<BlockNode*>(n)->getId()));
     std::vector<AstNode*>* vec = n->getChildren();
     for(auto c : (*vec)) {
         statementCodegen(c, continueto, breakto, scope);
@@ -759,8 +759,8 @@ void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, Symbo
 
 //TODO(marcus): see if this code needs to be merged into one function later
 void vardecCodegen(AstNode* n, SymbolTable* sym) {
-    auto vardecn = (VarDecNode*) n;
-    auto varn = (VarNode*)vardecn->mchildren.at(0);
+    auto vardecn = static_cast<VarDecNode*>(n);
+    auto varn = static_cast<VarNode*>(vardecn->mchildren.at(0));
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     auto typeinfo = symbol_table_entry->typeinfo;
     auto irtype = getIRType(typeinfo);
@@ -774,8 +774,8 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
 
 void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     //std::cout << "Generating vardec assign\n";
-    auto vardecan = (VarDecAssignNode*) n;
-    auto varn = (VarNode*)vardecan->mchildren.at(0);
+    auto vardecan = static_cast<VarDecAssignNode*>(n);
+    auto varn = static_cast<VarNode*>(vardecan->mchildren.at(0));
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     //std::cout << "Looking up entry " << varn->getVarName() << '\n';
     if(!symbol_table_entry) 
@@ -801,7 +801,7 @@ void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
 void assignCodegen(AstNode* n, SymbolTable* sym) {
     //std::cout << "Generating assingment\n";
     //TODO(marcus): don't hardcode child access
-    auto assignn = (AssignNode*)n;
+    auto assignn = static_cast<AssignNode*>(n);
     auto lhs = assignn->mchildren.at(0);
     bool lval = (lhs->nodeType() != AstNodeType::Var);
     lval = true;
@@ -811,8 +811,8 @@ void assignCodegen(AstNode* n, SymbolTable* sym) {
         auto lhsv = expressionCodegen(lhs,sym,lval);
         Builder.CreateStore(val,lhsv);
     } else {
-        auto varn = (VarNode*) assignn->mchildren.at(0);
-        Value* var = (Value*)getFirstEntry(sym,varn->getVarName())->address;
+        auto varn = static_cast<VarNode*>(assignn->mchildren.at(0));
+        Value* var = static_cast<Value*>(getFirstEntry(sym,varn->getVarName())->address);
         Builder.CreateStore(val,var);
     }
     return;
@@ -820,7 +820,7 @@ void assignCodegen(AstNode* n, SymbolTable* sym) {
 
 void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, SymbolTable* sym) {
     //std::cout << "Generating if statement\n";
-    auto ifn = (IfNode*) n;
+    auto ifn = static_cast<IfNode*>(n);
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* thenBB = BasicBlock::Create(context, "then", enclosingscope);
     BasicBlock* elseBB = BasicBlock::Create(context, "else");
@@ -846,7 +846,7 @@ void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, Symb
 }
 
 void whileloopCodegen(AstNode* n, SymbolTable* sym) {
-    auto whilen = (WhileLoopNode*) n;
+    auto whilen = static_cast<WhileLoopNode*>(n);
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* whileBB = BasicBlock::Create(context,"while",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"whilebegin",enclosingscope);
@@ -868,7 +868,7 @@ void whileloopCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 void forloopCodegen(AstNode* n, SymbolTable* sym) {
-    auto forn = (ForLoopNode*) n;
+    auto forn = static_cast<ForLoopNode*>(n);
     auto scope = getScope(sym, "for"+std::to_string(forn->getId()));
     sym = scope;
     auto inits = forn->getInit();
@@ -954,7 +954,7 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
                 break;
         case ANT::WhileLoop:
                 {
-                auto scope = getScope(sym, "while"+std::to_string(((WhileLoopNode*)n)->getId()));
+                auto scope = getScope(sym, "while"+std::to_string(static_cast<WhileLoopNode*>(n)->getId()));
                 whileloopCodegen(n, scope);
                 }
                 break;
@@ -982,7 +982,7 @@ void typeGenerateIR(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::CompileUnit:
             {
-                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                auto scope = getScope(sym, static_cast<CompileUnitNode*>(ast)->getFileName());
                 std::vector<AstNode*>* vec = ast->getChildren();
                 for(auto c : (*vec)) {
                     typeGenerateIR(c,scope);
@@ -1019,21 +1019,22 @@ void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                auto scope = getScope(sym, static_cast<PrototypeNode*>(ast)->mfuncname);
                 prototypeCodegen(ast, scope);
                 return;
             }
             break;
         case ANT::FuncDef:
             {
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
+                auto fdef = static_cast<FuncDefNode*>(ast);
+                auto scope = getScope(sym, fdef->mfuncname + std::to_string(fdef->id));
                 functionCodegen(ast, scope, true);
                return;
             }
             break;
         case ANT::CompileUnit:
             {
-                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                auto scope = getScope(sym, static_cast<CompileUnitNode*>(ast)->getFileName());
                 std::vector<AstNode*>* vec = ast->getChildren();
                 for(auto c : (*vec)) {
                     prepassGenerateIR(c,scope);
@@ -1071,7 +1072,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname);
+                auto scope = getScope(sym, static_cast<PrototypeNode*>(ast)->mfuncname);
                 prototypeCodegen(ast, scope);
                 return;
             }
@@ -1079,16 +1080,17 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
         case ANT::FuncDef:
             {
                 //std::cout << "Generating FuncDef IR\n";
-                auto scope = getScope(sym, ((FuncDefNode*)ast)->mfuncname + std::to_string(((FuncDefNode*)ast)->id));
+                auto fdef = static_cast<FuncDefNode*>(ast);
+                auto scope = getScope(sym, fdef->mfuncname + std::to_string(fdef->id));
                 functionCodegen(ast, scope);
-               statementCodegen(((FuncDefNode*)ast)->getFunctionBody(),nullptr,nullptr,scope);
+               statementCodegen(fdef->getFunctionBody(),nullptr,nullptr,scope);
                //verifyFunction(*F);
                return;
             }
             break;
         case ANT::CompileUnit:
             {
-                auto scope = getScope(sym, ((CompileUnitNode*)ast)->getFileName());
+                auto scope = getScope(sym, static_cast<CompileUnitNode*>(ast)->getFileName());
                 std::vector<AstNode*>* vec = ast->getChildren();
                 for(auto c : (*vec)) {
                     generateIR_llvm(c,scope);

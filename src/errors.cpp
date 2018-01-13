@@ -159,12 +159,12 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::NoFunc:
         {
-            ERROR("Error: No Function named " << ((FuncCallNode*)n)->mfuncname << " is defined!\n");
+            ERROR("Error: No Function named " << static_cast<FuncCallNode*>(n)->mfuncname << " is defined!\n");
         }
         break;
         case SET::MissmatchBinop:
         {
-            auto binop = (BinOpNode*)n;
+            auto binop = static_cast<BinOpNode*>(n);
             auto lt = binop->LHS()->mtypeinfo;
             auto rt = binop->RHS()->mtypeinfo;
             ERROR("Binary Operator had conflicting types: " << lt << " binop " << rt << '\n');
@@ -172,7 +172,7 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::MissmatchReturnType:
         {
-            auto retn = (ReturnNode*)n;
+            auto retn = static_cast<ReturnNode*>(n);
             auto lt = retn->mchildren.at(0)->mtypeinfo;
             auto rt = retn->mtypeinfo;
             ERROR("Return value of type " << lt << " does not match function type " << rt << '\n');
@@ -180,7 +180,7 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::MissmatchAssign:
         {
-            auto assignn = (AssignNode*)n;
+            auto assignn = static_cast<AssignNode*>(n);
             auto lt = assignn->getLHS()->mtypeinfo;
             auto rt = assignn->getRHS()->mtypeinfo;
             ERROR("Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
@@ -188,7 +188,7 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::MissmatchVarDecAssign:
         {
-            auto vdassignn = (VarDecAssignNode*)n;
+            auto vdassignn = static_cast<VarDecAssignNode*>(n);
             auto lt = vdassignn->getLHS()->mtypeinfo;
             auto rt = vdassignn->getRHS()->mtypeinfo;
             ERROR("Variable Decl and Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');
@@ -196,14 +196,14 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::DerefNonPointer:
         {
-            auto binop = (BinOpNode*)n;
+            auto binop = static_cast<BinOpNode*>(n);
             auto lt = binop->LHS()->mtypeinfo;
             ERROR("Cannot Derefernece value, type " << lt << " is not a pointer\n");
         }
         break;
         case SemanticErrorType::NotLValue:
         {
-            auto assignn = (AssignNode*)n;
+            auto assignn = static_cast<AssignNode*>(n);
             auto name = assignn->getLHS()->mtoken.token;
             ERROR("Error, attempting to assign " << name << " to something that is not an lvalue!\n");
         }
@@ -217,28 +217,28 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::UndefUse:
         {
-            std::string name = ((VarNode*)(n))->getVarName();
+            std::string name = static_cast<VarNode*>(n)->getVarName();
             ERROR("Error: Variable " << name << " used before it was defined!\n");
         }
         break;
         case SemanticErrorType::DupFuncDef:
         {
-            ERROR("Duplicate defeinition of function " << ((FuncDefNode*)n)->mfuncname << "\n");
+            ERROR("Duplicate defeinition of function " << static_cast<FuncDefNode*>(n)->mfuncname << "\n");
         }
         break;
         case SemanticErrorType::MultipleFuncResolve:
         {
-            ERROR("Could not resolve function call of function " << ((FuncCallNode*)n)->mfuncname << "\n");
+            ERROR("Could not resolve function call of function " << static_cast<FuncCallNode*>(n)->mfuncname << "\n");
         }
         break;
         case SemanticErrorType::NoResolve:
         {
-            ERROR("No function match found for " << ((FuncCallNode*)n)->mfuncname << "\n");
+            ERROR("No function match found for " << static_cast<FuncCallNode*>(n)->mfuncname << "\n");
         }
         break;
         case SemanticErrorType::NoFunction:
         {
-            ERROR("No function named " << ((FuncCallNode*)n)->mfuncname << " found\n"); 
+            ERROR("No function named " << static_cast<FuncCallNode*>(n)->mfuncname << " found\n");
         }
         break;
         case SemanticErrorType::Unknown:

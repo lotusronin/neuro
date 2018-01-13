@@ -85,6 +85,12 @@ void Parser::setLexer(LexerTarget* _lexer) {
 ProgramNode* program;
 
 void printSizes() {
+    std::cout << "int " << sizeof(int) << '\n';
+    std::cout << "const char* " << sizeof(const char*) << '\n';
+    std::cout << "semantic_type " << sizeof(SemanticType) << '\n';
+    std::cout << "string " << sizeof(std::string) << '\n';
+    std::cout << "token " << sizeof(Token) << '\n';
+    std::cout << "typeinfo " << sizeof(TypeInfo) << '\n';
     std::cout << "astnode " << sizeof(AstNode) << '\n';
     std::cout << "program " << sizeof(ProgramNode) << '\n';
     std::cout << "compileunit " << sizeof(CompileUnitNode) << '\n';
@@ -104,9 +110,11 @@ void printSizes() {
     std::cout << "var " << sizeof(VarNode) << '\n';
     std::cout << "binop " << sizeof(BinOpNode) << '\n';
     std::cout << "constant " << sizeof(ConstantNode) << '\n';
+    std::cout << "sizeof " << sizeof(SizeOfNode) << '\n';
     std::cout << "assign " << sizeof(AssignNode) << '\n';
     std::cout << "structdef " << sizeof(StructDefNode) << '\n';
     std::cout << "cast " << sizeof(CastNode) << '\n';
+    std::cout << "vec<astnode*> " << sizeof(std::vector<AstNode*>) << '\n';
 }
 
 
@@ -139,7 +147,7 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
             //std::cout << "Function Definitions matched\n";
         } else if(tok.type == TokenType::foreign) {
             //std::cout << "extern token, beginning to match prototype...\n";
-            parsePrototypeOrStruct(lexer, (CompileUnitNode*)parent);
+            parsePrototypeOrStruct(lexer, static_cast<CompileUnitNode*>(parent));
             ////std::cout << "prototype matched\n";
         } else if(tok.type == TokenType::tstruct) {
             parseStructDef(lexer, parent);
@@ -169,7 +177,7 @@ void parseImportStatement(LexerTarget* lexer, AstNode* parent) {
     lexer->lex();
 
     if(!fileImported(newfilename)) {
-        ((CompileUnitNode*)parent)->imports.push_back(newfilename);
+        static_cast<CompileUnitNode*>(parent)->imports.push_back(newfilename);
         CompileUnitNode* compunit = importFile(newfilename);
         LexerTarget importlex = LexerTarget(newfilename, lexer->isDebug());
         importlex.lexFile();
@@ -190,7 +198,7 @@ void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
         //consume extern;
         lexer->lex();
         parseStructDef(lexer, parent);
-        ((StructDefNode*)(parent->mchildren.back()))->foreign = true;
+        static_cast<StructDefNode*>(parent->mchildren.back())->foreign = true;
         std::cout << "opaque struct found!\n";
     } else {
         parse_error(PET::MissForeign, tok, lexer);
@@ -485,13 +493,13 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     //consume id
     lexer->lex();
     //consume :
-    Token tok = lexer->lex();
+    lexer->lex();
     VarNode* vnode = new VarNode();
     vnode->mtoken = tokid;
     vnode->addVarName(tokid.token);
 
     parseOptType(lexer,vnode);
-    tok = lexer->peek();
+    Token tok = lexer->peek();
 
     //Token nextTok = lexer->peekNext();
     // id : . type = expression
@@ -832,7 +840,7 @@ void parseScopedFunccall(LexerTarget* lexer, AstNode* parent) {
         parse_error(PET::MultipleScope,tok,lexer);
     }
     parseFunccall(lexer,parent);
-    ((FuncCallNode*)(parent->mchildren.back()))->scopes = scope;
+    static_cast<FuncCallNode*>(parent->mchildren.back())->scopes = scope;
 }
 
 void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
@@ -915,9 +923,8 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
 
 void parseOptargs2(LexerTarget* lexer, AstNode* parent) {
     //opt_args2 -> . id | . id , opt_args2
-    Token tok = lexer->peek();
     parseExpression(lexer, parent);
-    tok = lexer->peek();
+    Token tok = lexer->peek();
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
@@ -1122,11 +1129,10 @@ AstNode* parseInfix(LexerTarget* lexer) {
 }
 
 AstNode* parseParenGroup(LexerTarget* lexer) {
-    Token t = lexer->peek();
     //consume (
     lexer->lex();
     auto child = parseExpression(lexer, 0);
-    t = lexer->peek();
+    Token t = lexer->peek();
     if(t.type != TokenType::rparen) {
         parse_error(PET::MissRParen, t, lexer);
     }
@@ -1268,14 +1274,14 @@ AstNode* parseExpression(LexerTarget* lexer, int precedence) {
             case TokenType::greaterthan:
             case TokenType::gtequal:
                 {
-                    BinOpNode* tmpN = (BinOpNode*) parseInfix(lexer);
+                    BinOpNode* tmpN = static_cast<BinOpNode*>(parseInfix(lexer));
                     tmpN->setLHS(left);
                     left = tmpN;
                 }
                 break;
             case TokenType::lsqrbrace:
                 {
-                    BinOpNode* tmpN = (BinOpNode*) parseArrInd(lexer);
+                    BinOpNode* tmpN = static_cast<BinOpNode*>(parseArrInd(lexer));
                     tmpN->setLHS(left);
                     left = tmpN;
                 }
