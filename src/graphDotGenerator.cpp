@@ -34,7 +34,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::Prototype:
             {
-                auto proto = static_cast<PrototypeNode*>(ast);
+                auto proto = static_cast<FuncDefNode*>(ast);
                 id = proto->id;
                 outfile << "prototype" << id << ";\n";
                 outfile << "prototype" << id << "[label=\"extern fn "<<proto->mfuncname<<"\"];\n";
@@ -61,7 +61,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::VarDec:
             {
-                id = static_cast<VarDecNode*>(ast)->id;
+                id = static_cast<VarDeclNode*>(ast)->id;
                 outfile << "vardec" << id << ";\n";
                 outfile << "vardec" << id << "[label=\"vardec\"];\n";
                 header = "vardec";
@@ -69,7 +69,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::VarDecAssign:
             {
-                id = static_cast<VarDecAssignNode*>(ast)->id;
+                id = static_cast<VarDeclNode*>(ast)->id;
                 outfile << "vardecassign" << id << ";\n";
                 outfile << "vardecassign" << id << "[label=\"vardecassign\"];\n";
                 header = "vardecassign";
@@ -111,7 +111,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::ForLoop:
             {
-                id = static_cast<ForLoopNode*>(ast)->id;
+                id = static_cast<LoopNode*>(ast)->id;
                 outfile << "forloop" << id << ";\n";
                 outfile << "forloop" << id << "[label=\"for\"];\n";
                 header = "forloop";
@@ -127,7 +127,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
             break;
         case ANT::WhileLoop:
             {
-                id = static_cast<WhileLoopNode*>(ast)->id;
+                id = static_cast<LoopNode*>(ast)->id;
                 outfile << "whileloop" << id << ";\n";
                 outfile << "whileloop" << id << "[label=\"while\"];\n";
                 header = "whileloop";

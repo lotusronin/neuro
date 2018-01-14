@@ -79,13 +79,11 @@ void addFuncEntry(SymbolTable* s, SemanticType t, AstNode* n, const std::vector<
     entry->typeinfo.type = t;
     entry->typeinfo.userid = n->mtypeinfo.userid;
     entry->funcParams = p;
-    std::string funcname;
-    if(n->nodeType() == AstNodeType::Prototype) {
-        funcname = static_cast<PrototypeNode*>(n)->mfuncname;
-    } else {
-        funcname = static_cast<FuncDefNode*>(n)->mfuncname;
+    std::string funcname = static_cast<FuncDefNode*>(n)->mfuncname;
+    if(n->nodeType() == AstNodeType::FuncDef) {
         funcname += std::to_string(static_cast<FuncDefNode*>(n)->id);
     }
+
     s->table.insert(std::make_pair(funcname,entry));
 }
 

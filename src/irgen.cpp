@@ -152,7 +152,7 @@ Type* generateTypeCodegen(AstNode* n) {
     std::vector<Type*> memberTypes;
 
     for(auto c : *(n->getChildren())) {
-        auto var = static_cast<VarDecNode*>(c);
+        auto var = static_cast<VarDeclNode*>(c);
         TypeInfo typeinfo = var->mtypeinfo; 
         SemanticType stype = typeinfo.type;
         int indirection = typeinfo.indirection;
@@ -190,7 +190,7 @@ StructType* getStructIRType(std::string ident) {
 }
 
 Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
-    PrototypeNode* protonode = static_cast<PrototypeNode*>(n);
+    FuncDefNode* protonode = static_cast<FuncDefNode*>(n);
     Function* defined = module->getFunction(protonode->mfuncname);
     if(defined) {
         return defined;
@@ -759,7 +759,7 @@ void blockCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, Symbo
 
 //TODO(marcus): see if this code needs to be merged into one function later
 void vardecCodegen(AstNode* n, SymbolTable* sym) {
-    auto vardecn = static_cast<VarDecNode*>(n);
+    auto vardecn = static_cast<VarDeclNode*>(n);
     auto varn = static_cast<VarNode*>(vardecn->mchildren.at(0));
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     auto typeinfo = symbol_table_entry->typeinfo;
@@ -774,7 +774,7 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
 
 void vardecassignCodegen(AstNode* n, SymbolTable* sym) {
     //std::cout << "Generating vardec assign\n";
-    auto vardecan = static_cast<VarDecAssignNode*>(n);
+    auto vardecan = static_cast<VarDeclNode*>(n);
     auto varn = static_cast<VarNode*>(vardecan->mchildren.at(0));
     auto symbol_table_entry = getFirstEntry(sym,varn->getVarName());
     //std::cout << "Looking up entry " << varn->getVarName() << '\n';
@@ -846,7 +846,7 @@ void ifelseCodegen(AstNode* n, BasicBlock* continueto, BasicBlock* breakto, Symb
 }
 
 void whileloopCodegen(AstNode* n, SymbolTable* sym) {
-    auto whilen = static_cast<WhileLoopNode*>(n);
+    auto whilen = static_cast<LoopNode*>(n);
     auto enclosingscope = Builder.GetInsertBlock()->getParent();
     BasicBlock* whileBB = BasicBlock::Create(context,"while",enclosingscope);
     BasicBlock* beginBB = BasicBlock::Create(context,"whilebegin",enclosingscope);
@@ -868,7 +868,7 @@ void whileloopCodegen(AstNode* n, SymbolTable* sym) {
 }
 
 void forloopCodegen(AstNode* n, SymbolTable* sym) {
-    auto forn = static_cast<ForLoopNode*>(n);
+    auto forn = static_cast<LoopNode*>(n);
     auto scope = getScope(sym, "for"+std::to_string(forn->getId()));
     sym = scope;
     auto inits = forn->getInit();
@@ -954,7 +954,7 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
                 break;
         case ANT::WhileLoop:
                 {
-                auto scope = getScope(sym, "while"+std::to_string(static_cast<WhileLoopNode*>(n)->getId()));
+                auto scope = getScope(sym, "while"+std::to_string(static_cast<LoopNode*>(n)->getId()));
                 whileloopCodegen(n, scope);
                 }
                 break;
@@ -1019,7 +1019,7 @@ void prepassGenerateIR(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                auto scope = getScope(sym, static_cast<PrototypeNode*>(ast)->mfuncname);
+                auto scope = getScope(sym, static_cast<FuncDefNode*>(ast)->mfuncname);
                 prototypeCodegen(ast, scope);
                 return;
             }
@@ -1072,7 +1072,7 @@ void generateIR_llvm(AstNode* ast, SymbolTable* sym) {
     switch(ast->nodeType()) {
         case ANT::Prototype:
             {
-                auto scope = getScope(sym, static_cast<PrototypeNode*>(ast)->mfuncname);
+                auto scope = getScope(sym, static_cast<FuncDefNode*>(ast)->mfuncname);
                 prototypeCodegen(ast, scope);
                 return;
             }

@@ -4,13 +4,13 @@
 
 int FuncDefNode::count = 0;
 
-FuncDefNode::FuncDefNode() {
+FuncDefNode::FuncDefNode(AstNodeType ntype) {
     id = FuncDefNode::count;
     FuncDefNode::count++;
     mchildren.reserve(8);
     isOperatorOverload = 0;
     op = nullptr;
-    mnodet = AstNodeType::FuncDef;
+    mnodet = ntype;
 }
 
 FuncDefNode::~FuncDefNode() {
@@ -24,23 +24,15 @@ void FuncDefNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
 }
 
-std::vector<AstNode*>* FuncDefNode::getChildren() {
-    return &mchildren;
-}
-
-SemanticType FuncDefNode::getType() {
-    return mtypeinfo.type;
-}
-
 ArrayView FuncDefNode::getParameters() {
-    auto s = mchildren.size() - 1;
+    auto s = mchildren.size();
+    if(mnodet == AstNodeType::FuncDef) s -= 1;
     auto p = s ? &mchildren[0] : nullptr;
     ArrayView params(p,s);
     return params;
 }
 
 AstNode* FuncDefNode::getFunctionBody() {
-    //return mparams.back();
     return mchildren.back();
 }
 

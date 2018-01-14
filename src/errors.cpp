@@ -188,7 +188,7 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         break;
         case SemanticErrorType::MissmatchVarDecAssign:
         {
-            auto vdassignn = static_cast<VarDecAssignNode*>(n);
+            auto vdassignn = static_cast<VarDeclNode*>(n);
             auto lt = vdassignn->getLHS()->mtypeinfo;
             auto rt = vdassignn->getRHS()->mtypeinfo;
             ERROR("Variable Decl and Assign Type Error: Cannot assign " << rt << " to a variable of type " << lt << '\n');

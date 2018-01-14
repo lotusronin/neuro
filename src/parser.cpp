@@ -94,14 +94,11 @@ void printSizes() {
     std::cout << "astnode " << sizeof(AstNode) << '\n';
     std::cout << "program " << sizeof(ProgramNode) << '\n';
     std::cout << "compileunit " << sizeof(CompileUnitNode) << '\n';
-    std::cout << "prototype " << sizeof(PrototypeNode) << '\n';
     std::cout << "funcdef " << sizeof(FuncDefNode) << '\n';
     std::cout << "params " << sizeof(ParamsNode) << '\n';
     std::cout << "block " << sizeof(BlockNode) << '\n';
-    std::cout << "vdeca " << sizeof(VarDecAssignNode) << '\n';
-    std::cout << "vdec " << sizeof(VarDecNode) << '\n';
-    std::cout << "for " << sizeof(ForLoopNode) << '\n';
-    std::cout << "while " << sizeof(WhileLoopNode) << '\n';
+    std::cout << "vdecl " << sizeof(VarDeclNode) << '\n';
+    std::cout << "loop " << sizeof(LoopNode) << '\n';
     std::cout << "return " << sizeof(ReturnNode) << '\n';
     std::cout << "defer " << sizeof(DeferStmtNode) << '\n';
     std::cout << "loopstmt " << sizeof(LoopStmtNode) << '\n';
@@ -207,7 +204,7 @@ void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
 
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
     //prototypes -> . extern fn id ( opt_params ) : type ;
-    PrototypeNode* protonode = new PrototypeNode();
+    FuncDefNode* protonode = new FuncDefNode(AstNodeType::Prototype);
     //consume extern
     Token tok = lexer->lex();
     if(tok.type != TokenType::fn) {
@@ -509,7 +506,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
         // id : . = expression
         //we have type inferenced declaration assignment
-        VarDecAssignNode* vdecassignnode = new VarDecAssignNode();
+        VarDeclNode* vdecassignnode = new VarDeclNode(AstNodeType::VarDecAssign);
         vdecassignnode->mtoken = tok;
         vdecassignnode->addChild(vnode);
         parent->addChild(vdecassignnode);
@@ -520,7 +517,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             //std::cout << "var declaration only\n";
             //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
             //we have a declaration
-            VarDecNode* vdecnode = new VarDecNode();
+            VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
     } else {
@@ -545,7 +542,7 @@ bool tokenIsOperator(Token& t) {
 void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //functiondefs -> . fn id ( opt_params ) : type block
     //consume fn
-    FuncDefNode* funcnode = new FuncDefNode();
+    FuncDefNode* funcnode = new FuncDefNode(AstNodeType::FuncDef);
     parent->addChild(funcnode);
     Token tok = lexer->lex();
     //std::cout << tok.token << '\n';
@@ -721,7 +718,7 @@ void parseLoop(LexerTarget* lexer, AstNode* parent) {
 
 void parseForLoop(LexerTarget* lexer, AstNode* parent) {
     //forloop -> . for ( vardecassign ; conditional ; expr )
-    ForLoopNode* fornode = new ForLoopNode();
+    LoopNode* fornode = new LoopNode(AstNodeType::ForLoop);
     parent->addChild(fornode);
     //std::cout << "Parsing for loop!!\n";
     //consume for
@@ -759,7 +756,7 @@ void parseForLoop(LexerTarget* lexer, AstNode* parent) {
 
 void parseWhileLoop(LexerTarget* lexer, AstNode* parent) {
     //whileloop -> . while ( expression )
-    WhileLoopNode* whilenode = new WhileLoopNode();
+    LoopNode* whilenode = new LoopNode(AstNodeType::WhileLoop);
     parent->addChild(whilenode);
     //std::cout << "Parsing while loop!!\n";
     //consume while
@@ -1009,7 +1006,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         //std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
         
         //we have a declaration
-        VarDecNode* vdecnode = new VarDecNode();
+        VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
         VarNode* vnode = new VarNode();
         vnode->addVarName(tokid.token);
         vdecnode->addChild(vnode);

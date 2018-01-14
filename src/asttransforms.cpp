@@ -51,7 +51,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::Prototype:
             {
-                std::string name = static_cast<PrototypeNode*>(ast)->mfuncname;
+                std::string name = static_cast<FuncDefNode*>(ast)->mfuncname;
                 scope = getScope(symTab, name);
             }
             break;
@@ -60,11 +60,11 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             break;
         case ANT::ForLoop:
             nextLoopDepth += 1;
-            scope = getScope(symTab, "for"+std::to_string(static_cast<ForLoopNode*>(ast)->getId()));
+            scope = getScope(symTab, "for"+std::to_string(static_cast<LoopNode*>(ast)->getId()));
             break;
         case ANT::WhileLoop:
             nextLoopDepth += 1;
-            scope = getScope(symTab, "while"+std::to_string(static_cast<WhileLoopNode*>(ast)->getId()));
+            scope = getScope(symTab, "while"+std::to_string(static_cast<LoopNode*>(ast)->getId()));
             break;
         case ANT::LoopStmt:
             if(loopDepth == 0) {
@@ -114,7 +114,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                     TypeInfo typeinfo = static_cast<VarNode*>(ast->getChildren()->at(0))->mtypeinfo;
                     if(typeinfo.type == SemanticType::Typeless) typeinfo.type = SemanticType::Infer;
                     addVarEntry(symTab, typeinfo, name);
-                    auto rhs = static_cast<VarDecAssignNode*>(ast)->getRHS();
+                    auto rhs = static_cast<VarDeclNode*>(ast)->getRHS();
                     semanticPass1(rhs, nextLoopDepth, symTab);
                     return;
                 }
@@ -207,7 +207,7 @@ static void registerTypeDef(StructDefNode* n) {
             //definitions.
             continue;
         }
-        auto vdec = static_cast<VarDecNode*>(c);
+        auto vdec = static_cast<VarDeclNode*>(c);
         auto v = static_cast<VarNode*>(vdec->getLHS());
         std::string member_name = v->getVarName();
         member_map->insert(std::make_pair(member_name,index));
@@ -279,7 +279,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
         switch(c->nodeType()) {
             case ANT::Prototype:
                 {
-                    auto proto = static_cast<PrototypeNode*>(c);
+                    auto proto = static_cast<FuncDefNode*>(c);
                     retType = proto->getType();
                     auto params = proto->getParameters();
                     for(auto prm : (params)) {
@@ -604,14 +604,14 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::ForLoop:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " For!\n";
-                    auto scope = getScope(symTab, "for"+std::to_string(static_cast<ForLoopNode*>(c)->getId()));
+                    auto scope = getScope(symTab, "for"+std::to_string(static_cast<LoopNode*>(c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
             case ANT::WhileLoop:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " While!\n";
-                    auto scope = getScope(symTab, "while"+std::to_string(static_cast<WhileLoopNode*>(c)->getId()));
+                    auto scope = getScope(symTab, "while"+std::to_string(static_cast<LoopNode*>(c)->getId()));
                     typeCheckPass(c,scope);
                 }
                 break;
@@ -716,7 +716,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         if(tmp == structList.end()) std::cout << "Error, struct not found...\n";
                         auto strdef = tmp->second;
                         for(auto member : strdef->mchildren) {
-                            auto vardec = static_cast<VarDecNode*>(member);
+                            auto vardec = static_cast<VarDeclNode*>(member);
                             auto var = static_cast<VarNode*>(vardec->mchildren[0]);
                             if(var->getVarName() == membername) {
                                 binopn->mtypeinfo = var->mtypeinfo;
@@ -889,7 +889,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::VarDecAssign:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
-                    auto vdeca = static_cast<VarDecAssignNode*>(c);
+                    auto vdeca = static_cast<VarDeclNode*>(c);
                     auto lhs = vdeca->getLHS();
                     auto rhs = vdeca->getRHS();
                     typeCheckPass(c, symTab);
@@ -927,7 +927,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Prototype:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Prototype!\n";
-                    auto scope = getScope(symTab, static_cast<PrototypeNode*>(c)->mfuncname);
+                    auto scope = getScope(symTab, static_cast<FuncDefNode*>(c)->mfuncname);
                     typeCheckPass(c,scope);
                 }
                 break;
@@ -979,7 +979,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDec:
             {
-                std::string name = static_cast<VarNode*>(static_cast<VarDecNode*>(ast)->getLHS())->getVarName();
+                std::string name = static_cast<VarNode*>(static_cast<VarDeclNode*>(ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -987,7 +987,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
             break;
         case ANT::VarDecAssign:
             {
-                std::string name = static_cast<VarNode*>(static_cast<VarDecAssignNode*>(ast)->getLHS())->getVarName();
+                std::string name = static_cast<VarNode*>(static_cast<VarDeclNode*>(ast)->getLHS())->getVarName();
                 auto entries = getEntry(symTab,name);
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
@@ -1221,7 +1221,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     //TODO(marcus): Shouold we allow mix of prototypes and mangled funcs of same name?
     //eg extern foo() and foo()
     if(e->node->nodeType() == AstNodeType::Prototype) {
-        auto funcparams = static_cast<PrototypeNode*>(e->node)->getParameters();
+        auto funcparams = static_cast<FuncDefNode*>(e->node)->getParameters();
         if(funcparams.size != funccall->mchildren.size()) {
             std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams.size << '\n';
             return false;

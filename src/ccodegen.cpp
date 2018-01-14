@@ -72,12 +72,7 @@ void genCFile(std::string filename, const std::vector<SymbolTableEntry*>& export
         if(!isPrimitiveType(entry->type)) {
             types.insert(retType);
         }
-        std::string funcname;
-        if(n->nodeType() == AstNodeType::Prototype) {
-            funcname = static_cast<PrototypeNode*>(n)->mfuncname;
-        } else {
-            funcname = static_cast<FuncDefNode*>(n)->mfuncname;
-        }
+        std::string funcname = static_cast<FuncDefNode*>(n)->mfuncname;
         exported_func.push_back(funcname);
 
     //std::vector<std::pair<SemanticType,AstNode*>> funcParams;

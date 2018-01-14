@@ -1,23 +1,21 @@
-#ifndef WHILELOOPNODE_H
-#define WHILELOOPNODE_H
+#ifndef LOOPNODE_H
+#define LOOPNODE_H
 
 #include <vector>
-#include <string>
 #include "astnode.h"
 
-class WhileLoopNode : public AstNode {
+class LoopNode : public AstNode {
     public:
         static int count;
-        WhileLoopNode();
-        ~WhileLoopNode();
+        LoopNode(AstNodeType ntype);
+        ~LoopNode();
         void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         AstNode* getConditional();
+        AstNode* getUpdate();
+        AstNode* getInit();
         AstNode* getBody();
         int getId();
         int id;
 };
-
-
 
 #endif
