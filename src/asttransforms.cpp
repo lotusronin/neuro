@@ -224,7 +224,10 @@ void populateTypeList(AstNode* ast, SymbolTable* sym) {
     for(auto c : (*(ast->getChildren()))) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
-                populateTypeList(c);
+                {
+                    auto scope = addNewScope(sym, static_cast<CompileUnitNode*>(c)->getFileName());
+                    populateTypeList(c, scope);
+                }
                 break;
             case ANT::StructDef:
                 //parse definition!
@@ -237,35 +240,11 @@ void populateTypeList(AstNode* ast, SymbolTable* sym) {
     }
 }
 void populateTypeList(AstNode* ast) {
-    for(auto c : (*(ast->getChildren()))) {
-        switch(c->nodeType()) {
-            case ANT::CompileUnit:
-                {
-                    auto scope = addNewScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
-                    populateTypeList(c, scope);
-                }
-                break;
-            default:
-                continue;
-                break;
-        }
-    }
+    populateTypeList(ast,&progSymTab);
 }
 
 void populateSymbolTableFunctions(AstNode* ast) {
-    for(auto c : (*(ast->getChildren()))) {
-        switch(c->nodeType()) {
-            case ANT::CompileUnit:
-                {
-                auto scope = addNewScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
-                populateSymbolTableFunctions(c, scope);
-                }
-                break;
-            default:
-                //std::cout << "unknown ast node type!\n";
-                break;
-        }
-    }
+    populateSymbolTableFunctions(ast,&progSymTab);
 }
 
 SymbolTable* getSymtab(std::string& file) {
@@ -277,6 +256,12 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
         std::vector<std::pair<TypeInfo,AstNode*>> p;
         SemanticType retType;
         switch(c->nodeType()) {
+            case ANT::CompileUnit:
+                {
+                    auto scope = addNewScope(symTab, static_cast<CompileUnitNode*>(c)->getFileName());
+                    populateSymbolTableFunctions(c, scope);
+                }
+                break;
             case ANT::Prototype:
                 {
                     auto proto = static_cast<FuncDefNode*>(c);
@@ -902,6 +887,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //std::cout << "Inferring type for var " << varname << '\n';
                         //std::cout << rhs_typeinfo << '\n';
                         updateVarEntry(symTab,rhs_typeinfo,varname);
+                        c->mtypeinfo = rhs_typeinfo;
                         break;
                     }
 
@@ -931,6 +917,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     typeCheckPass(c,scope);
                 }
                 break;
+                /*
             case ANT::Params:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " Params!\n";
@@ -945,6 +932,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::Const:
                 //std::cout << __FILE__ << ':' << __FUNCTION__ << " Constant!\n";
                 break;
+                */
             case ANT::StructDef:
                 {
                     typeCheckPass(c,symTab);
@@ -1293,7 +1281,7 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
         auto mangled = matchedNode->mangledName();
         //std::cout << "Matched: " << mangled << '\n';
         //std::cout << "Replacing function call name\n";
-        funccall->mfuncnamemangled = mangled;
+        funccall->func = matchedNode;
     } else {
         semanticError(SemanticErrorType::NoResolve, funccall, symTab);
     }
@@ -1305,7 +1293,7 @@ static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst) {
     //an operator overload
     bool lhs_is_user = ((lhst.type == SemanticType::User) && (lhst.indirection == 0));
     bool rhs_is_user = ((rhst.type == SemanticType::User) && (rhst.indirection == 0));
-    return (lhs_is_user | rhs_is_user);
+    return (lhs_is_user || rhs_is_user);
 }
 
 static void importPrepass(AstNode* ast, SymbolTable* symTab) {
@@ -1324,16 +1312,9 @@ static void importPrepass(AstNode* ast, SymbolTable* symTab) {
 
 void importPrepass(AstNode* ast) {
     for(auto c : (*(ast->getChildren()))) {
-        switch(c->nodeType()) {
-            case ANT::CompileUnit:
-                {
-                auto scope = getScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
-                importPrepass(c, scope);
-                }
-                break;
-            default:
-                //std::cout << "unknown ast node type!\n";
-                break;
+        if(c->nodeType() == ANT::CompileUnit) {
+            auto scope = getScope(&progSymTab, static_cast<CompileUnitNode*>(c)->getFileName());
+            importPrepass(c,scope);
         }
     }
 }

@@ -295,10 +295,10 @@ Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
 Value* funcCallCodegen(AstNode* n, SymbolTable* sym) {
     FuncCallNode* callnode = static_cast<FuncCallNode*>(n);
     Function* F;
-    if(callnode->mfuncnamemangled.size() == 0) {
+    if(callnode->func == nullptr) {
         F = module->getFunction(callnode->mfuncname);
     } else {
-        F = module->getFunction(callnode->mfuncnamemangled);
+        F = module->getFunction(callnode->func->mangledName());
     }
     if(!F) {
         std::cout << "Function lookup for " << callnode->mfuncname << " not found!\n";

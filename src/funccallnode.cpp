@@ -6,19 +6,12 @@ FuncCallNode::FuncCallNode() {
     id = FuncCallNode::count;
     FuncCallNode::count++;
     mnodet = AstNodeType::FuncCall;
+    func = nullptr;
 }
 
 FuncCallNode::~FuncCallNode() {
 }
 
-void FuncCallNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
 void FuncCallNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
-}
-
-std::vector<AstNode*>* FuncCallNode::getChildren() {
-    return &mchildren;
 }
