@@ -21,7 +21,6 @@ void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent);
 void parseStructDef(LexerTarget* lexer, AstNode* parent);
 void parseStructDefBody(LexerTarget* lexer, AstNode* parent);
 void parseOptparams(LexerTarget* lexer, AstNode* parent);
-void parseOptparams2(LexerTarget* lexer, AstNode* parent);
 void parseType(LexerTarget* lexer, AstNode* parent);
 void parseVar(LexerTarget* lexer, AstNode* parent);
 void parseVarAssign(LexerTarget* lexer, AstNode* parent);
@@ -31,7 +30,6 @@ void parseBlock(LexerTarget* lexer, AstNode* parent);
 void parseStatementList(LexerTarget* lexer, AstNode* parent);
 void parseStatement(LexerTarget* lexer, AstNode* parent);
 void parseIfblock(LexerTarget* lexer, AstNode* parent);
-void parseOptElseBlock(LexerTarget* lexer, AstNode* parent);
 void parseLoop(LexerTarget* lexer, AstNode* parent);
 void parseForLoop(LexerTarget* lexer, AstNode* parent);
 void parseDeferBlock(LexerTarget* lexer, AstNode* parent);
@@ -53,7 +51,6 @@ void parseConst(LexerTarget* lexer, AstNode* parent);
 void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent);
 void parseFunccall(LexerTarget* lexer, AstNode* parent);
 void parseOptargs(LexerTarget* lexer, AstNode* parent);
-void parseOptargs2(LexerTarget* lexer, AstNode* parent);
 void parseLoopStmt(LexerTarget* lexer, AstNode* parent);
 void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent);
 AstNode* parseExpression(LexerTarget* lexer, int precedence);
@@ -270,35 +267,32 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptparams2(lexer, parent);
+        //opt_params2 -> id : type | id : type , opt_params2
+        while(1) {
+            Token tok = lexer->peek();
+            if(tok.type != TokenType::id) {
+                parse_error(PET::BadOptparamTail, tok, lexer);
+            }
+            std::string n = tok.token;
+            //consume id
+            tok = lexer->lex();
+            if(tok.type != TokenType::colon) {
+                parse_error(PET::Unknown, tok, lexer);
+            }
+            //consume :
+            lexer->lex();
+            ParamsNode* param = new ParamsNode();
+            parent->addChild(param);
+            param->addParamName(n);
+            parseType(lexer, param);
+            tok = lexer->peek();
+            if(tok.type != TokenType::comma) {
+                break;
+            }
+            //consume ,
+            lexer->lex();
+        }
     }
-}
-
-void parseOptparams2(LexerTarget* lexer, AstNode* parent) {
-    //opt_params2 -> id : type | id : type , opt_params2
-    Token tok = lexer->peek();
-    if(tok.type != TokenType::id) {
-        parse_error(PET::BadOptparamTail, tok, lexer);
-    }
-    std::string n = tok.token;
-    //consume id
-    tok = lexer->lex();
-    if(tok.type != TokenType::colon) {
-        parse_error(PET::Unknown, tok, lexer);
-    }
-    //consume :
-    lexer->lex();
-    ParamsNode* param = new ParamsNode();
-    parent->addChild(param);
-    param->addParamName(n);
-    parseType(lexer, param);
-    tok = lexer->peek();
-    if(tok.type == TokenType::comma) {
-        //consume ,
-        lexer->lex();
-        parseOptparams2(lexer, parent);
-    }
-    return;
 }
 
 static bool isTokenAType(TokenType t) {
@@ -607,11 +601,12 @@ void parseBlock(LexerTarget* lexer, AstNode* parent) {
 void parseStatementList(LexerTarget* lexer, AstNode* parent) {
     //stmtlist -> stmt stmtlisttail
     //stmtlisttail -> stmtlist | null
-    parseStatement(lexer, parent);
-    //std::cout << "Statement matched\n";
-    Token tok = lexer->peek();
-    if(tok.type != TokenType::rbrace) {
-        parseStatementList(lexer, parent);
+    while(1) {
+        parseStatement(lexer, parent);
+        Token tok = lexer->peek();
+        if(tok.type == TokenType::rbrace) {
+            return;
+        }
     }
 }
 
@@ -682,14 +677,10 @@ void parseIfblock(LexerTarget* lexer, AstNode* parent) {
     //consume )
     lexer->lex();
     parseStatement(lexer, ifnode);
-    parseOptElseBlock(lexer, ifnode);
-}
-
-void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
     /*
      * optelseblock -> . else ifelsebody | null
      */
-    Token tok = lexer->peek();
+    tok = lexer->peek();
     if(tok.type != TokenType::selse) {
         return;
     }
@@ -697,7 +688,8 @@ void parseOptElseBlock(LexerTarget* lexer, AstNode* parent) {
     //parent->addChild(elsenode);
     //consume else
     lexer->lex();
-    parseStatement(lexer, parent);
+    parseStatement(lexer, ifnode);
+
 }
 
 void parseLoop(LexerTarget* lexer, AstNode* parent) {
@@ -912,20 +904,17 @@ void parseOptargs(LexerTarget* lexer, AstNode* parent) {
     if(tok.type == TokenType::comma) {
         //consume ,
         lexer->lex();
-        parseOptargs2(lexer, parent);
-    }
-    //Else return. if it is a ')' we will catch it in parseFunccall
-    return;
-}
+        //opt_args2 -> . id | . id , opt_args2
+        while(1) {
+            parseExpression(lexer, parent);
+            Token tok = lexer->peek();
+            if(tok.type != TokenType::comma) {
+                break;
+            }
+            //consume ,
+            lexer->lex();
+        }
 
-void parseOptargs2(LexerTarget* lexer, AstNode* parent) {
-    //opt_args2 -> . id | . id , opt_args2
-    parseExpression(lexer, parent);
-    Token tok = lexer->peek();
-    if(tok.type == TokenType::comma) {
-        //consume ,
-        lexer->lex();
-        parseOptargs2(lexer, parent);
     }
     //Else return. if it is a ')' we will catch it in parseFunccall
     return;
