@@ -10,11 +10,3 @@ SizeOfNode::SizeOfNode() {
 
 SizeOfNode::~SizeOfNode() {
 }
-
-void SizeOfNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-std::vector<AstNode*>* SizeOfNode::getChildren() {
-    return &mchildren;
-}

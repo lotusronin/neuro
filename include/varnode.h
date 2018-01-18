@@ -10,10 +10,8 @@ class VarNode : public AstNode {
         static int count;
         VarNode();
         ~VarNode();
-        void addChild(AstNode* node);
         void addVarName(std::string name);
         std::string getVarName();
-        std::vector<AstNode*>* getChildren();
         int id;
         std::string mname;
 };

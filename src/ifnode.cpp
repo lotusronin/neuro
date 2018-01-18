@@ -11,14 +11,6 @@ IfNode::IfNode() {
 IfNode::~IfNode() {
 }
 
-void IfNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-std::vector<AstNode*>* IfNode::getChildren() {
-    return &mchildren;
-}
-
 AstNode* IfNode::getConditional() {
     return mchildren.at(0);
 }

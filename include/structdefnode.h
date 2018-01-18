@@ -10,9 +10,7 @@ class StructDefNode : public AstNode {
         static int count;
         StructDefNode();
         ~StructDefNode();
-        void addChild(AstNode* node);
         std::string& getIdent();
-        std::vector<AstNode*>* getChildren();
         std::string ident;
         bool foreign;
         int id;

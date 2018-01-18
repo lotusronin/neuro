@@ -8,8 +8,6 @@ class ProgramNode : public AstNode {
     public:
         ProgramNode();
         ~ProgramNode();
-        void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
 };
 
 

@@ -11,7 +11,6 @@ class CastNode : public AstNode {
         CastNode();
         ~CastNode();
         void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         TypeInfo fromType;
         TypeInfo toType;
         int id;

@@ -15,7 +15,3 @@ void CastNode::addChild(AstNode* n) {
     //TODO(marcus): should we allow more than 1 child for Cast nodes?
     mchildren.push_back(n);
 }
-
-std::vector<AstNode*>* CastNode::getChildren() {
-    return &mchildren;
-}

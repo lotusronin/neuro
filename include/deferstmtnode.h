@@ -10,8 +10,6 @@ class DeferStmtNode : public AstNode {
         static int count;
         DeferStmtNode();
         ~DeferStmtNode();
-        void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         int id;
 };
 

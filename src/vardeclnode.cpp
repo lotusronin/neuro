@@ -13,10 +13,6 @@ VarDeclNode::VarDeclNode(AstNodeType ntype) {
 VarDeclNode::~VarDeclNode() {
 }
 
-void VarDeclNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
 AstNode* VarDeclNode::getLHS() {
     return mchildren.at(0);
 }

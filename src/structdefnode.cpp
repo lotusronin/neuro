@@ -12,14 +12,6 @@ StructDefNode::StructDefNode() {
 StructDefNode::~StructDefNode() {
 }
 
-void StructDefNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-std::vector<AstNode*>* StructDefNode::getChildren() {
-    return &mchildren;
-}
-
 std::string& StructDefNode::getIdent() {
     return ident;
 }

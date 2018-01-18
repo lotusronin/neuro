@@ -16,10 +16,6 @@ FuncDefNode::FuncDefNode(AstNodeType ntype) {
 FuncDefNode::~FuncDefNode() {
 }
 
-void FuncDefNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
 void FuncDefNode::addFuncName(std::string funcname) {
     mfuncname = funcname;
 }

@@ -12,10 +12,6 @@ LoopNode::LoopNode(AstNodeType ntype) {
 LoopNode::~LoopNode() {
 }
 
-void LoopNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
 AstNode* LoopNode::getInit() {
     assert(mnodet == AstNodeType::ForLoop);
     return mchildren.at(0);

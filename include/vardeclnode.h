@@ -9,7 +9,6 @@ class VarDeclNode : public AstNode {
         static int count;
         VarDeclNode(AstNodeType ntype);
         ~VarDeclNode();
-        void addChild(AstNode* node);
         AstNode* getLHS();
         AstNode* getRHS();
         int id;

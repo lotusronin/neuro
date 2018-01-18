@@ -11,18 +11,6 @@ BlockNode::BlockNode() {
 BlockNode::~BlockNode() {
 }
 
-void BlockNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-AstNode* BlockNode::lastChild() {
-    return mchildren.back();
-}
-
-std::vector<AstNode*>* BlockNode::getChildren() {
-    return &mchildren;
-}
-
 int BlockNode::getId() {
     return id;
 }

@@ -10,11 +10,3 @@ DeferStmtNode::DeferStmtNode() {
 
 DeferStmtNode::~DeferStmtNode() {
 }
-
-void DeferStmtNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-std::vector<AstNode*>* DeferStmtNode::getChildren() {
-    return &mchildren;
-}

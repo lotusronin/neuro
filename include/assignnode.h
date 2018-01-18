@@ -11,7 +11,6 @@ class AssignNode : public AstNode {
         AssignNode();
         ~AssignNode();
         void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         AstNode* getLHS();
         AstNode* getRHS();
         int id;

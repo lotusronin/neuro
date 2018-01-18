@@ -9,7 +9,6 @@ class LoopNode : public AstNode {
         static int count;
         LoopNode(AstNodeType ntype);
         ~LoopNode();
-        void addChild(AstNode* node);
         AstNode* getConditional();
         AstNode* getUpdate();
         AstNode* getInit();

@@ -11,7 +11,6 @@ class FuncDefNode : public AstNode {
         static int count;
         FuncDefNode(AstNodeType ntype);
         ~FuncDefNode();
-        void addChild(AstNode* node);
         void addFuncName(std::string funcname);
         ArrayView getParameters();
         AstNode* getFunctionBody();

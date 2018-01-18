@@ -12,8 +12,6 @@ class CompileUnitNode : public AstNode {
         ~CompileUnitNode();
         void setFileName(std::string name);
         std::string getFileName();
-        void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         int id;
         std::string mname;
         std::vector<std::string> imports;

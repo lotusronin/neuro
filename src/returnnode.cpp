@@ -11,11 +11,3 @@ ReturnNode::ReturnNode() {
 
 ReturnNode::~ReturnNode() {
 }
-
-void ReturnNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
-std::vector<AstNode*>* ReturnNode::getChildren() {
-    return &mchildren;
-}
