@@ -12,17 +12,14 @@ class BinOpNode : public AstNode {
         static int constructed;
         BinOpNode();
         ~BinOpNode();
-        void addChild(AstNode* node);
-        std::vector<AstNode*>* getChildren();
         void setOp(const std::string& op);
-        std::string getOp();
+        std::string getOp() const;
         AstNode* LHS();
         void setLHS(AstNode* ast);
         AstNode* RHS();
         void setRHS(AstNode* ast);
-        int getPriority();
         void setToken(Token& t);
-        SemanticType getType();
+        SemanticType getType() const;
         static void printDeleted();
         static int deleted;
         //TODO(marcus): make this an enum

@@ -38,6 +38,6 @@ AstNode* LoopNode::getBody() {
     return mchildren.at(idx);
 }
 
-int LoopNode::getId() {
+int LoopNode::getId() const {
     return id;
 }

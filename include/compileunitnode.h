@@ -11,7 +11,7 @@ class CompileUnitNode : public AstNode {
         CompileUnitNode();
         ~CompileUnitNode();
         void setFileName(std::string name);
-        std::string getFileName();
+        std::string getFileName() const;
         int id;
         std::string mname;
         std::vector<std::string> imports;

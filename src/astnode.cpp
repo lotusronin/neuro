@@ -7,11 +7,11 @@ AstNode::AstNode() {
 AstNode::~AstNode() {
 }
 
-AstNodeType AstNode::nodeType() {
+AstNodeType AstNode::nodeType() const {
     return mnodet;
 }
 
-SemanticType AstNode::getType() {
+SemanticType AstNode::getType() const {
     return mtypeinfo.type;
 }
 

@@ -11,7 +11,7 @@ class VarNode : public AstNode {
         VarNode();
         ~VarNode();
         void addVarName(std::string name);
-        std::string getVarName();
+        std::string getVarName() const;
         int id;
         std::string mname;
 };

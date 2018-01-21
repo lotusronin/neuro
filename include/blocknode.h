@@ -9,7 +9,7 @@ class BlockNode : public AstNode {
         static int count;
         BlockNode();
         ~BlockNode();
-        int getId();
+        int getId() const;
         int id;
 };
 

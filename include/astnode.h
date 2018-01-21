@@ -74,8 +74,8 @@ class AstNode {
     public:
         AstNode();
         ~AstNode();
-        AstNodeType nodeType();
-        SemanticType getType();
+        AstNodeType nodeType() const;
+        SemanticType getType() const;
         TypeInfo* getTypeInfo();
         void addChild(AstNode* child);
         AstNode* lastChild();

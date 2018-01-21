@@ -13,7 +13,7 @@ class LoopNode : public AstNode {
         AstNode* getUpdate();
         AstNode* getInit();
         AstNode* getBody();
-        int getId();
+        int getId() const ;
         int id;
 };
 

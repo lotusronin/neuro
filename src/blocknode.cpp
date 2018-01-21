@@ -11,6 +11,6 @@ BlockNode::BlockNode() {
 BlockNode::~BlockNode() {
 }
 
-int BlockNode::getId() {
+int BlockNode::getId() const {
     return id;
 }

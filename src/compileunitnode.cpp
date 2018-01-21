@@ -15,6 +15,6 @@ void CompileUnitNode::setFileName(std::string name) {
     mname = name;
 }
 
-std::string CompileUnitNode::getFileName() {
+std::string CompileUnitNode::getFileName() const {
     return mname;
 }

@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <string>
-#include <regex>
 #include "tokens.h"
 
 class LexerTarget
@@ -14,11 +13,11 @@ public:
     Token lex();
     Token lex_internal();
     void lexFile();
-    Token peek();
-    Token peekNext();
+    Token peek() const;
+    Token peekNext() const;
     void lexcomment();
-    bool isDebug();
-    std::string targetName();
+    bool isDebug() const;
+    std::string targetName() const;
 
 private:
     std::string filename;

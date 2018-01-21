@@ -19,20 +19,12 @@ BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
 }
 
-void BinOpNode::addChild(AstNode* node) {
-    mchildren.push_back(node);
-}
-
 void BinOpNode::setOp(const std::string& op) {
     mop = op;
 }
 
-std::string BinOpNode::getOp() {
+std::string BinOpNode::getOp() const {
     return mop;
-}
-
-std::vector<AstNode*>* BinOpNode::getChildren() {
-    return &mchildren;
 }
 
 AstNode* BinOpNode::LHS() {
@@ -62,7 +54,7 @@ void BinOpNode::setToken(Token& t) {
     setOp(std::string(t.token));
 }
 
-SemanticType BinOpNode::getType() {
+SemanticType BinOpNode::getType() const {
     return mtypeinfo.type;
 }
 

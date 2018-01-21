@@ -110,11 +110,11 @@ LexerTarget::LexerTarget(std::string name, bool debug) {
 LexerTarget::~LexerTarget() {
 }
 
-bool LexerTarget::isDebug() {
+bool LexerTarget::isDebug() const {
     return debug_out;
 }
 
-std::string LexerTarget::targetName() {
+std::string LexerTarget::targetName() const {
     return filename;
 }
 
@@ -543,6 +543,7 @@ TOP:
     f_idx += longest_match;
     
     
+    //NOTE(marcus): This is first use of token, could create string down here, profile
     token = std::string(ln+colNum,longest_match);
     if(longest_match_type == TokenType::strlit) {
         std::regex stripped("\"([^\"]*)\"");
@@ -574,11 +575,11 @@ TOP:
 
 }
 
-Token LexerTarget::peek() {
+Token LexerTarget::peek() const {
     return tokenizedFile[currentIdx];
 }
 
-Token LexerTarget::peekNext() {
+Token LexerTarget::peekNext() const {
     if(tokenizedFile.size()-2 > currentIdx) {
         return tokenizedFile[currentIdx+1];
     }

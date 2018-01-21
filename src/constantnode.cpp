@@ -24,7 +24,7 @@ void ConstantNode::setVal(std::string& val) {
     mval = val;
 }
 
-std::string ConstantNode::getVal() {
+std::string ConstantNode::getVal() const {
     return mval;
 }
 
