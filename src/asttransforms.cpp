@@ -646,7 +646,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             if(canCast(paramt,argt)) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = argt;
-                                cast->toType = paramt;
                                 cast->mtypeinfo = paramt;
                                 cast->addChild(funccall->mchildren.at(i));
                                 funccall->mchildren[i] = cast;
@@ -736,14 +735,12 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             if(canCast(lhs_t,rhs_t)) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = rhs_t;
-                                cast->toType = lhs_t;
                                 cast->mtypeinfo = lhs_t;
                                 cast->addChild(binopn->RHS());
                                 binopn->setRHS(cast);
                             } else if(canCast(rhs_t,lhs_t)) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = lhs_t;
-                                cast->toType = rhs_t;
                                 cast->mtypeinfo = rhs_t;
                                 cast->addChild(binopn->LHS());
                                 binopn->setLHS(cast);
@@ -785,7 +782,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 binopn->mtypeinfo = lhs_t;
                                 CastNode* cast = new CastNode();
                                 cast->fromType = rhs_t;
-                                cast->toType = lhs_t;
                                 cast->mtypeinfo = lhs_t;
                                 cast->addChild(binopn->RHS());
                                 binopn->setRHS(cast);
@@ -793,7 +789,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 binopn->mtypeinfo = rhs_t;
                                 CastNode* cast = new CastNode();
                                 cast->fromType = lhs_t;
-                                cast->toType = rhs_t;
                                 cast->mtypeinfo = rhs_t;
                                 cast->addChild(binopn->LHS());
                                 binopn->setLHS(cast);
@@ -833,7 +828,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             //std::cout << "return type and function type matched!\n";
                             CastNode* cast = new CastNode();
                             cast->fromType = ret_typeinfo;
-                            cast->toType = func_typeinfo;
                             cast->mtypeinfo = func_typeinfo;
                             //NOTE(marcus): should never reach here with expr as nullptr
                             //can't cast void to another type.
@@ -864,7 +858,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         if(canCast(lhs_typeinfo,rhs_typeinfo)) {
                             CastNode* cast = new CastNode();
                             cast->fromType = rhs_typeinfo;
-                            cast->toType = lhs_typeinfo;
                             cast->mtypeinfo = lhs_typeinfo;
                             cast->addChild(rhs);
                             assignn->mchildren[1] = cast;
@@ -902,7 +895,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             //assignn->mtypeinfo = lhs_typeinfo;
                             CastNode* cast = new CastNode();
                             cast->fromType = rhs_typeinfo;
-                            cast->toType = lhs_typeinfo;
                             cast->mtypeinfo = lhs_typeinfo;
                             cast->addChild(rhs);
                             vdeca->mchildren[1] = cast;
@@ -1008,7 +1000,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::Cast:
             {
                 auto castnode = static_cast<CastNode*>(ast);
-                return castnode->toType;
+                return castnode->mtypeinfo;
             }
         default:
             break;

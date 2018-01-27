@@ -625,26 +625,26 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 val = expressionCodegen(cast->mchildren[0], sym);
                 //TODO(marcus): make sure casts work for all types
                 if(cast->fromType.indirection > 0) {
-                    if(cast->toType.indirection > 0) {
+                    if(cast->mtypeinfo.indirection > 0) {
                         //Pointer Cast!
-                        auto type = getIRType(cast->toType);
+                        auto type = getIRType(cast->mtypeinfo);
                         return Builder.CreatePointerCast(val, type, "cast");
                     }
                 } else {
                     if(cast->fromType.type == SemanticType::Float || cast->fromType.type == SemanticType::floatlit) {
                         //Cast between floats
-                        if(cast->toType.type == SemanticType::Float || cast->toType.type == SemanticType::Double) {
-                            return Builder.CreateFPCast(val, getIRType(cast->toType), "cast");
+                        if(cast->mtypeinfo.type == SemanticType::Float || cast->mtypeinfo.type == SemanticType::Double) {
+                            return Builder.CreateFPCast(val, getIRType(cast->mtypeinfo), "cast");
                         }
                     }
-                    if(cast->toType.type == SemanticType::Float || cast->toType.type == SemanticType::Double) {
+                    if(cast->mtypeinfo.type == SemanticType::Float || cast->mtypeinfo.type == SemanticType::Double) {
                         //convert integer types to float/double
                         switch(cast->fromType.type) {
                             case SemanticType::u8:
                             case SemanticType::u16:
                             case SemanticType::u32:
                             case SemanticType::u64:
-                                return Builder.CreateUIToFP(val, getIRType(cast->toType), "cast");
+                                return Builder.CreateUIToFP(val, getIRType(cast->mtypeinfo), "cast");
                                 break;
                             case SemanticType::Int:
                             case SemanticType::intlit:
@@ -652,14 +652,14 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                             case SemanticType::s16:
                             case SemanticType::s32:
                             case SemanticType::s64:
-                                return Builder.CreateSIToFP(val, getIRType(cast->toType), "cast");
+                                return Builder.CreateSIToFP(val, getIRType(cast->mtypeinfo), "cast");
                                 break;
                             default:
                                 break;
                         }
                     }
 
-                    switch(cast->toType.type) {
+                    switch(cast->mtypeinfo.type) {
                         case SemanticType::u8:
                         case SemanticType::u16:
                         case SemanticType::u32:
@@ -674,7 +674,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                                 case SemanticType::Char:
                                 case SemanticType::Int:
                                     //convert unsigned to different unsigned
-                                    return Builder.CreateZExtOrTrunc(val, getIRType(cast->toType), "cast");
+                                    return Builder.CreateZExtOrTrunc(val, getIRType(cast->mtypeinfo), "cast");
                                     break;
                                 case SemanticType::s8:
                                 case SemanticType::s16:
@@ -696,7 +696,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                                 case SemanticType::s32:
                                 case SemanticType::s64:
                                     //convert signed to different signed
-                                    return Builder.CreateSExtOrTrunc(val, getIRType(cast->toType), "cast");
+                                    return Builder.CreateSExtOrTrunc(val, getIRType(cast->mtypeinfo), "cast");
                                     break;
                                 case SemanticType::u8:
                                 case SemanticType::u16:

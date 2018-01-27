@@ -194,7 +194,7 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
                 auto cast = static_cast<CastNode*>(ast);
                 id = cast->id;
                 outfile << "cast"<<id<<";\n";
-                outfile << "cast"<<id<<"[label=\"cast to " << cast->toType << "\"];\n";
+                outfile << "cast"<<id<<"[label=\"cast to " << cast->mtypeinfo << "\"];\n";
                 header = "cast";
             }
             break;

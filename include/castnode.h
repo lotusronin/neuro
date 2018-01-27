@@ -12,7 +12,6 @@ class CastNode : public AstNode {
         ~CastNode();
         void addChild(AstNode* node);
         TypeInfo fromType;
-        TypeInfo toType;
         int id;
 };
 

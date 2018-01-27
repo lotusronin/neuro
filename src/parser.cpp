@@ -1154,7 +1154,6 @@ AstNode* parseCast(LexerTarget* lexer, AstNode* child) {
     CastNode* cnode = new CastNode();
     cnode->mchildren.reserve(1);
     parseType(lexer, cnode);
-    cnode->toType = cnode->mtypeinfo;
     cnode->addChild(child);
     return cnode;
 }
