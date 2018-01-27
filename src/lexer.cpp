@@ -53,7 +53,7 @@ TokenType keyword_type[] = {
     TokenType::ssizeof
 };
 
-const char* keyword_array[] = {
+const char* keyword_array[30] = {
     "fn",
     "extern",
     "import",
@@ -86,7 +86,6 @@ const char* keyword_array[] = {
     "sizeof"
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
-
 
 LexerTarget::LexerTarget(std::string name, bool debug) {
     filename = name;
@@ -205,11 +204,15 @@ void printLn(char* s) {
     std::cout << "\n";
 }
 
+std::regex stripped("\"([^\"]*)\"");
+std::string newlines = "\\n";
+std::string newlinec = "\n";
+
 Token LexerTarget::lex_internal() {
-    std::string token = "";            
 
     TokenType longest_match_type;
     int longest_match = 0;
+    const char* c_str_tok = nullptr;
 
     /*
      * Match other tokens
@@ -239,45 +242,58 @@ TOP:
             break;
         case '(':
             longest_match_type = TokenType::lparen;
+            c_str_tok = "(";
             break;
         case ')':
             longest_match_type = TokenType::rparen;
+            c_str_tok = ")";
             break;
         case '.':
             longest_match_type = TokenType::dot;
+            c_str_tok = ".";
             break;
         case ',':
             longest_match_type = TokenType::comma;
+            c_str_tok = ",";
             break;
         case '{':
             longest_match_type = TokenType::lbrace;
+            c_str_tok = "{";
             break;
         case '}':
             longest_match_type = TokenType::rbrace;
+            c_str_tok = "}";
             break;
         case '[':
             longest_match_type = TokenType::lsqrbrace;
+            c_str_tok = "[";
             break;
         case ']':
             longest_match_type = TokenType::rsqrbrace;
+            c_str_tok = "]";
             break;
         case ':':
             {
                 longest_match_type = TokenType::colon;
+                c_str_tok = ":";
                 if(remaining[1] == ':') {
                     longest_match++;
                     longest_match_type = TokenType::dblcolon;
+                    c_str_tok = "::";
                 }
             }
             break;
         case ';':
             longest_match_type = TokenType::semicolon;
+            c_str_tok = ";";
             break;
         case '@':
             longest_match_type = TokenType::dereference;
+            c_str_tok = "@";
             break;
         case '~':
             longest_match_type = TokenType::tilda;
+            c_str_tok = "~";
             break;
         case '0':
         case '1':
@@ -312,6 +328,10 @@ TOP:
                     len_lit--;
                     longest_match = len_lit;
                 } 
+                char* cstr = (char*)malloc(longest_match+1);
+                std::strncpy(cstr,ln+colNum,longest_match);
+                cstr[longest_match] = '\0';
+                c_str_tok = cstr;
                 
             }
             break;
@@ -333,6 +353,19 @@ TOP:
                 }
                 longest_match = match_len;
                 longest_match_type = TokenType::strlit;
+                std::string token = std::string(ln+colNum,longest_match);
+                std::smatch m;
+                if(std::regex_match(token, m, stripped)) {
+                    token = m[1].str();
+                    size_t index;
+                    while( (index = token.find(newlines)) != std::string::npos) {
+                        token.replace(index, newlines.length(), newlinec);
+                        index += newlinec.length();
+                    }
+                }
+                char* cstr = (char*)malloc(token.size()+1);
+                std::strcpy(cstr,token.c_str());
+                c_str_tok = cstr;
             }
             break;
         case '\'':
@@ -374,6 +407,10 @@ TOP:
                 match_len++;
                 longest_match = match_len;
                 longest_match_type = TokenType::charlit;
+                char* cstr = (char*)malloc(longest_match+1);
+                std::strncpy(cstr,ln+colNum,longest_match);
+                cstr[longest_match] = '\0';
+                c_str_tok = cstr;
             }
             break;
         case '+':
@@ -381,11 +418,14 @@ TOP:
                 if(remaining[1] == '+') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                    c_str_tok = "++";
                 } else if(remaining[1] == '=') {
                     longest_match++;
                     longest_match_type = TokenType::addassign;
+                    c_str_tok = "+=";
                 } else {
                     longest_match_type = TokenType::plus;
+                    c_str_tok = "+";
                 }
             }
             break;
@@ -394,11 +434,14 @@ TOP:
                 if(remaining[1] == '-') {
                     longest_match++;
                     longest_match_type = TokenType::increment;
+                    c_str_tok = "--";
                 } else if(remaining[1] == '=') {
                     longest_match++;
                     longest_match_type = TokenType::subassign;
+                    c_str_tok = "-=";
                 } else {
                     longest_match_type = TokenType::minus;
+                    c_str_tok = "-";
                 }
             }
             break;
@@ -438,81 +481,99 @@ TOP:
                     return lex_internal();
                 }
                 longest_match_type = TokenType::fslash;
+                c_str_tok = "/";
                 if(remaining[1] == '=') {
                     longest_match++;
                     longest_match_type = TokenType::divassign;
+                    c_str_tok = "/=";
                 }
             }
             break;
         case '*':
             {
                 longest_match_type = TokenType::star;
+                c_str_tok = "*";
                 if(remaining[1] == '=') {
                     longest_match++;
                     longest_match_type = TokenType::mulassign;
+                    c_str_tok = "*=";
                 }
             }
             break;
         case '^':
             {
                 longest_match_type = TokenType::carrot;
+                c_str_tok = "^";
             }
             break;
         case '%':
             {
                 longest_match_type = TokenType::mod;
+                c_str_tok = "%";
             }
             break;
         case '=':
             {
                 longest_match_type = TokenType::assignment;
+                c_str_tok = "=";
                 if(remaining[1] == '=') {
                     longest_match = 2;
                     longest_match_type = TokenType::equality;
+                    c_str_tok = "==";
                 }
             }
             break;
         case '<':
             {
                 longest_match_type = TokenType::lessthan;
+                c_str_tok = "<";
                 if(remaining[1] == '=') {
                     longest_match_type = TokenType::ltequal;
                     longest_match = 2;
+                    c_str_tok = "<=";
                 }
             }
             break;
         case '>':
             {
                 longest_match_type = TokenType::greaterthan;
+                c_str_tok = ">";
                 if(remaining[1] == '=') {
                     longest_match_type = TokenType::gtequal;
                     longest_match = 2;
+                    c_str_tok = ">=";
                 }
             }
             break;
         case '!':
             {
                 longest_match_type = TokenType::exclaim;
+                c_str_tok = "!";
                 if(remaining[1] == '=') {
                     longest_match_type = TokenType::nequality;
                     longest_match = 2;
+                    c_str_tok = "!=";
                 }
             }
             break;
         case '|':
             {
                 longest_match_type = TokenType::bar;
+                c_str_tok = "|";
                 if(remaining[1] == '|') {
                     longest_match_type = TokenType::dblbar;
                     longest_match = 2;
+                    c_str_tok = "||";
                 }
             }
         case '&':
             {
                 longest_match_type = TokenType::ampersand;
+                c_str_tok = "&";
                 if(remaining[1] == '&') {
                     longest_match_type = TokenType::dblampersand;
                     longest_match = 2;
+                    c_str_tok = "&&";
                 }
             }
             break;
@@ -528,39 +589,29 @@ TOP:
                 }
                 longest_match = len_t;
                 longest_match_type = TokenType::id;
-                std::string matched_string(ln+colNum,longest_match);
+                char buff[longest_match+1];
+                std::strncpy(buff,ln+colNum,longest_match);
+                buff[longest_match] = '\0';
                 for(unsigned int j = 0; j < num_keywords; j++) {
-                   if(matched_string == keyword_array[j]) {
+                   if(std::strcmp(buff, keyword_array[j]) == 0) {
                        longest_match = strlen(keyword_array[j]);
                        longest_match_type = keyword_type[j];
+                       c_str_tok = keyword_array[j];
                        break;
                    }
+                }
+                if(longest_match_type == TokenType::id) {
+                    char* cstr = (char*)malloc(longest_match+1);
+                    std::strncpy(cstr,ln+colNum,longest_match);
+                    cstr[longest_match] = '\0';
+                    c_str_tok = cstr;
                 }
             }
             break;
     }
     
     f_idx += longest_match;
-    
-    
-    //NOTE(marcus): This is first use of token, could create string down here, profile
-    token = std::string(ln+colNum,longest_match);
-    if(longest_match_type == TokenType::strlit) {
-        std::regex stripped("\"([^\"]*)\"");
-        std::smatch m;
-        if(std::regex_match(token, m, stripped)) {
-            token = m[1].str();
-            size_t index;
-            std::string newlines = "\\n";
-            std::string newlinec = "\n";
-            while( (index = token.find(newlines)) != std::string::npos) {
-                token.replace(index, newlines.length(), newlinec);
-                index += newlinec.length();
-            }
-        }
-    }
-    char* c_str_tok = (char*)malloc(token.size()+1);
-    std::strcpy(c_str_tok,token.c_str());
+
     Token ret = {
 		longest_match_type, //type
 		colNum, //col
@@ -569,7 +620,7 @@ TOP:
 	};
     colNum += longest_match;
 
-    DEBUGLEX(std::cout << "token: " << token << "\n\n";)
+    DEBUGLEX(std::cout << "token: " << std::string(ln+colNum-longest_match,longest_match) << "\n\n";)
     //std::cout << colNum << ' ' << f_idx << '\t' << content[f_idx] << '\n';
     return ret;
 
