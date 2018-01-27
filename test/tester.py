@@ -105,7 +105,15 @@ def runTests(tests):
                         pass
                 else:
                     objFile = srcs+'.o'
-                    os.remove('./'+objFile)
+                    try:
+                        os.remove('./'+objFile)
+                    except:
+                        pass
+                    try:
+                        os.remove('./'+srcs.replace('.nro','_neuro.c'))
+                        os.remove('./'+srcs.replace('.nro','_neuro.h'))
+                    except:
+                        pass
                     os.remove('./'+exe)
 
         #Check for success

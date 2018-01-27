@@ -13,9 +13,11 @@
 
 bool debug_lexer;
 bool debug_parser;
+bool debug_cgen = false;
 bool semantic_error = false;
 bool timedOut = false;
 bool outputIR = false;
+bool cbackend = false;
 
 void badargspass() {
     std::cout << "Usage:\n  Neuro <inputfiles>\n";
@@ -27,18 +29,24 @@ void badargspass() {
 void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
     std::string dbgl("-dbgl");
     std::string dbgp("-dbgp");
+    std::string dbgc("-dbgc");
     std::string t("-t");
     std::string l("-l");
     std::string h("-h");
+    std::string c("-c");
     for(int i = 1; i < argc; i++) {
         if(dbgl.compare(argv[i]) == 0) {
             debug_lexer = true;
         } else if(dbgp.compare(argv[i]) == 0) {
             debug_parser = true;
+        } else if(dbgc.compare(argv[i]) == 0) {
+            debug_cgen = true;
         } else if(t.compare(argv[i]) == 0) {
             timedOut = true;
         } else if(l.compare(argv[i]) == 0) {
             outputIR = true;
+        } else if(c.compare(argv[i]) == 0) {
+            cbackend = true;
         } else if(h.compare(argv[i]) == 0) {
             badargspass();
         } else {
@@ -49,9 +57,14 @@ void parseargs(int argc, char** argv, std::vector<std::string>& cmd_args) {
 
 void linkFile(std::string file);
 void makeDotGraph(std::ofstream& outfile, AstNode* ast);
+void cBackend(AstNode* ast, std::string filename);
 
+void printSizes();
 int main(int argc, char** argv) {
-    std::cout << "Welcome to the neuro compiler.\n";
+    //std::cout << "Welcome to the neuro compiler.\n";
+
+    printSizes();
+    cbackend = true; //TODO(marcus): remove this
 
     if(argc < 2) {
         badargspass();
@@ -63,10 +76,6 @@ int main(int argc, char** argv) {
             badargspass();
             return 0;
         }
-
-        //std::cout << "Sizeof(AstNode) = " << sizeof(AstNode) << '\n';
-        //std::cout << "Sizeof(Token) = " << sizeof(Token) << '\n';
-        //std::cout << "Sizeof(TypeInfo) = " << sizeof(TypeInfo) << '\n';
 
         //std::cout << "Beginning Lexing...\ndebug: " << debug_lexer << "\n";
 
@@ -115,17 +124,32 @@ int main(int argc, char** argv) {
             auto start_ir = std::chrono::steady_clock::now();
             auto start_link = start_ir;
             if(!semantic_error) {
-                //std::cout << "Generating IR code\n";
-                //Generate IR code
-                generateIR(ast);
-                if(outputIR) {
-                    std::cout << "IR output:\n";
-                    dumpIR();
+                if(cbackend) {
+                    //*
+                    //std::cout << "writing c\n";
+                    std::string c_filename = target1.targetName();
+                    cBackend(ast,c_filename);
+                    start_link = std::chrono::steady_clock::now();
+                    c_filename = c_filename.replace(c_filename.find(".nro"),4,"");
+                    std::string cc_cmd = "cc " + c_filename + "_neuro.c -o " + c_filename + ".exe";
+                    //std::cout << ">" << cc_cmd << '\n';
+                    system(cc_cmd.c_str());
+                    /**/
+                } else {
+                    //std::cout << "Generating IR code\n";
+                    //Generate IR code
+                    generateIR(ast);
+                    if(outputIR) {
+                        std::cout << "IR output:\n";
+                        dumpIR();
+                    }
+                    start_link = std::chrono::steady_clock::now();
+                    /**/
+                    writeObj(target1.targetName());
+                    linkFile(target1.targetName());
+                    /**/
+                    //writeIR(target1.targetName());
                 }
-                start_link = std::chrono::steady_clock::now();
-                writeObj(target1.targetName());
-                linkFile(target1.targetName());
-                //writeIR(target1.targetName());
             }
             auto end_total = std::chrono::steady_clock::now();
             auto diff_total = end_total - start_total;
@@ -138,14 +162,20 @@ int main(int argc, char** argv) {
                 auto ir_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_ir).count();
                 auto link_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_link).count();
                 auto total_time = std::chrono::duration_cast<std::chrono::milliseconds>(diff_total).count();
-                std::cout << "Lex Time: " << lex_time << "ms\n";
-                std::cout << "Time for parsing: " << parse_time << "ms\n";
-                std::cout << "Time for semantic passes: " << semantic_time << "ms\n";
+                //std::cout << "Lex Time: " << lex_time << "ms\n";
+                std::cout << lex_time << ",";
+                //std::cout << "Time for parsing: " << parse_time << "ms\n";
+                std::cout << parse_time << ",";
+                //std::cout << "Time for semantic passes: " << semantic_time << "ms\n";
+                std::cout << semantic_time << ",";
                 if(!semantic_error) {
-                    std::cout << "Time for IR generation: " << ir_time << "ms\n";
-                    std::cout << "Time for linking: " << link_time << "ms\n";
+                    //std::cout << "Time for IR generation: " << ir_time << "ms\n";
+                    std::cout << ir_time << ",";
+                    //std::cout << "Time for linking: " << link_time << "ms\n";
+                    std::cout << link_time << ",";
                 }
-                std::cout << "Total Time: " << total_time << "ms\n";
+                //std::cout << "Total Time: " << total_time << "ms\n";
+                std::cout << total_time << "\n";
                 //BinOpNode::printDeleted();
             }
 
