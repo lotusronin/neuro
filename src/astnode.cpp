@@ -91,7 +91,7 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
         }
     }
     os << obj.type;
-    if(obj.userid.size() > 0) {
+    if(obj.userid) {
         os << obj.userid;
     }
     return os;

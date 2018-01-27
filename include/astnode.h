@@ -63,7 +63,7 @@ enum class SemanticType {
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
 
 struct TypeInfo {
-    std::string userid;
+    const char* userid = nullptr;
     SemanticType type = SemanticType::Typeless;
     int indirection = 0;
 };
