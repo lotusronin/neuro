@@ -21,6 +21,7 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include <cstring>
 #include "astnode.h"
 #include "astnodetypes.h"
 #include "symboltable.h"
@@ -415,30 +416,30 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             } else if(opc == '%') {
                 //TODO(marcus): support signed and floating remainder
                 return Builder.CreateURem(lhsv,rhsv,"modtemp");
-            } else if(op.compare(">") == 0) {
+            } else if(std::strcmp(op,">") == 0) {
                 return Builder.CreateICmpUGT(lhsv,rhsv,"gttemp");
-            } else if(op.compare("<") == 0) {
+            } else if(std::strcmp(op,"<") == 0) {
                 if(lhs->mtypeinfo.type == SemanticType::Int) {
                     return Builder.CreateICmpSLT(lhsv,rhsv,"lttemp");
                 }
                 return Builder.CreateICmpULT(lhsv,rhsv,"lttemp");
-            } else if(op.compare(">=") == 0) {
+            } else if(std::strcmp(op,">=") == 0) {
                 return Builder.CreateICmpUGE(lhsv,rhsv,"getemp");
-            } else if(op.compare("<=") == 0) {
+            } else if(std::strcmp(op,"<=") == 0) {
                 return Builder.CreateICmpULE(lhsv,rhsv,"letemp");
-            } else if(op.compare("==") == 0) {
+            } else if(std::strcmp(op,"==") == 0) {
                 return Builder.CreateICmpEQ(lhsv,rhsv,"eqtemp");
-            } else if(op.compare("!=") == 0) {
+            } else if(std::strcmp(op,"!=") == 0) {
                 return Builder.CreateICmpNE(lhsv,rhsv,"neqtemp");
-            } else if(op.compare("|") == 0) {
+            } else if(std::strcmp(op,"|") == 0) {
                 return Builder.CreateOr(lhsv,rhsv,"bitortemp");
-            } else if(op.compare("^") == 0) {
+            } else if(std::strcmp(op,"^") == 0) {
                 return Builder.CreateXor(lhsv,rhsv,"bitxortemp");
-            } else if(op.compare("~") == 0) {
+            } else if(std::strcmp(op,"~") == 0) {
                 //NOTE(marcus): bitwise ops in llvm only work for integers or vectors of integers
                 //TODO(marcus): make this work for other sizes of integers
                 return Builder.CreateXor(lhsv,ConstantInt::get(context,APInt(32,-1)));
-            } else if(op.compare("||") == 0) {
+            } else if(std::strcmp(op,"||") == 0) {
                 //TODO(marcus): make this work for other sizes of integers
                 Value* zero_val;
                 if(lhsv->getType()->isIntegerTy(1)) {
@@ -450,7 +451,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 auto secondval = Builder.CreateICmpNE(rhsv,zero_val);
                 auto oredvals = Builder.CreateOr(firstval,secondval,"or_res");
                 return oredvals;
-            } else if(op.compare("&&") == 0) {
+            } else if(std::strcmp(op,"&&") == 0) {
                 //TODO(marcus): make this work for other sizes of integers
                 Value* zero_val;
                 if(lhsv->getType()->isIntegerTy(1)) {
@@ -502,7 +503,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                         //auto indexval = ConstantInt::get(context,APInt(32,index));
                         //std::cout << "Success, getting element index " << index << "\n";
                         //return Builder.CreateGEP(structtype,lhsv,indexval,structmembername);
-                        auto memberptr = Builder.CreateStructGEP(structtype,lhsv_ptr,index,"ptr_"+structmembername);
+                        auto memberptr = Builder.CreateStructGEP(structtype,lhsv_ptr,index,"ptr_"+std::string(structmembername));
                         if(lvalue) {
                             return memberptr;
                         }
@@ -524,7 +525,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                     return childvar;
                 }
                 return Builder.CreateLoad(childvar,"deref");
-            } else if(op.compare("&") == 0) {
+            } else if(std::strcmp(op,"&") == 0) {
                 //std::cout << "Generating address of\n";
                 //TODO(marcus): we are assuming the expression underneath will be some variable
                 //which has been allocated on the stack.
@@ -538,7 +539,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //generation first. Maybe its own symbol table?
                 auto childvar = expressionCodegen(lhs,sym);
                 return childvar;
-            } else if(op.compare("!")) {
+            } else if(std::strcmp(op,"!") == 0) {
                 //TODO(marcus): make this work for other types
                 return Builder.CreateICmpEQ(lhsv,ConstantInt::get(context, APInt(32,0)),"lnottmp");
             } else {
@@ -551,7 +552,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
             {
                 //std::cout << "generating constant!\n";
                 auto constn = static_cast<ConstantNode*>(n);
-                auto strval = constn->getVal();
+                std::string strval = constn->getVal();
                 if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
                 } else if(constn->mtypeinfo.type == SemanticType::Char) {

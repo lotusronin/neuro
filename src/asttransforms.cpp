@@ -6,6 +6,9 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <cstring>
+#include <stdio.h>
+#include <assert.h>
 
 extern bool semantic_error;
 
@@ -20,7 +23,7 @@ std::unordered_map<std::string,AstNode*> structList;
 
 //TODO(marcus): put this in the SymbolTable?
 std::unordered_map<std::string,std::vector<FuncDefNode*>> operatorOverloads;
-static std::string getOperatorName(std::string& op);
+static const char* getOperatorName(const char* op);
 
 #define ANT AstNodeType
 #define SET SemanticErrorType
@@ -156,7 +159,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 if(lhs->nodeType() == ANT::BinOp) {
                     auto binopn = static_cast<BinOpNode*>(lhs);
                     auto op = binopn->mop;
-                    if((op == "@") || (op == ".")) {
+                    if(std::strcmp(op,"@") == 0 || std::strcmp(op,".") == 0) {
                         break;
                     }
                 }
@@ -166,7 +169,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             {
                 auto binopn = static_cast<BinOpNode*>(ast);
                 auto op = binopn->mop;
-                if(op == ".") {
+                if(std::strcmp(op,".") == 0) {
                     auto lhs = binopn->LHS();
                     auto lhst = lhs->nodeType();
                     if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp) {
@@ -279,8 +282,8 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                     auto func = static_cast<FuncDefNode*>(c);
 
                     if(func->isOperatorOverload == 1) {
-                        std::string op = func->op;
-                        auto opstr = getOperatorName(op);
+                        auto op = func->op;
+                        std::string opstr = getOperatorName(op);
                         opstr = "op_"+opstr;
                         //std::cout << "op is ... " << opstr << '\n';
                         operatorOverloads.emplace(opstr,std::vector<FuncDefNode*>());
@@ -326,7 +329,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
 }
 
 void typeCheckPass(AstNode* ast) {
-    std::cout << "Type Checking Pass\n";
+    //std::cout << "Type Checking Pass\n";
     for(auto c : (*(ast->getChildren()))) {
         switch(c->nodeType()) {
             case ANT::CompileUnit:
@@ -349,7 +352,7 @@ static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
             if(t1.type != SemanticType::User) {
                 return true;
             } else {
-                return (t1.userid.compare(t2.userid) == 0);
+                return (std::strcmp(t1.userid,t2.userid) == 0);
             }
         }
     }
@@ -362,7 +365,7 @@ bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
         return false;
     }
 
-    SemanticType st;
+    SemanticType st = ST::Typeless;
     if(t1.indirection > 0) {
         st = t2.type;
     } else if(t2.indirection > 0) {
@@ -393,7 +396,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
 
     if(t1.type == SemanticType::User && t2.type == SemanticType::User) {
-        return (t1.userid.compare(t2.userid) == 0);
+        return (std::strcmp(t1.userid,t2.userid) == 0);
     }
 
     if(t1.indirection != t2.indirection) {
@@ -570,10 +573,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto fundef = static_cast<FuncDefNode*>(c);
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
                     auto scope = getScope(symTab, fundef->mfuncname + std::to_string(fundef->id));
-                    currentFunc2 = fundef->mfuncname;
                     currentFunc = c;
                     typeCheckPass(c,scope);
-                    currentFunc2 = "";
                     currentFunc = nullptr;
                     //std::cout << "done with function " << ((FuncDefNode*)c)->mfuncname << '\n';
                 }
@@ -646,6 +647,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = argt;
                                 cast->toType = paramt;
+                                cast->mtypeinfo = paramt;
                                 cast->addChild(funccall->mchildren.at(i));
                                 funccall->mchildren[i] = cast;
                             } else {
@@ -669,13 +671,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
                     //TODO(marcus): support operator overloading
                     auto binopn = static_cast<BinOpNode*>(c);
-                    std::string op = binopn->getOp();
+                    const char* op = binopn->getOp();
 
-                    if(op.compare("( )") == 0) {
-                        typeCheckPass(c,symTab);
-                        TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
-                        binopn->mtypeinfo = t;
-                    } else if(op.compare("@") == 0) {
+                    if(std::strcmp(op,"@") == 0) {
                         typeCheckPass(c,symTab);
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
                         int err = decreaseDerefTypeInfo(t);
@@ -683,7 +681,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             semanticError(SET::DerefNonPointer,c,symTab);
                         }
                         binopn->mtypeinfo = t;
-                    } else if(op.compare(".") == 0) {
+                    } else if(std::strcmp(op,".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
                         //get member name
                         if(binopn->RHS()->nodeType() != ANT::Var) {
@@ -695,8 +693,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //or maybe the right side is a dereferenced struct ptr, also
                         //will need to handle that case
                         auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
-                        auto structtypename = lhs_t.userid;
-                        auto membername = static_cast<VarNode*>(binopn->RHS())->getVarName();
+                        std::string structtypename = lhs_t.userid;
+                        std::string membername = static_cast<VarNode*>(binopn->RHS())->getVarName();
                         auto tmp = structList.find(structtypename);
                         if(tmp == structList.end()) std::cout << "Error, struct not found...\n";
                         auto strdef = tmp->second;
@@ -708,14 +706,14 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 break;
                             }
                         }
-                    } else if(op.compare("&") == 0) {
+                    } else if(std::strcmp(op,"&") == 0) {
                         //TODO(marcus): make sure to differentiate between address-of and
                         //bitwise-and when you get both
                         typeCheckPass(c,symTab);
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
                         increaseDerefTypeInfo(t);
                         binopn->mtypeinfo = t;
-                    } else if(op.compare("-") == 0 && binopn->unaryOp) {
+                    } else if((std::strcmp(op,"-") == 0) && binopn->unaryOp) {
                         //unary negation
                         typeCheckPass(binopn,symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
@@ -725,7 +723,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         }
                         //TODO(marcus): actually type check
                         binopn->mtypeinfo = lhs_t;
-                    } else if(op.compare("==") == 0 || op.compare("!=") == 0) {
+                    } else if(std::strcmp(op,"==") == 0 || std::strcmp(op,"!=") == 0) {
                         typeCheckPass(binopn,symTab);
                         TypeInfo t;
                         t.type = SemanticType::Bool;
@@ -739,12 +737,14 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = rhs_t;
                                 cast->toType = lhs_t;
+                                cast->mtypeinfo = lhs_t;
                                 cast->addChild(binopn->RHS());
                                 binopn->setRHS(cast);
                             } else if(canCast(rhs_t,lhs_t)) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = lhs_t;
                                 cast->toType = rhs_t;
+                                cast->mtypeinfo = rhs_t;
                                 cast->addChild(binopn->LHS());
                                 binopn->setLHS(cast);
                             } else {
@@ -786,6 +786,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = rhs_t;
                                 cast->toType = lhs_t;
+                                cast->mtypeinfo = lhs_t;
                                 cast->addChild(binopn->RHS());
                                 binopn->setRHS(cast);
                             } else if(canCast(rhs_t,lhs_t)) {
@@ -793,6 +794,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                 CastNode* cast = new CastNode();
                                 cast->fromType = lhs_t;
                                 cast->toType = rhs_t;
+                                cast->mtypeinfo = rhs_t;
                                 cast->addChild(binopn->LHS());
                                 binopn->setLHS(cast);
                             } else {
@@ -819,7 +821,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     std::string name = static_cast<FuncDefNode*>(currentFunc)->mfuncname;
                     name += std::to_string(static_cast<FuncDefNode*>(currentFunc)->id);
                     //std::string name = currentFunc2;
-                    auto entries = getEntry(symTab,name);
+                    auto entries = getEntry(symTab,std::move(name));
                     //TypeInfo func_typeinfo = currentFunc2->mtypeinfo;
                     TypeInfo func_typeinfo = entries.at(0)->typeinfo;
                     //do compatibility checking
@@ -832,6 +834,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             CastNode* cast = new CastNode();
                             cast->fromType = ret_typeinfo;
                             cast->toType = func_typeinfo;
+                            cast->mtypeinfo = func_typeinfo;
                             //NOTE(marcus): should never reach here with expr as nullptr
                             //can't cast void to another type.
                             cast->addChild(expr);
@@ -862,6 +865,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             CastNode* cast = new CastNode();
                             cast->fromType = rhs_typeinfo;
                             cast->toType = lhs_typeinfo;
+                            cast->mtypeinfo = lhs_typeinfo;
                             cast->addChild(rhs);
                             assignn->mchildren[1] = cast;
                         } else {
@@ -886,7 +890,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         std::string varname = static_cast<VarNode*>(lhs)->getVarName();
                         //std::cout << "Inferring type for var " << varname << '\n';
                         //std::cout << rhs_typeinfo << '\n';
-                        updateVarEntry(symTab,rhs_typeinfo,varname);
+                        updateVarEntry(symTab,rhs_typeinfo,std::move(varname));
                         c->mtypeinfo = rhs_typeinfo;
                         break;
                     }
@@ -899,6 +903,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             CastNode* cast = new CastNode();
                             cast->fromType = rhs_typeinfo;
                             cast->toType = lhs_typeinfo;
+                            cast->mtypeinfo = lhs_typeinfo;
                             cast->addChild(rhs);
                             vdeca->mchildren[1] = cast;
                         } else {
@@ -955,7 +960,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::Var:
             {
                 std::string name = static_cast<VarNode*>(ast)->getVarName();
-                auto entries = getEntry(symTab,name);
+                auto entries = getEntry(symTab,std::move(name));
                 if(entries.size() > 0) {
                     SymbolTableEntry* e = entries.at(0);
                     ast->mtypeinfo = e->typeinfo;
@@ -968,7 +973,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::VarDec:
             {
                 std::string name = static_cast<VarNode*>(static_cast<VarDeclNode*>(ast)->getLHS())->getVarName();
-                auto entries = getEntry(symTab,name);
+                auto entries = getEntry(symTab,std::move(name));
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
             }
@@ -976,7 +981,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::VarDecAssign:
             {
                 std::string name = static_cast<VarNode*>(static_cast<VarDeclNode*>(ast)->getLHS())->getVarName();
-                auto entries = getEntry(symTab,name);
+                auto entries = getEntry(symTab,std::move(name));
                 SymbolTableEntry* e = entries.at(0);
                 return e->typeinfo;
             }
@@ -1180,7 +1185,11 @@ void resolveSizeOfs(AstNode* ast) {
         AstNode* child = (*vec)[i];
         if(child->nodeType() == ANT::SizeOf) {
             int size = calcTypeSize(child->mtypeinfo);
-            auto val = std::to_string(size);
+            char* buff = (char*)malloc(12);
+            int wrote = sprintf(buff,"%d",size);
+            buff[11] = '\0';
+            assert(wrote <= 10);
+            const char* val = buff;
             auto cnode = new ConstantNode();
             cnode->setVal(val);
             cnode->mtypeinfo.type = SemanticType::intlit;
@@ -1356,15 +1365,15 @@ void transformAssignments(AstNode* ast) {
     }
 }
 
-static std::string getOperatorName(std::string& op)
+static const char* getOperatorName(const char* op)
 {
-    if(op == "+") {
+    if(std::strcmp(op,"+") == 0) {
         return "plus";
-    } else if(op == "-") {
+    } else if(std::strcmp(op,"-") == 0) {
         return "minus";
-    } else if(op == "*") {
+    } else if(std::strcmp(op,"*") == 0) {
         return "mult";
-    } else if(op == "/") {
+    } else if(std::strcmp(op,"/") == 0) {
         return "div";
     }
     return "noop";
@@ -1374,8 +1383,8 @@ static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const Ty
 {
     //TODO(marcus): searches for the proper op overload for a given node.
     //TODO(marcus): op overloads are global right now, maybe should be in symbol table?
-    std::string op = funccall->getOp();
-    auto opstr = getOperatorName(op);
+    auto op = funccall->getOp();
+    std::string opstr = getOperatorName(op);
     opstr = "op_"+opstr;
     std::cout << "Searching for op: " << opstr << '\n';
     auto res = operatorOverloads.find(opstr);

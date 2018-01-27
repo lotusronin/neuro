@@ -2,7 +2,6 @@
 #define BINOPNODE_H
 
 #include <vector>
-#include <string>
 #include "astnode.h"
 #include "tokens.h"
 
@@ -12,8 +11,8 @@ class BinOpNode : public AstNode {
         static int constructed;
         BinOpNode();
         ~BinOpNode();
-        void setOp(const std::string& op);
-        std::string getOp() const;
+        void setOp(const char* op);
+        const char* getOp() const;
         AstNode* LHS();
         void setLHS(AstNode* ast);
         AstNode* RHS();
@@ -22,8 +21,7 @@ class BinOpNode : public AstNode {
         SemanticType getType() const;
         static void printDeleted();
         static int deleted;
-        //TODO(marcus): make this an enum
-        std::string mop;
+        const char* mop;
         int id;
         bool unaryOp;
         AstNode* opOverload;

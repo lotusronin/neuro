@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "tokens.h"
 #include "astnodetypes.h"
+#include <string.h>
 
 //ParseErrorType:: is a pain to write out every time... :)
 #define PET ParseErrorType
@@ -332,7 +333,6 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
         lexer->lex();
         tok = lexer->peek();
     }
-    //tnode->mindirection = indirection;
     t.indirection = indirection;
     /**/
     SemanticType mstype;
@@ -380,8 +380,6 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             break;
     }
     /**/
-    //tnode->setToken(tok);
-    //t.type = tnode->mstype;
     t.type = mstype;
     parent->mtypeinfo = t;
     //parent->mstype = t.type;
@@ -544,8 +542,8 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
         parse_error(PET::BadPrototypeName, tok, lexer);
     }
 
-    std::string operatorOverload = "op";
-    if(operatorOverload == tok.token) {
+    const char* operatorOverload = "op";
+    if(strcmp(operatorOverload, tok.token) == 0) {
         auto next_tok = lexer->peekNext();
         if(tokenIsOperator(next_tok)) {
             //we have an operator overload
@@ -812,7 +810,7 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
     ConstantNode* constnode = new ConstantNode();
     constnode->setToken(lexer->peek());
     parent->addChild(constnode);
-    std::string op = lexer->peek().token;
+    auto op = lexer->peek().token;
     constnode->setVal(op);
     lexer->lex();
     return;
@@ -1154,6 +1152,7 @@ AstNode* parseCast(LexerTarget* lexer, AstNode* child) {
     //consume cast
     lexer->lex();
     CastNode* cnode = new CastNode();
+    cnode->mchildren.reserve(1);
     parseType(lexer, cnode);
     cnode->toType = cnode->mtypeinfo;
     cnode->addChild(child);
@@ -1185,6 +1184,7 @@ AstNode* parseExpression(LexerTarget* lexer, int precedence) {
         case TokenType::floatlit:
             {
                 AstNode temp;
+                temp.mchildren.reserve(2);
                 parseConst(lexer, &temp);
                 left = temp.mchildren.at(0);
             }
@@ -1192,6 +1192,7 @@ AstNode* parseExpression(LexerTarget* lexer, int precedence) {
         case TokenType::id:
             {
                 AstNode temp;
+                temp.mchildren.reserve(1);
                 parseFunccallOrVar(lexer, &temp);
                 left = temp.mchildren.at(0);
             }

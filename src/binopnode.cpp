@@ -19,11 +19,11 @@ BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
 }
 
-void BinOpNode::setOp(const std::string& op) {
+void BinOpNode::setOp(const char* op) {
     mop = op;
 }
 
-std::string BinOpNode::getOp() const {
+const char* BinOpNode::getOp() const {
     return mop;
 }
 
@@ -51,7 +51,7 @@ void BinOpNode::setRHS(AstNode* ast) {
 
 void BinOpNode::setToken(Token& t) {
     mtoken = t;
-    setOp(std::string(t.token));
+    setOp(t.token);
 }
 
 SemanticType BinOpNode::getType() const {

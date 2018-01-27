@@ -20,11 +20,11 @@ std::vector<AstNode*>* ConstantNode::getChildren() {
     return &mchildren;
 }
 
-void ConstantNode::setVal(std::string& val) {
+void ConstantNode::setVal(const char* val) {
     mval = val;
 }
 
-std::string ConstantNode::getVal() const {
+const char* ConstantNode::getVal() const {
     return mval;
 }
 

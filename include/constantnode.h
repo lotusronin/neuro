@@ -12,11 +12,11 @@ class ConstantNode : public AstNode {
         ~ConstantNode();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();
-        void setVal(std::string& val);
+        void setVal(const char* val);
         void setToken(const Token& t);
-        std::string getVal() const;
+        const char* getVal() const;
         int id;
-        std::string mval;
+        const char* mval;
 };
 
 

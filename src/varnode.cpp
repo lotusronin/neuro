@@ -15,6 +15,6 @@ void VarNode::addVarName(std::string name) {
     mname = name;
 }
 
-std::string VarNode::getVarName() const {
-    return mname;
+const char* VarNode::getVarName() const {
+    return mname.c_str();
 }
