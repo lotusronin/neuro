@@ -8,7 +8,7 @@
 class StructDefNode : public AstNode {
     public:
         static int count;
-        StructDefNode();
+        StructDefNode(AstNodeType nodet);
         ~StructDefNode();
         std::string& getIdent();
         std::string ident;

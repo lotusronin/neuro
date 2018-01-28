@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <cstring>
+#include <set>
 #include <stdio.h>
 #include <assert.h>
 
@@ -31,6 +32,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
+static void checkForRecursiveTypes();
 
 void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
 {
@@ -232,6 +234,7 @@ void populateTypeList(AstNode* ast, SymbolTable* sym) {
                     populateTypeList(c, scope);
                 }
                 break;
+            case ANT::UnionDef:
             case ANT::StructDef:
                 //parse definition!
                 registerTypeDef(static_cast<StructDefNode*>(c));
@@ -244,6 +247,7 @@ void populateTypeList(AstNode* ast, SymbolTable* sym) {
 }
 void populateTypeList(AstNode* ast) {
     populateTypeList(ast,&progSymTab);
+    checkForRecursiveTypes();
 }
 
 void populateSymbolTableFunctions(AstNode* ast) {
@@ -394,6 +398,10 @@ bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
 
 static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
+
+    if((t1.type == SemanticType::nulllit && t2.indirection) || (t2.type == SemanticType::nulllit && t1.indirection)) {
+        return true;
+    }
 
     if(t1.type == SemanticType::User && t2.type == SemanticType::User) {
         return (std::strcmp(t1.userid,t2.userid) == 0);
@@ -879,6 +887,11 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
 
                     if(lhs_typeinfo.type == SemanticType::Infer) {
+                        //Infer *void from null
+                        if(rhs_typeinfo.type == SemanticType::nulllit) {
+                            rhs_typeinfo.type = SemanticType::Void;
+                            rhs_typeinfo.indirection = 1;
+                        }
                         //std::cout << "Inferred type!\n";
                         std::string varname = static_cast<VarNode*>(lhs)->getVarName();
                         //std::cout << "Inferring type for var " << varname << '\n';
@@ -1419,4 +1432,74 @@ static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const Ty
         }
     }
     return bestMatch;
+}
+
+static void checkForRecursiveTypes() {
+    std::set<StructDefNode*> valid_types;
+
+    //Validate all structs/unions made of only primitive types
+    for(auto iter : structList) {
+        auto n = static_cast<StructDefNode*>(iter.second);
+        bool is_simple = true;
+        for(auto c : (*(n->getChildren()))) {
+            if(c->nodeType() == AstNodeType::VarDec) {
+                if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                    is_simple = false;
+                    break;
+                }
+            }
+        }
+        if(is_simple) {
+            valid_types.insert(n);
+        }
+    }
+
+    //Validate any structs where all the struct members are validated
+    bool did_change;
+    do {
+        did_change = false;
+        bool finished = true;
+        for(auto iter : structList) {
+            auto n = static_cast<StructDefNode*>(iter.second);
+            //skip structs we already validated
+            if(valid_types.find(n) != valid_types.end()) {
+                continue;
+            }
+            //we have a struct we haven't validated, we aren't finished
+            finished = false;
+
+            //have we validated out every member type?
+            bool all_members_valid = true;
+            for(auto c : (*(n->getChildren()))) {
+                if(c->nodeType() == AstNodeType::VarDec) {
+                    if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                        auto type_str = c->mtypeinfo.userid;
+                        bool struct_is_valid = false;
+                        for(auto s : valid_types) {
+                            if(std::strcmp(s->getIdent().c_str(),type_str) == 0) {
+                                struct_is_valid = true;
+                                break;
+                            }
+                        }
+                        if(!struct_is_valid) {
+                            //haven't validated the types for every member of this struct
+                            all_members_valid = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if(all_members_valid) {
+                did_change = true;
+                valid_types.insert(n);
+                break;
+            }
+        }
+        if(finished) {
+            did_change = true;
+            break;
+        }
+    } while(did_change);
+    if(!did_change) std::cout << "Couldn't resolve circular dependency with types!\n";
 }

@@ -50,10 +50,12 @@ TokenType keyword_type[] = {
     TokenType::scontinue,
     TokenType::tstruct,
     TokenType::cast,
-    TokenType::ssizeof
+    TokenType::ssizeof,
+    TokenType::tunion,
+    TokenType::vnull
 };
 
-const char* keyword_array[30] = {
+const char* keyword_array[32] = {
     "fn",
     "extern",
     "import",
@@ -83,7 +85,9 @@ const char* keyword_array[30] = {
     "continue",
     "struct",
     "cast",
-    "sizeof"
+    "sizeof",
+    "union",
+    "null"
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 

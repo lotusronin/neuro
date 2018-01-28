@@ -35,7 +35,8 @@ enum class AstNodeType {
     Assign,
     Default,
     Cast,
-    SizeOf
+    SizeOf,
+    UnionDef
 };
 
 enum class SemanticType {
@@ -57,7 +58,8 @@ enum class SemanticType {
     s32,
     s64,
     intlit,
-    floatlit
+    floatlit,
+    nulllit
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);

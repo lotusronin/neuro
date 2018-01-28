@@ -144,7 +144,7 @@ void parseTopLevelStatements(LexerTarget* lexer, AstNode* parent) {
             //std::cout << "extern token, beginning to match prototype...\n";
             parsePrototypeOrStruct(lexer, static_cast<CompileUnitNode*>(parent));
             ////std::cout << "prototype matched\n";
-        } else if(tok.type == TokenType::tstruct) {
+        } else if(tok.type == TokenType::tstruct || tok.type == TokenType::tunion) {
             parseStructDef(lexer, parent);
         } else if(tok.type == TokenType::eof) {
             //std::cout << "File is parsed, no errors detected!\n\n";
@@ -189,7 +189,7 @@ void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
     Token tok = lexer->peekNext();
     if(tok.type == TokenType::fn) {
         parsePrototype(lexer, parent);
-    } else if(tok.type == TokenType::tstruct) {
+    } else if(tok.type == TokenType::tstruct || tok.type == TokenType::tunion) {
         //consume extern;
         lexer->lex();
         parseStructDef(lexer, parent);
@@ -945,7 +945,8 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
 
 void parseStructDef(LexerTarget* lexer, AstNode* parent) {
     //structdef -> . struct id { element list }
-    StructDefNode* structdef = new StructDefNode();
+    AstNodeType nt = (lexer->peek().type == TokenType::tstruct) ? AstNodeType::StructDef : AstNodeType::UnionDef;
+    StructDefNode* structdef = new StructDefNode(nt);
     
     //consume struct
     Token tok = lexer->lex();
@@ -1181,6 +1182,7 @@ AstNode* parseExpression(LexerTarget* lexer, int precedence) {
         case TokenType::strlit:
         case TokenType::charlit:
         case TokenType::floatlit:
+        case TokenType::vnull:
             {
                 AstNode temp;
                 temp.mchildren.reserve(2);

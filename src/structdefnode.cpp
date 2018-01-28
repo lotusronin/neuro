@@ -2,11 +2,11 @@
 
 int StructDefNode::count = 0;
 
-StructDefNode::StructDefNode() {
+StructDefNode::StructDefNode(AstNodeType nodet) {
     id = StructDefNode::count;
     StructDefNode::count++;
     foreign = false;
-    mnodet = AstNodeType::StructDef;
+    mnodet = nodet;
 }
 
 StructDefNode::~StructDefNode() {

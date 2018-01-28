@@ -22,6 +22,9 @@ std::vector<AstNode*>* ConstantNode::getChildren() {
 
 void ConstantNode::setVal(const char* val) {
     mval = val;
+    if(mtypeinfo.type == SemanticType::nulllit) {
+        mval = "0";
+    }
 }
 
 const char* ConstantNode::getVal() const {
@@ -41,6 +44,8 @@ void ConstantNode::setToken(const Token& t) {
         mtypeinfo.indirection = 1;
     } else if(t.type == TokenType::charlit) {
         mstype = SemanticType::Char;
+    } else if(t.type == TokenType::vnull) {
+        mstype = SemanticType::nulllit;
     }
     mtypeinfo.type = mstype;
 }

@@ -163,6 +163,7 @@ static void getUserTypeNodes(AstNode* ast, std::vector<StructDefNode*>& types) {
                 getUserTypeNodes(c, types);
             }
             break;
+        case AstNodeType::UnionDef:
         case AstNodeType::StructDef:
             types.push_back(static_cast<StructDefNode*>(ast));
             break;
@@ -239,7 +240,13 @@ std::string generateTypeString(TypeInfo& t) {
 }
 
 void printStruct(StructDefNode* n, std::ofstream& out) {
-    out << "struct " << n->getIdent() << " {\n";
+    const char* str_uni = n->nodeType() == (AstNodeType::StructDef) ? "struct " : "union ";
+    if(n->foreign) {
+        //foreign structs/unions have no body.
+        out << "extern " << str_uni << n->getIdent() << ";\n";
+        return;
+    }
+    out << str_uni << n->getIdent() << " {\n";
     for(auto c : (*(n->getChildren()))) {
         if(c->nodeType() == AstNodeType::VarDec) {
             auto vdec = static_cast<VarDeclNode*>(c);
@@ -510,7 +517,8 @@ void cBackend(AstNode* ast, std::string filename) {
     header << "typedef double f64;\n";
     for(auto n : types) {
         std::string struct_name = n->getIdent();
-        header << "typedef struct " << struct_name << ' ' << struct_name <<  ";\n";
+        const char* struct_or_union = (n->nodeType() == AstNodeType::StructDef) ? "typedef struct " : "typedef union ";
+        header << struct_or_union << struct_name << ' ' << struct_name <<  ";\n";
     }
 
     DEBUGC(std::cout << "Simple types\n";)
@@ -583,6 +591,10 @@ void cBackend(AstNode* ast, std::string filename) {
             break;
         }
     } while(did_change);
+    //NOTE(marcus): There should not be any circular dependencies if this code is run as this is
+    //checked in an earlier pass.
+    //TODO(marcus): use the earlier pass to construct the list of structs in a correct order instead
+    //of redoing the work here.
     if(!did_change) std::cout << "Couldn't resolve circular dependency with types!\n";
 
     DEBUGC(std::cout << "Prototypes\n";)

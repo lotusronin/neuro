@@ -63,7 +63,7 @@ void printSizes();
 int main(int argc, char** argv) {
     //std::cout << "Welcome to the neuro compiler.\n";
 
-    printSizes();
+    //printSizes();
     cbackend = true; //TODO(marcus): remove this
 
     if(argc < 2) {
