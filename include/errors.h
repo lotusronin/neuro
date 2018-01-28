@@ -46,10 +46,12 @@ enum class SemanticErrorType{
     MultipleFuncResolve,
     NoResolve,
     NoFunction,
+    CyclicTypeDefinitions,
     Unknown
 };
 
 void printErrorContext(int line, int col, std::string filename);
 void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s);
+void semanticError(SemanticErrorType err, std::vector<StructDefNode*>& types);
 int parse_error(ParseErrorType type, Token& t, LexerTarget* l);
 #endif //ERRORS

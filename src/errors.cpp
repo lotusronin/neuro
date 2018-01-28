@@ -253,3 +253,19 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
     std::cout << "\n";
     semantic_error = true;
 }
+
+void semanticError(SemanticErrorType err, std::vector<StructDefNode*>& types) {
+    if(err == SemanticErrorType::CyclicTypeDefinitions) {
+        ERROR("<Error> Couldn't resolve dependencies with provided types\n");
+        std::cout << "Unresolved Types: ";
+        for(auto n : types) {
+            std::cout << n->getIdent() << ' ';
+        }
+        std::cout << '\n';
+    } else {
+        std::cout << __FILE__ << ':' << __LINE__ << " Compiler error, unknown error type " << static_cast<int>(err) << '\n';
+    }
+    std::cout << "\n";
+    semantic_error = true;
+    exit(-1);
+}

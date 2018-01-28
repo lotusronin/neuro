@@ -1501,5 +1501,14 @@ static void checkForRecursiveTypes() {
             break;
         }
     } while(did_change);
-    if(!did_change) std::cout << "Couldn't resolve circular dependency with types!\n";
+    if(!did_change) {
+        std::vector<StructDefNode*> unresolvedTypes;
+        for(auto iter : structList) {
+            auto n = static_cast<StructDefNode*>(iter.second);
+            if(valid_types.find(n) == valid_types.end()) {
+                unresolvedTypes.push_back(n);
+            }
+        }
+        semanticError(SET::CyclicTypeDefinitions,unresolvedTypes);
+    }
 }
