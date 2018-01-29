@@ -26,6 +26,7 @@ enum class ParseErrorType {
     MissRParen,
     MissSemicolon,
     MissColon,
+    BadTypeModifier,
     Unknown
 };
 
@@ -47,6 +48,7 @@ enum class SemanticErrorType{
     NoResolve,
     NoFunction,
     CyclicTypeDefinitions,
+    VoidPtrDeref,
     Unknown
 };
 

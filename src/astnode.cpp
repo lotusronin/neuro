@@ -83,8 +83,8 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj) {
 }
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
-    if(obj.indirection > 0) {
-        int i = obj.indirection;
+    if(obj.indirection() > 0) {
+        int i = obj.indirection();
         while(i) {
             os << '*';
             --i;
@@ -95,4 +95,12 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
         os << obj.userid;
     }
     return os;
+}
+
+int TypeInfo::indirection() const {
+    int indirection = 0;
+    for(int idx = 0; modifier[idx] == '*'; idx++) {
+        ++indirection;
+    }
+    return indirection;
 }

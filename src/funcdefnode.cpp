@@ -64,8 +64,9 @@ std::string FuncDefNode::mangledName() {
         if(arg->nodeType() != AstNodeType::Params)
             continue;
         auto argti = arg->mtypeinfo;
-        if(argti.indirection) {
-            mangled = mangled + "p" + std::to_string(argti.indirection);
+        auto indirection = argti.indirection();
+        if(indirection) {
+            mangled = mangled + "p" + std::to_string(indirection);
         }
         switch(argti.type) {
             case SemanticType::Void:

@@ -60,7 +60,7 @@ Type* getIRPtrType(Type* t, int indirection) {
 
 #define ST SemanticType
 Type* getIRType(TypeInfo& info) {
-    return getIRType(info.type,info.userid,info.indirection);
+    return getIRType(info.type,info.userid,info.indirection());
 }
 
 Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
@@ -156,7 +156,7 @@ Type* generateTypeCodegen(AstNode* n) {
         auto var = static_cast<VarDeclNode*>(c);
         TypeInfo typeinfo = var->mtypeinfo; 
         SemanticType stype = typeinfo.type;
-        int indirection = typeinfo.indirection;
+        int indirection = typeinfo.indirection();
         if(isPrimitiveType(typeinfo)) {
             memberTypes.push_back(getIRType(stype,"",indirection));
         } else {
@@ -390,9 +390,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 }
             }
             if(opc == '+') {
-                if(lhs->mtypeinfo.indirection) {
+                if(lhs->mtypeinfo.indirection()) {
                     return Builder.CreateGEP(lhsv,rhsv,"ptr");
-                } else if(rhs->mtypeinfo.indirection) {
+                } else if(rhs->mtypeinfo.indirection()) {
                     return Builder.CreateGEP(rhsv,lhsv,"ptr");
                 }
                 //std::cout << "generating add\n";
@@ -403,9 +403,9 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                     rhsv = ConstantInt::get(context, APInt(32,-1));
                     return Builder.CreateMul(lhsv,rhsv);
                 }
-                if(lhs->mtypeinfo.indirection) {
+                if(lhs->mtypeinfo.indirection()) {
                     return Builder.CreateGEP(lhsv,rhsv,"ptr");
-                } else if(rhs->mtypeinfo.indirection) {
+                } else if(rhs->mtypeinfo.indirection()) {
                     return Builder.CreateGEP(rhsv,lhsv,"ptr");
                 }
                 return Builder.CreateSub(lhsv,rhsv,"subtemp");
@@ -483,12 +483,16 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //generates a struct that we will do address of or member access on.
                 auto lhs_typeinfo = getTypeInfo(lhs,sym);
                 Type* structtype;
-                bool getLval = (lhs_typeinfo.indirection == 0); //if ptr, want ptr value, not address
+                bool getLval = (lhs_typeinfo.indirection() == 0); //if ptr, want ptr value, not address
                 auto structval = expressionCodegen(lhs,sym,getLval);
                 lhsv_ptr = structval;
-                if(lhs_typeinfo.indirection == 1) {
+                if(lhs_typeinfo.indirection() == 1) {
                     //we are just dereferencing a pointer
-                    lhs_typeinfo.indirection = 0;
+                    //FIXME(marcus): there should be a better way of doing this...
+                    auto len = std::strlen(lhs_typeinfo.modifier);
+                    char* new_modifier = (char*)malloc(len);
+                    std::strcpy(new_modifier,lhs_typeinfo.modifier+1);
+                    lhs_typeinfo.modifier = new_modifier;
                 }
                 structtype = getIRType(lhs_typeinfo);
                 //auto structtype = lhsv->getType();
@@ -553,7 +557,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 //std::cout << "generating constant!\n";
                 auto constn = static_cast<ConstantNode*>(n);
                 std::string strval = constn->getVal();
-                if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection == 1) {
+                if(constn->mtypeinfo.type == SemanticType::Char && constn->mtypeinfo.indirection() == 1) {
                     val = Builder.CreateGlobalStringPtr(strval, "g_str");
                 } else if(constn->mtypeinfo.type == SemanticType::Char) {
                     char c;
@@ -624,8 +628,8 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 CastNode* cast = static_cast<CastNode*>(n);
                 val = expressionCodegen(cast->mchildren[0], sym);
                 //TODO(marcus): make sure casts work for all types
-                if(cast->fromType.indirection > 0) {
-                    if(cast->mtypeinfo.indirection > 0) {
+                if(cast->fromType.indirection() > 0) {
+                    if(cast->mtypeinfo.indirection() > 0) {
                         //Pointer Cast!
                         auto type = getIRType(cast->mtypeinfo);
                         return Builder.CreatePointerCast(val, type, "cast");

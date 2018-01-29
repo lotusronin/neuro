@@ -231,7 +231,7 @@ std::string generateTypeString(TypeInfo& t) {
         }
     }
 
-    int x = t.indirection;
+    int x = t.indirection();
     while(x) {
         type += "*";
         --x;
@@ -361,7 +361,7 @@ void printBody(AstNode* n, std::ofstream& out) {
         case AstNodeType::Const:
             {
                 auto node = static_cast<ConstantNode*>(n);
-                if(node->mtypeinfo.type == SemanticType::Char && node->mtypeinfo.indirection) {
+                if(node->mtypeinfo.type == SemanticType::Char && node->mtypeinfo.indirection()) {
                     out << '"' << node->getVal() << '"';
                 } else {
                     out << node->getVal();
@@ -403,6 +403,13 @@ void printBody(AstNode* n, std::ofstream& out) {
                             printBody(node->LHS(),out);
                             out << op;
                             printBody(node->RHS(),out);
+                        } else if(op == "[") {
+                            out << '(';
+                            printBody(node->LHS(),out);
+                            out << ')';
+                            out << '[';
+                            printBody(node->RHS(),out);
+                            out << ']';
                         } else {
                             out << '(';
                             printBody(node->LHS(),out);
@@ -529,7 +536,7 @@ void cBackend(AstNode* ast, std::string filename) {
         bool is_simple = true;
         for(auto c : (*(n->getChildren()))) {
             if(c->nodeType() == AstNodeType::VarDec) {
-                if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection() == 0)) {
                     is_simple = false;
                     break;
                 }
@@ -560,7 +567,7 @@ void cBackend(AstNode* ast, std::string filename) {
             bool can_print = true;
             for(auto c : (*(n->getChildren()))) {
                 if(c->nodeType() == AstNodeType::VarDec) {
-                    if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                    if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection() == 0)) {
                         auto type_str = c->mtypeinfo.userid;
                         bool struct_is_printed = false;
                         for(auto s : printed_types) {

@@ -8,6 +8,7 @@
 #include "tokens.h"
 #include "astnodetypes.h"
 #include <string.h>
+#include <cstring>
 
 //ParseErrorType:: is a pain to write out every time... :)
 #define PET ParseErrorType
@@ -325,16 +326,36 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
     Token tok = lexer->peek();
     TypeInfo t;
 
-    //Handle pointer types
-    int indirection = 0;
-    while(tok.type == TokenType::star) {
-        indirection++;
-        //consume *
-        lexer->lex();
-        tok = lexer->peek();
+    std::vector<char> modifier_str;
+    modifier_str.reserve(16);
+    //parse type modifier (pointers and arrays)
+    while(1) {
+        if(tok.type == TokenType::star) {
+            modifier_str.push_back('*');
+        } else if(tok.type == TokenType::lsqrbrace) {
+            modifier_str.push_back('[');
+            tok = lexer->lex();
+            if(tok.type != TokenType::intlit) {
+                parse_error(PET::BadTypeModifier, tok, lexer);
+            }
+            for(int idx = 0; tok.token[idx] != '\0'; idx++) {
+                modifier_str.push_back(tok.token[idx]);
+            }
+            //consume int lit
+            tok = lexer->lex();
+            if(tok.type != TokenType::rsqrbrace) {
+                parse_error(PET::BadTypeModifier, tok, lexer);
+            }
+        } else {
+            break;
+        }
+        tok = lexer->lex();
     }
-    t.indirection = indirection;
-    /**/
+    char* mod_str = (char*)malloc(modifier_str.size()+1);
+    std::strncpy(mod_str,&modifier_str[0],modifier_str.size());
+    mod_str[modifier_str.size()] = '\0';
+    t.modifier = mod_str;
+
     SemanticType mstype;
     switch(tok.type) {
         case TokenType::tuchar:
@@ -462,6 +483,10 @@ bool tokenTypeIsAType(TokenType t) {
             //Or it could be a pointer.
             return true;
             break;
+        case TokenType::lsqrbrace:
+            //TODO(marcus): this could also be a syntax error.
+            //Or it could be an array
+            return true;
         default:
             return false;
             break;

@@ -1,5 +1,6 @@
 #include "constantnode.h"
 #include <iostream>
+#include <cstring>
 
 int ConstantNode::count = 0;
 
@@ -40,8 +41,9 @@ void ConstantNode::setToken(const Token& t) {
         mstype = SemanticType::floatlit;
     } else if(t.type == TokenType::strlit) {
         //TODO(marcus): maybe fix this up?
+        //TODO(marcus): this might break if someone else tries to set mtypeinfo later
         mstype = SemanticType::Char;
-        mtypeinfo.indirection = 1;
+        mtypeinfo.modifier = "*";
     } else if(t.type == TokenType::charlit) {
         mstype = SemanticType::Char;
     } else if(t.type == TokenType::vnull) {

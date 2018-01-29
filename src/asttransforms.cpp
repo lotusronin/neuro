@@ -351,7 +351,7 @@ void typeCheckPass(AstNode* ast) {
 }
 
 static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
-    if(t1.indirection == t2.indirection) {
+    if(t1.indirection() == t2.indirection()) {
         if(t1.type == t2.type) {
             if(t1.type != SemanticType::User) {
                 return true;
@@ -365,14 +365,14 @@ static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
 
 #define ST SemanticType
 bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
-    if(t1.indirection > 0 && t2.indirection > 0) {
+    if(t1.indirection() > 0 && t2.indirection() > 0) {
         return false;
     }
 
     SemanticType st = ST::Typeless;
-    if(t1.indirection > 0) {
+    if(t1.indirection() > 0) {
         st = t2.type;
-    } else if(t2.indirection > 0) {
+    } else if(t2.indirection() > 0) {
         st = t1.type;
     }
 
@@ -399,7 +399,7 @@ bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
 static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
 
-    if((t1.type == SemanticType::nulllit && t2.indirection) || (t2.type == SemanticType::nulllit && t1.indirection)) {
+    if((t1.type == SemanticType::nulllit && t2.indirection()) || (t2.type == SemanticType::nulllit && t1.indirection())) {
         return true;
     }
 
@@ -407,12 +407,12 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
         return (std::strcmp(t1.userid,t2.userid) == 0);
     }
 
-    if(t1.indirection != t2.indirection) {
+    if(t1.indirection() != t2.indirection()) {
         //can't implicitly convert two diff pointer types
         return false;
     }
 
-    if(t1.indirection == 1 && t2.indirection == 1) {
+    if(t1.indirection() == 1 && t2.indirection() == 1) {
         if(t1.type == SemanticType::u8 || t1.type == SemanticType::Char) {
             if(t2.type == SemanticType::u8 || t2.type == SemanticType::Char) {
                 return true;
@@ -420,7 +420,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
         }
     }
 
-    if(t1.indirection > 0 || t2.indirection > 0) {
+    if(t1.indirection() > 0 || t2.indirection() > 0) {
         //can't implicitly convert two diff pointer types
         //TODO(marcus): what about void*?
         return false;
@@ -530,7 +530,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
     // *u8 = string literal
     if(t2.type == ST::Char) {
         if(t1.type == ST::u8) {
-            if(t1.indirection == 1) {
+            if(t1.indirection() == 1) {
                 return true;
             }
         }
@@ -554,8 +554,13 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
 #undef ST
 
 static int decreaseDerefTypeInfo(TypeInfo& t) {
-    if(t.indirection > 0) {
-        t.indirection -= 1;
+    if(t.indirection() > 0) {
+        auto len = std::strlen(t.modifier);
+        char* new_modifier = (char*)malloc(len);
+        //modifier looks like *<rest of type>
+        //copy rest of modifier without leading *
+        std::strcpy(new_modifier,t.modifier+1);
+        t.modifier = new_modifier;
     } else {
         return 1;
     }
@@ -563,7 +568,13 @@ static int decreaseDerefTypeInfo(TypeInfo& t) {
 }
 
 static void increaseDerefTypeInfo(TypeInfo& t) {
-    t.indirection += 1;
+    auto len = std::strlen(t.modifier);
+    char* new_modifier = (char*)malloc(len+2);
+    //modifier looks like *<rest of type>
+    //copy rest of modifier without leading *
+    new_modifier[0] = '*';
+    std::strcpy(new_modifier+1,t.modifier);
+    t.modifier = new_modifier;
     return;
 }
 
@@ -687,7 +698,24 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         if(err) {
                             semanticError(SET::DerefNonPointer,c,symTab);
                         }
+                        if(t.type == SemanticType::Void && t.indirection() == 0) {
+                            semanticError(SET::VoidPtrDeref,c,symTab);
+                        }
                         binopn->mtypeinfo = t;
+                    } else if(std::strcmp(op,"[") == 0) {
+                        //we are indexing into an array, make sure left side is a ptr and right side
+                        //is an integer
+                        typeCheckPass(c,symTab);
+                        TypeInfo lhst = getTypeInfo(binopn->LHS(),symTab);
+                        TypeInfo rhst = getTypeInfo(binopn->RHS(),symTab);
+                        int err = decreaseDerefTypeInfo(lhst);
+                        if(err) {
+                            semanticError(SET::DerefNonPointer,c,symTab);
+                        }
+                        if(lhst.type == SemanticType::Void && lhst.indirection() == 0) {
+                            semanticError(SET::VoidPtrDeref,c,symTab);
+                        }
+                        binopn->mtypeinfo = lhst;
                     } else if(std::strcmp(op,".") == 0) {
                         //TODO(marcus): fill out type checking for user structs
                         //get member name
@@ -724,7 +752,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //unary negation
                         typeCheckPass(binopn,symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
-                        if(lhs_t.indirection) {
+                        if(lhs_t.indirection()) {
                             //TODO(marcus): get actual errors!
                             semanticError(SET::Unknown,binopn,symTab);
                         }
@@ -777,7 +805,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         } else {
                             //check for pointer math
                             if(isPointerMath(lhs_t,rhs_t)) {
-                                if(lhs_t.indirection) {
+                                if(lhs_t.indirection()) {
                                     binopn->mtypeinfo = lhs_t;
                                     //binopn->mstype = lhs_t.type;
                                 } else {
@@ -890,7 +918,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //Infer *void from null
                         if(rhs_typeinfo.type == SemanticType::nulllit) {
                             rhs_typeinfo.type = SemanticType::Void;
-                            rhs_typeinfo.indirection = 1;
+                            rhs_typeinfo.modifier = "*";
                         }
                         //std::cout << "Inferred type!\n";
                         std::string varname = static_cast<VarNode*>(lhs)->getVarName();
@@ -965,7 +993,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::Var:
             {
                 std::string name = static_cast<VarNode*>(ast)->getVarName();
-                auto entries = getEntry(symTab,std::move(name));
+                auto entries = getEntry(symTab,name);
                 if(entries.size() > 0) {
                     SymbolTableEntry* e = entries.at(0);
                     ast->mtypeinfo = e->typeinfo;
@@ -1001,8 +1029,6 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                 }
                 SymbolTableEntry* e = entries.at(0);
                 return e->node->mtypeinfo;
-                //TODO(marcus): function entries don't get their typeinfo field set
-                return e->typeinfo;
             }
             break;
         case ANT::BinOp:
@@ -1123,7 +1149,7 @@ void deferPass(AstNode* ast) {
 
 static int calcTypeSize(TypeInfo t) {
 //TODO(marcus): make this not hard coded
-    if(t.indirection) {
+    if(t.indirection()) {
         return 8;
     }
 
@@ -1305,8 +1331,8 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
 static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst) {
     //If either the left or the right side of the operator is a user type we need to look up
     //an operator overload
-    bool lhs_is_user = ((lhst.type == SemanticType::User) && (lhst.indirection == 0));
-    bool rhs_is_user = ((rhst.type == SemanticType::User) && (rhst.indirection == 0));
+    bool lhs_is_user = ((lhst.type == SemanticType::User) && (lhst.indirection() == 0));
+    bool rhs_is_user = ((rhst.type == SemanticType::User) && (rhst.indirection() == 0));
     return (lhs_is_user || rhs_is_user);
 }
 
@@ -1443,7 +1469,7 @@ static void checkForRecursiveTypes() {
         bool is_simple = true;
         for(auto c : (*(n->getChildren()))) {
             if(c->nodeType() == AstNodeType::VarDec) {
-                if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection() == 0)) {
                     is_simple = false;
                     break;
                 }
@@ -1472,7 +1498,7 @@ static void checkForRecursiveTypes() {
             bool all_members_valid = true;
             for(auto c : (*(n->getChildren()))) {
                 if(c->nodeType() == AstNodeType::VarDec) {
-                    if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection == 0)) {
+                    if((c->mtypeinfo.type == SemanticType::User) && (c->mtypeinfo.indirection() == 0)) {
                         auto type_str = c->mtypeinfo.userid;
                         bool struct_is_valid = false;
                         for(auto s : valid_types) {

@@ -118,6 +118,9 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
             std::cout << "File:" << t.line << ":" << t.col << " Error: Expected colon\n";
             std::cout << "  Token: " << t.token << " is not a ':'\n";
             break;
+        case ParseErrorType::BadTypeModifier:
+            std::cout << "File:"<< t.line << ":" << t.col << " Error: invalid type modifier\n";
+            break;
        default:
             std::cout << "Unknown Parse Error!\n";
             break;
@@ -239,6 +242,11 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
         case SemanticErrorType::NoFunction:
         {
             ERROR("No function named " << static_cast<FuncCallNode*>(n)->mfuncname << " found\n");
+        }
+        break;
+        case SemanticErrorType::VoidPtrDeref:
+        {
+            ERROR("Cannot dereference a pointer of type *void\n");
         }
         break;
         case SemanticErrorType::Unknown:

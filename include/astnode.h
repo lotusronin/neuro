@@ -67,7 +67,8 @@ std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
 struct TypeInfo {
     const char* userid = nullptr;
     SemanticType type = SemanticType::Typeless;
-    int indirection = 0;
+    const char* modifier = "";
+    int indirection() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);
