@@ -7,6 +7,7 @@
 #include <string>
 #include <utility>
 #include <cstring>
+#include <algorithm>
 #include <set>
 #include <stdio.h>
 #include <assert.h>
@@ -1147,65 +1148,88 @@ void deferPass(AstNode* ast) {
 
 #define ST SemanticType
 
-static int calcTypeSize(TypeInfo t) {
-//TODO(marcus): make this not hard coded
+static std::pair<int,int> typeSizeAndAlign(TypeInfo t) {
+    int size = 0;
+    int align = 0;
+    //TODO(marcus): Support array sizes
     if(t.indirection()) {
-        return 8;
-    }
+        //NOTE(marcus): this is platform dependent
+        size = align = 8;
+    } else {
+        switch(t.type) {
+            case ST::Bool:
+            case ST::Char:
+            case ST::u8:
+            case ST::s8:
+                size = align = 1;
+                break;
+            case ST::u16:
+            case ST::s16:
+                size = align = 2;
+                break;
+            case ST::u32:
+            case ST::s32:
+            case ST::Float:
+            case ST::Int:
+            case ST::intlit:
+            case ST::floatlit:
+                size = align = 4;
+                break;
+            case ST::u64:
+            case ST::s64:
+            case ST::Double:
+                size = align = 8;
+                break;
+            case ST::User:
+                {
+                    //stargate
+                    auto iter = structList.find(std::string(t.userid));
+                    if(iter == structList.end()) {
+                        //TODO(marcus): error, struct type doesn't exist
+                        semanticError(SemanticErrorType::Unknown, nullptr, &progSymTab);
+                    }
+                    auto struct_node = static_cast<StructDefNode*>(iter->second);
 
-    switch(t.type) {
-        case ST::Bool:
-        case ST::Char:
-        case ST::u8:
-        case ST::s8:
-            return 1;
-            break;
-        case ST::u16:
-        case ST::s16:
-            return 2;
-            break;
-        case ST::u32:
-        case ST::s32:
-        case ST::Float:
-        case ST::Int:
-        case ST::intlit:
-        case ST::floatlit:
-            return 4;
-            break;
-        case ST::u64:
-        case ST::s64:
-        case ST::Double:
-            return 8;
-            break;
-        case ST::User:
-/*
- *            {
- *                int sum = 0;
- *                //TODO(marcus): factor in alignment?
- *                auto iter = userTypesList.find(t.userid);
- *                if(iter == userTypesList.end()) {
- *                    //TODO(marcus): add error case
- *                    semanticError(SemanticErrorType::Unknown, t,t);
- *                    return 1;
- *                }
- *
- *                auto members = iter->second;
- *
- *                for(auto i : *members) {
- *                    s
- *                }
- *                return sum;
- *            }
- *            break;
- */
-            //TODO(marcus): implement this for user defined types!
-            return 1;
-        default:
-            //TODO(marcus): fix this error
-            semanticError(SemanticErrorType::Unknown, nullptr, &progSymTab);
-            return 0;
-            break;
+                    int maximum_size = 0;
+                    int maximum_align = 0;
+                    int struct_size = 0;
+                    for(auto member : struct_node->mchildren) {
+                        if(member->nodeType() != AstNodeType::VarDec) continue;
+                        auto vardec = static_cast<VarDeclNode*>(member);
+                        auto var = static_cast<VarNode*>(vardec->mchildren[0]);
+                        auto member_t = var->mtypeinfo;
+                        auto m_size_align = typeSizeAndAlign(member_t);
+                        maximum_size = std::max(maximum_size,m_size_align.first);
+                        maximum_align = std::max(maximum_align,m_size_align.second);
+                        int padding = (m_size_align.second - (struct_size % m_size_align.second)) % m_size_align.second;
+                        struct_size += m_size_align.first + padding;
+                    }
+                    //Empty structs are size 1
+                    if(struct_size == 0) {
+                        struct_size = 1;
+                        maximum_align = 1;
+                    }
+                    if(struct_node->nodeType() == AstNodeType::UnionDef) {
+                        //unions are the size of the largest member
+                        struct_size = maximum_size;
+                    }
+                    struct_size += (maximum_align - (struct_size % maximum_align)) % maximum_align;
+                    size = struct_size;
+                    align = maximum_align;
+                }
+                break;
+            default:
+                //TODO(marcus): fix this error
+                semanticError(SemanticErrorType::Unknown, nullptr, &progSymTab);
+                break;
+        }
     }
+    return std::pair<int,int>(size,align);
+}
+
+static int calcTypeSize(TypeInfo t) {
+    auto ret = typeSizeAndAlign(t);
+    return ret.first;
 }
 
 #undef ST
