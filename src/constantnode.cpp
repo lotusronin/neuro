@@ -43,7 +43,7 @@ void ConstantNode::setToken(const Token& t) {
         //TODO(marcus): maybe fix this up?
         //TODO(marcus): this might break if someone else tries to set mtypeinfo later
         mstype = SemanticType::Char;
-        mtypeinfo.modifier = "*";
+        mtypeinfo.pindirection = 1;
     } else if(t.type == TokenType::charlit) {
         mstype = SemanticType::Char;
     } else if(t.type == TokenType::vnull) {

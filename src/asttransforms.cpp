@@ -556,12 +556,7 @@ static bool canCast(TypeInfo& t1, TypeInfo& t2) {
 
 static int decreaseDerefTypeInfo(TypeInfo& t) {
     if(t.indirection() > 0) {
-        auto len = std::strlen(t.modifier);
-        char* new_modifier = (char*)malloc(len);
-        //modifier looks like *<rest of type>
-        //copy rest of modifier without leading *
-        std::strcpy(new_modifier,t.modifier+1);
-        t.modifier = new_modifier;
+        t.pindirection -= 1;
     } else {
         return 1;
     }
@@ -569,13 +564,7 @@ static int decreaseDerefTypeInfo(TypeInfo& t) {
 }
 
 static void increaseDerefTypeInfo(TypeInfo& t) {
-    auto len = std::strlen(t.modifier);
-    char* new_modifier = (char*)malloc(len+2);
-    //modifier looks like *<rest of type>
-    //copy rest of modifier without leading *
-    new_modifier[0] = '*';
-    std::strcpy(new_modifier+1,t.modifier);
-    t.modifier = new_modifier;
+    t.pindirection += 1;
     return;
 }
 
@@ -725,9 +714,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             break;
                         }
                         typeCheckPass(c,symTab);
-                        //FIXME(marcus): if . also dereferences then we will need to handle this case
-                        //or maybe the right side is a dereferenced struct ptr, also
-                        //will need to handle that case
                         auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         std::string structtypename = lhs_t.userid;
                         std::string membername = static_cast<VarNode*>(binopn->RHS())->getVarName();
@@ -739,6 +725,11 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             auto var = static_cast<VarNode*>(vardec->mchildren[0]);
                             if(var->getVarName() == membername) {
                                 binopn->mtypeinfo = var->mtypeinfo;
+                                if(lhs_t.indirection() == 1) {
+                                    //TODO(marcus): we need a better way to indicate that the . also
+                                    //dereferences
+                                    binopn->unaryOp = true;
+                                }
                                 break;
                             }
                         }
@@ -788,8 +779,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         }
                     } else {
                         typeCheckPass(binopn,symTab);
-                        //typeCheckPass(binopn->LHS(),symTab);
-                        //typeCheckPass(binopn->RHS(),symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
                         if(isOpOverloadCandidate(lhs_t,rhs_t)) {
@@ -919,7 +908,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //Infer *void from null
                         if(rhs_typeinfo.type == SemanticType::nulllit) {
                             rhs_typeinfo.type = SemanticType::Void;
-                            rhs_typeinfo.modifier = "*";
+                            rhs_typeinfo.pindirection = 1;
                         }
                         //std::cout << "Inferred type!\n";
                         std::string varname = static_cast<VarNode*>(lhs)->getVarName();

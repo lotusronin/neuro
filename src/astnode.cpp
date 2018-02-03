@@ -98,9 +98,17 @@ std::ostream& operator<<(std::ostream& os, const TypeInfo& obj) {
 }
 
 int TypeInfo::indirection() const {
-    int indirection = 0;
-    for(int idx = 0; modifier[idx] == '*'; idx++) {
-        ++indirection;
-    }
-    return indirection;
+    return pindirection;
+}
+
+bool TypeInfo::isPointer() const {
+    return (pindirection > 0);
+}
+
+bool TypeInfo::isArray() const {
+    return (arr_size > 0);
+}
+
+int TypeInfo::arraySize() const {
+    return arr_size;
 }

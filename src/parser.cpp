@@ -320,44 +320,9 @@ static bool isTokenAType(TokenType t) {
     }
 }
 
-void parseType(LexerTarget* lexer, AstNode* parent) {
-    //type -> int | char | float | double | bool | id
-    //optional *'s infront of each type name
-    Token tok = lexer->peek();
-    TypeInfo t;
-
-    std::vector<char> modifier_str;
-    modifier_str.reserve(16);
-    //parse type modifier (pointers and arrays)
-    while(1) {
-        if(tok.type == TokenType::star) {
-            modifier_str.push_back('*');
-        } else if(tok.type == TokenType::lsqrbrace) {
-            modifier_str.push_back('[');
-            tok = lexer->lex();
-            if(tok.type != TokenType::intlit) {
-                parse_error(PET::BadTypeModifier, tok, lexer);
-            }
-            for(int idx = 0; tok.token[idx] != '\0'; idx++) {
-                modifier_str.push_back(tok.token[idx]);
-            }
-            //consume int lit
-            tok = lexer->lex();
-            if(tok.type != TokenType::rsqrbrace) {
-                parse_error(PET::BadTypeModifier, tok, lexer);
-            }
-        } else {
-            break;
-        }
-        tok = lexer->lex();
-    }
-    char* mod_str = (char*)malloc(modifier_str.size()+1);
-    std::strncpy(mod_str,&modifier_str[0],modifier_str.size());
-    mod_str[modifier_str.size()] = '\0';
-    t.modifier = mod_str;
-
+static SemanticType getSemanticTypeFromTokenType(TokenType t) {
     SemanticType mstype;
-    switch(tok.type) {
+    switch(t) {
         case TokenType::tuchar:
         case TokenType::tchar:
             mstype = SemanticType::Char;
@@ -379,7 +344,6 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             break;
         case TokenType::id:
             mstype = SemanticType::User;
-            t.userid = tok.token;
             break;
         case TokenType::tuint:
             mstype = SemanticType::u32;
@@ -400,10 +364,62 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             mstype = SemanticType::Typeless;
             break;
     }
-    /**/
-    t.type = mstype;
-    parent->mtypeinfo = t;
-    //parent->mstype = t.type;
+    return mstype;
+}
+
+void parseType(LexerTarget* lexer, AstNode* parent) {
+    //type -> int | char | float | double | bool | id
+    //optional *'s infront of each type name
+    Token tok = lexer->peek();
+    TypeInfo t;
+    TypeInfo* ptr_t = &t;
+
+    int indirection = 0;
+    while(1) {
+        if(tok.type == TokenType::star) {
+            indirection += 1;
+        } else if(tok.type == TokenType::lsqrbrace) {
+            tok = lexer->lex();
+            if(tok.type != TokenType::intlit) {
+                parse_error(PET::BadTypeModifier, tok, lexer);
+            }
+            int arr_size = 0;
+            sscanf(tok.token,"%d",&arr_size);
+            //consume int lit
+            tok = lexer->lex();
+            if(tok.type != TokenType::rsqrbrace) {
+                parse_error(PET::BadTypeModifier, tok, lexer);
+            }
+            //have enough information for a type node
+            //will be some number of *s and then an array
+            auto typeInfoNode = new TypeInfo();
+            typeInfoNode->type = SemanticType::Array;
+            typeInfoNode->pindirection = indirection;
+            typeInfoNode->arr_size = arr_size;
+            ptr_t->base_t = typeInfoNode;
+            ptr_t = ptr_t->base_t;
+            indirection = 0;
+        } else {
+            auto mstype = getSemanticTypeFromTokenType(tok.type);
+            int arr_size = 0;
+            const char* user_id = nullptr;
+            if(mstype == SemanticType::User) user_id = tok.token;
+            //we have enough information for a type node
+            //will be some number of *s and then a type identifier
+            auto typeInfoNode = new TypeInfo();
+            typeInfoNode->type = mstype;
+            typeInfoNode->pindirection = indirection;
+            typeInfoNode->arr_size = arr_size;
+            typeInfoNode->userid = user_id;
+            //set this as the tail of the list;
+            ptr_t->base_t = typeInfoNode;
+            //std::cout << "TypeParse Finished with " << *typeInfoNode << '\n';
+            break;
+        }
+        tok = lexer->lex();
+    }
+
+    parent->mtypeinfo = *(t.base_t);
     if(isTokenAType(tok.type)) {
         //consume int/char/bool/float/double/void/id
         lexer->lex();

@@ -394,6 +394,10 @@ void printBody(AstNode* n, std::ofstream& out) {
                             out << "(*(";
                             printBody(node->LHS(),out);
                             out << "))";
+                        } else if(op == ".") {
+                            printBody(node->LHS(),out);
+                            out << "->";
+                            printBody(node->RHS(),out);
                         } else {
                             out << op;
                             printBody(node->LHS(),out);

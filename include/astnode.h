@@ -28,6 +28,7 @@ enum class AstNodeType {
     RetStmnt,
     Expression,
     BinOp,
+    UnaryOp,
     FuncCall,
     Const,
     Args,
@@ -59,16 +60,22 @@ enum class SemanticType {
     s64,
     intlit,
     floatlit,
-    nulllit
+    nulllit,
+    Array
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
 
 struct TypeInfo {
     const char* userid = nullptr;
+    TypeInfo* base_t = nullptr;
     SemanticType type = SemanticType::Typeless;
-    const char* modifier = "";
+    int pindirection = 0;
+    int arr_size = 0;
     int indirection() const;
+    bool isPointer() const;
+    bool isArray() const;
+    int arraySize() const;
 };
 
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);

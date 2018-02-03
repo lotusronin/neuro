@@ -488,11 +488,7 @@ Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue) {
                 lhsv_ptr = structval;
                 if(lhs_typeinfo.indirection() == 1) {
                     //we are just dereferencing a pointer
-                    //FIXME(marcus): there should be a better way of doing this...
-                    auto len = std::strlen(lhs_typeinfo.modifier);
-                    char* new_modifier = (char*)malloc(len);
-                    std::strcpy(new_modifier,lhs_typeinfo.modifier+1);
-                    lhs_typeinfo.modifier = new_modifier;
+                    lhs_typeinfo.pindirection -= 1;
                 }
                 structtype = getIRType(lhs_typeinfo);
                 //auto structtype = lhsv->getType();
