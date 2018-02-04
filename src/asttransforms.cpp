@@ -707,7 +707,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         }
                         binopn->mtypeinfo = lhst;
                     } else if(std::strcmp(op,".") == 0) {
-                        //TODO(marcus): fill out type checking for user structs
                         //get member name
                         if(binopn->RHS()->nodeType() != ANT::Var) {
                             std::cout << "RHS of . op was not a variable\n";
@@ -894,6 +893,20 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
 
                 }
                 break;
+            case ANT::VarDec:
+                {
+                    auto vdeca = static_cast<VarDeclNode*>(c);
+                    auto lhs = vdeca->getLHS();
+                    TypeInfo lhs_typeinfo = getTypeInfo(lhs, symTab);
+
+                    //Make sure struct is defined
+                    if(lhs_typeinfo.type == SemanticType::User) {
+                        std::string structtypename = lhs_typeinfo.userid;
+                        auto tmp = structList.find(structtypename);
+                        if(tmp == structList.end()) semanticError(SET::StructNotDefined,c,symTab);
+                    }
+                }
+                break;
             case ANT::VarDecAssign:
                 {
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " VarDecAssign!\n";
@@ -903,6 +916,13 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     typeCheckPass(c, symTab);
                     TypeInfo lhs_typeinfo = getTypeInfo(c, symTab);
                     TypeInfo rhs_typeinfo = getTypeInfo(rhs,symTab);
+
+                    //Make sure struct is defined
+                    if(lhs_typeinfo.type == SemanticType::User) {
+                        std::string structtypename = lhs_typeinfo.userid;
+                        auto tmp = structList.find(structtypename);
+                        if(tmp == structList.end()) semanticError(SET::StructNotDefined,c,symTab);
+                    }
 
                     if(lhs_typeinfo.type == SemanticType::Infer) {
                         //Infer *void from null
@@ -918,6 +938,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         c->mtypeinfo = rhs_typeinfo;
                         break;
                     }
+
 
                     //Do compatibility checking
                     if(!isSameType(lhs_typeinfo,rhs_typeinfo)) {

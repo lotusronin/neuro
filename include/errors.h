@@ -49,6 +49,7 @@ enum class SemanticErrorType{
     NoFunction,
     CyclicTypeDefinitions,
     VoidPtrDeref,
+    StructNotDefined,
     Unknown
 };
 

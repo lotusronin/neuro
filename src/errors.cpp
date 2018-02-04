@@ -249,6 +249,13 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
             ERROR("Cannot dereference a pointer of type *void\n");
         }
         break;
+        case SemanticErrorType::StructNotDefined:
+        {
+            auto vdassignn = static_cast<VarDeclNode*>(n);
+            auto lt = vdassignn->getLHS()->mtypeinfo;
+            ERROR("Struct type \"" << lt.userid << "\" has no definition\n");
+        }
+        break;
         case SemanticErrorType::Unknown:
         {
             ERROR("UNKNOWN ERROR TYPE");

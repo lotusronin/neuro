@@ -173,8 +173,9 @@ static void getUserTypeNodes(AstNode* ast, std::vector<StructDefNode*>& types) {
     return;
 }
 
-std::string generateTypeString(TypeInfo& t) {
+std::pair<std::string,std::string> generateTypeString(TypeInfo& t) {
     std::string type;
+    std::string arr;
     if(t.type == SemanticType::User) {
         type = t.userid;
     } else {
@@ -225,6 +226,16 @@ std::string generateTypeString(TypeInfo& t) {
             case SemanticType::Char:
                 type = std::string("char");
                 break;
+            case SemanticType::Array:
+                {
+                    //TODO(marcus): this works for arrays
+                    //but not pointer to arrays
+                    auto tnext = *(t.base_t);
+                    auto p = generateTypeString(tnext);
+                    type = p.first;
+                    arr = "[" + std::to_string(t.arraySize()) + "]" + p.second;
+                }
+                break;
             default:
                 type = std::string("unknown_t");
                 break;
@@ -236,7 +247,7 @@ std::string generateTypeString(TypeInfo& t) {
         type += "*";
         --x;
     }
-    return type;
+    return std::make_pair(type,arr);
 }
 
 void printStruct(StructDefNode* n, std::ofstream& out) {
@@ -251,8 +262,9 @@ void printStruct(StructDefNode* n, std::ofstream& out) {
         if(c->nodeType() == AstNodeType::VarDec) {
             auto vdec = static_cast<VarDeclNode*>(c);
             auto var = static_cast<VarNode*>(vdec->getLHS());
-            std::string type_str = generateTypeString(vdec->mtypeinfo);
-            out << type_str << ' ' << var->getVarName() << ";\n";
+            auto p = generateTypeString(vdec->mtypeinfo);
+            std::string type_str = p.first;
+            out << type_str << ' ' << var->getVarName() << p.second << ";\n";
         }
     }
     out << "};\n";
@@ -260,7 +272,7 @@ void printStruct(StructDefNode* n, std::ofstream& out) {
 
 void printFunctionHeader(FuncDefNode* fn, std::ofstream& out, bool is_proto) {
     auto typeinfo = fn->mtypeinfo;
-    std::string return_type = generateTypeString(typeinfo);
+    std::string return_type = generateTypeString(typeinfo).first;
     std::string extern_mod = "";
     std::string fn_name = "";
     if(fn->nodeType() == AstNodeType::Prototype) {
@@ -275,9 +287,10 @@ void printFunctionHeader(FuncDefNode* fn, std::ofstream& out, bool is_proto) {
     bool add_comma = false;
     for(auto p : params) {
         if(add_comma) out << ", ";
-        std::string type_str = generateTypeString(p->mtypeinfo);
+        auto pr = generateTypeString(p->mtypeinfo);
+        std::string type_str = pr.first;
         std::string param_name = static_cast<ParamsNode*>(p)->mname;
-        out << type_str << ' ' << param_name;
+        out << type_str << ' ' << param_name << pr.second;
         add_comma = true;
     }
     if(is_proto) {
@@ -372,7 +385,7 @@ void printBody(AstNode* n, std::ofstream& out) {
             {
                 auto node = static_cast<CastNode*>(n);
                 auto end_t = node->mtypeinfo;
-                std::string type_str = generateTypeString(end_t);
+                std::string type_str = generateTypeString(end_t).first;
                 out << '(' << type_str << ')';
                 printBody(node->mchildren.at(0),out);
             }
@@ -466,8 +479,9 @@ void printBody(AstNode* n, std::ofstream& out) {
             {
                 auto node = static_cast<VarDeclNode*>(n);
                 auto var = static_cast<VarNode*>(node->getLHS());
-                std::string type_str = generateTypeString(var->mtypeinfo);
-                out << type_str << ' ' << var->getVarName();
+                auto p = generateTypeString(var->mtypeinfo);
+                std::string type_str = p.first;
+                out << type_str << ' ' << var->getVarName() << p.second;
             }
             break;
         case AstNodeType::VarDecAssign:
@@ -475,12 +489,15 @@ void printBody(AstNode* n, std::ofstream& out) {
                 auto node = static_cast<VarDeclNode*>(n);
                 auto var = static_cast<VarNode*>(node->getLHS());
                 std::string type_str;
+                std::pair<std::string,std::string> p;
                 if(node->mtypeinfo.type != SemanticType::Typeless && node->mtypeinfo.type != SemanticType::Infer) {
-                    type_str = generateTypeString(node->mtypeinfo);
+                    p = generateTypeString(node->mtypeinfo);
+                    type_str = p.first;
                 } else {
-                    type_str = generateTypeString(var->mtypeinfo);
+                    p = generateTypeString(var->mtypeinfo);
+                    type_str = p.first;
                 }
-                out << type_str << ' ' << var->getVarName() << " = ";
+                out << type_str << ' ' << var->getVarName() << p.second << " = ";
                 printBody(node->getRHS(),out);
             }
             break;

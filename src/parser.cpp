@@ -551,6 +551,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
             //std::cout << "current: " << tok.token << " next: " << nextTok.token << "\n";
             //we have a declaration
             VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
+            vdecnode->mtoken = tok;
             vdecnode->addChild(vnode);
             parent->addChild(vdecnode);
     } else {
