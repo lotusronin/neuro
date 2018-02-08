@@ -979,13 +979,12 @@ void parseLoopStmt(LexerTarget* lexer, AstNode* parent) {
      */
     //std::cout << "Parsing a special loop statement\n";
     LoopStmtNode* brkcntnode = new LoopStmtNode();
-    //consume break/continue
-    if(lexer->peek().type == TokenType::sbreak) {
-        brkcntnode->setBreak(true);
-    } else {
-        brkcntnode->setBreak(false);
+    if(lexer->peek().type != TokenType::sbreak) {
+        //change node type to continue type if token is continue
+        brkcntnode->mnodet = AstNodeType::LoopStmtCnt;
     }
     brkcntnode->mtoken = lexer->peek();
+    //consume break/continue
     Token tok = lexer->lex();
     if(tok.type != TokenType::semicolon) {
         //consume ;
@@ -1142,7 +1141,7 @@ AstNode* parsePrefix(LexerTarget* lexer) {
     lexer->lex();
     int precedence = getPrefixPrecedence(tok.type);
     AstNode* child = parseExpression(lexer, precedence);
-    auto opnode = new BinOpNode();
+    auto opnode = new BinOpNode(AstNodeType::UnaryOp);
     opnode->setToken(tok);
     opnode->unaryOp = true;
     opnode->addChild(child);
@@ -1161,7 +1160,7 @@ AstNode* parseInfix(LexerTarget* lexer) {
     AstNode* child = parseExpression(lexer, precedence);
 
     //make node
-    auto opnode = new BinOpNode();
+    auto opnode = new BinOpNode(AstNodeType::BinOp);
     opnode->setToken(tok);
     opnode->addChild(child);
     opnode->addChild(child); //when this is returned, the left child will be set
@@ -1197,7 +1196,7 @@ AstNode* parseArrInd(LexerTarget* lexer) {
     lexer->lex();
 
     //make node
-    auto opnode = new BinOpNode();
+    auto opnode = new BinOpNode(AstNodeType::BinOp);
     opnode->setToken(tok);
     opnode->addChild(child);
     opnode->addChild(child); //when this is returned, the left child will be set

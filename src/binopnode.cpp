@@ -5,14 +5,14 @@ int BinOpNode::count = 0;
 int BinOpNode::deleted = 0;
 int BinOpNode::constructed = 0;
 
-BinOpNode::BinOpNode() {
+BinOpNode::BinOpNode(AstNodeType ntype) {
     id = BinOpNode::count;
     BinOpNode::count++;
     BinOpNode::constructed++;
     unaryOp = false;
     mchildren.reserve(2);
     opOverload = nullptr;
-    mnodet = AstNodeType::BinOp;
+    mnodet = ntype;
 }
 
 BinOpNode::BinOpNode(BinOpNode* n) {
@@ -25,6 +25,7 @@ BinOpNode::BinOpNode(BinOpNode* n) {
     mnodet = AstNodeType::BinOp;
     mtoken = n->mtoken;
     mop = n->mop;
+    mnodet = n->mnodet;
 }
 
 BinOpNode::~BinOpNode() {

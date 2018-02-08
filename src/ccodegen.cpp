@@ -375,14 +375,16 @@ void printBody(AstNode* n, std::ofstream& out) {
                 }
             }
             break;
-        case AstNodeType::LoopStmt:
+        case AstNodeType::LoopStmtCnt:
             {
                 auto node = static_cast<LoopStmtNode*>(n);
-                if(node->isBreak) {
-                    out << "break";
-                } else {
-                    out << "continue";
-                }
+                out << "continue";
+            }
+            break;
+        case AstNodeType::LoopStmtBrk:
+            {
+                auto node = static_cast<LoopStmtNode*>(n);
+                out << "break";
             }
             break;
         case AstNodeType::Const:
@@ -404,6 +406,20 @@ void printBody(AstNode* n, std::ofstream& out) {
                 printBody(node->mchildren.at(0),out);
             }
             break;
+        case AstNodeType::UnaryOp:
+            {
+                auto node = static_cast<BinOpNode*>(n);
+                std::string op = node->getOp();
+                if(op == "@") {
+                    out << "(*(";
+                    printBody(node->LHS(),out);
+                    out << "))";
+                } else {
+                    out << op;
+                    printBody(node->LHS(),out);
+                }
+            }
+            break;
         case AstNodeType::BinOp:
             {
                 auto node = static_cast<BinOpNode*>(n);
@@ -416,40 +432,29 @@ void printBody(AstNode* n, std::ofstream& out) {
                     printBody(node->RHS(),out);
                     out << ')';
                 } else {
-                    if(node->unaryOp) {
-                        if(op == "@") {
-                            out << "(*(";
-                            printBody(node->LHS(),out);
-                            out << "))";
-                        } else if(op == ".") {
-                            printBody(node->LHS(),out);
+                    if(op == ".") {
+                        printBody(node->LHS(),out);
+                        if(node->unaryOp) {
                             out << "->";
-                            printBody(node->RHS(),out);
                         } else {
                             out << op;
-                            printBody(node->LHS(),out);
                         }
+                        printBody(node->RHS(),out);
+                    } else if(op == "[") {
+                        out << '(';
+                        printBody(node->LHS(),out);
+                        out << ')';
+                        out << '[';
+                        printBody(node->RHS(),out);
+                        out << ']';
                     } else {
-                        if(op == ".") {
-                            printBody(node->LHS(),out);
-                            out << op;
-                            printBody(node->RHS(),out);
-                        } else if(op == "[") {
-                            out << '(';
-                            printBody(node->LHS(),out);
-                            out << ')';
-                            out << '[';
-                            printBody(node->RHS(),out);
-                            out << ']';
-                        } else {
-                            out << '(';
-                            printBody(node->LHS(),out);
-                            out << ')';
-                            out << op;
-                            out << '(';
-                            printBody(node->RHS(),out);
-                            out << ')';
-                        }
+                        out << '(';
+                        printBody(node->LHS(),out);
+                        out << ')';
+                        out << op;
+                        out << '(';
+                        printBody(node->RHS(),out);
+                        out << ')';
                     }
                 }
             }

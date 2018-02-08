@@ -168,16 +168,21 @@ static void makeGraph(std::ofstream& outfile, AstNode* ast) {
                 header = "constant";
             }
             break;
-        case ANT::LoopStmt:
+        case ANT::LoopStmtCnt:
             {
                 auto stmt = static_cast<LoopStmtNode*>(ast);
                 id = stmt->id;
                 outfile << "loopStmt" << id << ";\n";
-                if(stmt->isBreak) {
-                    outfile << "loopStmt" << id << "[label=\"break\"];\n";
-                } else {
-                    outfile << "loopStmt" << id << "[label=\"continue\"];\n";
-                }
+                outfile << "loopStmt" << id << "[label=\"continue\"];\n";
+                header = "loopStmt";
+            }
+            break;
+        case ANT::LoopStmtBrk:
+            {
+                auto stmt = static_cast<LoopStmtNode*>(ast);
+                id = stmt->id;
+                outfile << "loopStmt" << id << ";\n";
+                outfile << "loopStmt" << id << "[label=\"break\"];\n";
                 header = "loopStmt";
             }
             break;

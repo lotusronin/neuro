@@ -9,7 +9,7 @@ class BinOpNode : public AstNode {
     public:
         static int count;
         static int constructed;
-        BinOpNode();
+        BinOpNode(AstNodeType ntype);
         BinOpNode(BinOpNode* n);
         ~BinOpNode();
         void setOp(const char* op);

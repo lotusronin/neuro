@@ -968,7 +968,8 @@ void statementCodegen(AstNode* n, BasicBlock* begin=nullptr, BasicBlock* end=nul
                 forloopCodegen(n, sym);
                 }
                 break;
-        case ANT::LoopStmt:
+        case ANT::LoopStmtBrk:
+        case ANT::LoopStmtCnt:
                 loopstmtCodegen(n,begin,end);
                 break;
         default:

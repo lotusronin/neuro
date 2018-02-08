@@ -75,7 +75,8 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
             nextLoopDepth += 1;
             scope = getScope(symTab, "while"+std::to_string(static_cast<LoopNode*>(ast)->getId()));
             break;
-        case ANT::LoopStmt:
+        case ANT::LoopStmtBrk:
+        case ANT::LoopStmtCnt:
             if(loopDepth == 0) {
                 semanticError(SET::OutLoop, ast, symTab);
             }
@@ -171,7 +172,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 if(lhs->nodeType() == ANT::Var) {
                     break;
                 }
-                if(lhs->nodeType() == ANT::BinOp) {
+                if(lhs->nodeType() == ANT::BinOp || lhs->nodeType() == ANT::UnaryOp) {
                     auto binopn = static_cast<BinOpNode*>(lhs);
                     auto op = binopn->mop;
                     if(std::strcmp(op,"@") == 0 || std::strcmp(op,".") == 0) {
@@ -180,6 +181,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 }
                 semanticError(SemanticErrorType::NotLValue,ast,symTab);
             }
+        case ANT::UnaryOp:
         case ANT::BinOp:
             {
                 auto binopn = static_cast<BinOpNode*>(ast);
@@ -187,7 +189,7 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 if(std::strcmp(op,".") == 0) {
                     auto lhs = binopn->LHS();
                     auto lhst = lhs->nodeType();
-                    if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp) {
+                    if(lhst == ANT::Var || lhst == ANT::FuncCall || lhst == ANT::BinOp || lhst == ANT::UnaryOp) {
                         break;
                     } else {
                         //Error
@@ -717,15 +719,13 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     cnode->fromType = t;
                 }
                 break;
-            case ANT::BinOp:
+            case ANT::UnaryOp:
                 {
-                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
-                    //TODO(marcus): support operator overloading
                     auto binopn = static_cast<BinOpNode*>(c);
                     const char* op = binopn->getOp();
+                    typeCheckPass(c,symTab);
 
                     if(std::strcmp(op,"@") == 0) {
-                        typeCheckPass(c,symTab);
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
                         int err = decreaseDerefTypeInfo(t);
                         if(err) {
@@ -735,10 +735,34 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             semanticError(SET::VoidPtrDeref,c,symTab);
                         }
                         binopn->mtypeinfo = t;
-                    } else if(std::strcmp(op,"[") == 0) {
+                    } else if(std::strcmp(op,"-") == 0) {
+                        //unary negation
+                        TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
+                        if(lhs_t.indirection()) {
+                            //TODO(marcus): get actual errors!
+                            semanticError(SET::Unknown,binopn,symTab);
+                        }
+                        //TODO(marcus): actually type check
+                        binopn->mtypeinfo = lhs_t;
+                    } else if(std::strcmp(op,"&") == 0) {
+                        //Address-of op
+                        TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
+                        increaseDerefTypeInfo(t);
+                        binopn->mtypeinfo = t;
+                    }
+                }
+                break;
+            case ANT::BinOp:
+                {
+                    //std::cout << __FILE__ << ':' << __FUNCTION__ << " BinOp!\n";
+                    //TODO(marcus): support operator overloading
+                    auto binopn = static_cast<BinOpNode*>(c);
+                    const char* op = binopn->getOp();
+
+                    typeCheckPass(c,symTab);
+                    if(std::strcmp(op,"[") == 0) {
                         //we are indexing into an array, make sure left side is a ptr and right side
                         //is an integer
-                        typeCheckPass(c,symTab);
                         TypeInfo lhst = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhst = getTypeInfo(binopn->RHS(),symTab);
                         int err = decreaseDerefTypeInfo(lhst);
@@ -755,7 +779,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             std::cout << "RHS of . op was not a variable\n";
                             break;
                         }
-                        typeCheckPass(c,symTab);
                         auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         std::string structtypename = lhs_t.userid;
                         std::string membername = static_cast<VarNode*>(binopn->RHS())->getVarName();
@@ -776,24 +799,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             }
                         }
                     } else if(std::strcmp(op,"&") == 0) {
-                        //TODO(marcus): make sure to differentiate between address-of and
-                        //bitwise-and when you get both
-                        typeCheckPass(c,symTab);
+                        //TODO(marcus): implement bitwise-and
                         TypeInfo t = getTypeInfo(binopn->LHS(),symTab);
-                        increaseDerefTypeInfo(t);
                         binopn->mtypeinfo = t;
-                    } else if((std::strcmp(op,"-") == 0) && binopn->unaryOp) {
-                        //unary negation
-                        typeCheckPass(binopn,symTab);
-                        TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
-                        if(lhs_t.indirection()) {
-                            //TODO(marcus): get actual errors!
-                            semanticError(SET::Unknown,binopn,symTab);
-                        }
-                        //TODO(marcus): actually type check
-                        binopn->mtypeinfo = lhs_t;
                     } else if(std::strcmp(op,"==") == 0 || std::strcmp(op,"!=") == 0) {
-                        typeCheckPass(binopn,symTab);
                         TypeInfo t;
                         t.type = SemanticType::Bool;
                         binopn->mtypeinfo = t;
@@ -820,7 +829,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                             }
                         }
                     } else {
-                        typeCheckPass(binopn,symTab);
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
                         if(isOpOverloadCandidate(lhs_t,rhs_t)) {
@@ -1085,6 +1093,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                 return e->node->mtypeinfo;
             }
             break;
+        case ANT::UnaryOp:
         case ANT::BinOp:
             {
                 auto binopn = static_cast<BinOpNode*>(ast);
@@ -1138,7 +1147,7 @@ void deferPass(AstNode* ast) {
             //if(i != children->end()) {
             //    i--;
             //}
-        } else if(nodetype == AstNodeType::LoopStmt) {
+        } else if(nodetype == AstNodeType::LoopStmtCnt || nodetype == AstNodeType::LoopStmtBrk) {
             //end of loop scope, iterate through all defer statements in last stack
             if(deferStacks.size() > 0) {
                 auto defers = deferStacks.back();
@@ -1449,7 +1458,7 @@ void transformAssignments(AstNode* ast) {
                     if(t == TokenType::assignment)
                         break;
 
-                    auto bop = new BinOpNode();
+                    auto bop = new BinOpNode(AstNodeType::BinOp);
                     bop->mtoken = token;
                     if(t == TokenType::addassign) {
                         bop->setOp("+");
@@ -1617,37 +1626,32 @@ static void checkForRecursiveTypes() {
 }
 
 static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::string,TypeInfo>& typeMap) {
+    AstNode* cloned = nullptr;
     switch(node->nodeType()) {
         case AstNodeType::Params:
             {
                 auto t_param = static_cast<ParamsNode*>(node);
                 auto param = new ParamsNode(t_param);
+                cloned = param;
                 if(param->mtypeinfo.type == SemanticType::Template) {
                     auto replaceType = typeMap[param->mtypeinfo.userid];
                     param->mtypeinfo = replaceType;
                 }
-                parent->addChild(param);
             }
             break;
         case AstNodeType::Block:
             {
                 auto bn = new BlockNode();
-                parent->addChild(bn);
-                for(auto c : node->mchildren) {
-                    cloneTree(bn,c,typeMap);
-                }
+                cloned = bn;
             }
             break;
         case AstNodeType::Var:
             {
                 auto t_vn = static_cast<VarNode*>(node);
                 auto vn = new VarNode(t_vn);
+                cloned = vn;
                 if(vn->mtypeinfo.type == SemanticType::Template) {
                     vn->mtypeinfo = typeMap[vn->mtypeinfo.userid];
-                }
-                parent->addChild(vn);
-                for(auto c : node->mchildren) {
-                    cloneTree(vn,c,typeMap);
                 }
             }
             break;
@@ -1656,12 +1660,9 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
             {
                 auto t_vdn = static_cast<VarDeclNode*>(node);
                 auto vdn = new VarDeclNode(t_vdn);
+                cloned = vdn;
                 if(vdn->mtypeinfo.type == SemanticType::Template) {
                     vdn->mtypeinfo = typeMap[vdn->mtypeinfo.userid];
-                }
-                parent->addChild(vdn);
-                for(auto c : node->mchildren) {
-                    cloneTree(vdn,c,typeMap);
                 }
             }
             break;
@@ -1669,30 +1670,22 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
             {
                 auto t_ret = static_cast<ReturnNode*>(node);
                 auto ret = new ReturnNode(t_ret);
-                parent->addChild(ret);
-                for(auto c : node->mchildren) {
-                    cloneTree(ret,c,typeMap);
-                }
+                cloned = ret;
             }
             break;
+        case AstNodeType::UnaryOp:
         case AstNodeType::BinOp:
             {
                 auto t_bop = static_cast<BinOpNode*>(node);
                 auto bop = new BinOpNode(t_bop);
-                parent->addChild(bop);
-                for(auto c : node->mchildren) {
-                    cloneTree(bop,c,typeMap);
-                }
+                cloned = bop;
             }
             break;
         case AstNodeType::IfStmt:
             {
                 auto t_if = static_cast<IfNode*>(node);
                 auto ifn = new IfNode(t_if);
-                parent->addChild(ifn);
-                for(auto c : node->mchildren) {
-                    cloneTree(ifn,c,typeMap);
-                }
+                cloned = ifn;
             }
             break;
         case AstNodeType::WhileLoop:
@@ -1700,35 +1693,27 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
             {
                 auto t_loop = static_cast<LoopNode*>(node);
                 auto loopn = new LoopNode(t_loop);
-                parent->addChild(loopn);
-                for(auto c : node->mchildren) {
-                    cloneTree(loopn,c,typeMap);
-                }
+                cloned = loopn;
             }
             break;
-        case AstNodeType::LoopStmt:
+        case AstNodeType::LoopStmtBrk:
+        case AstNodeType::LoopStmtCnt:
             {
                 auto t_loops = static_cast<LoopStmtNode*>(node);
                 auto loops = new LoopStmtNode(t_loops);
-                parent->addChild(loops);
-                for(auto c : node->mchildren) {
-                    cloneTree(loops,c,typeMap);
-                }
+                cloned = loops;
             }
             break;
         case AstNodeType::Cast:
             {
                 auto t_cast = static_cast<CastNode*>(node);
                 auto cast = new CastNode(t_cast);
+                cloned = cast;
                 if(cast->mtypeinfo.type == SemanticType::Template) {
                     cast->mtypeinfo = typeMap[cast->mtypeinfo.userid];
                 }
                 if(cast->fromType.type == SemanticType::Template) {
                     cast->fromType = typeMap[cast->fromType.userid];
-                }
-                parent->addChild(cast);
-                for(auto c : node->mchildren) {
-                    cloneTree(cast,c,typeMap);
                 }
             }
             break;
@@ -1736,41 +1721,29 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
             {
                 auto t_asgn = static_cast<AssignNode*>(node);
                 auto asgn = new AssignNode(t_asgn);
-                parent->addChild(asgn);
-                for(auto c : node->mchildren) {
-                    cloneTree(asgn,c,typeMap);
-                }
+                cloned = asgn;
             }
             break;
         case AstNodeType::Const:
             {
                 auto t_const = static_cast<ConstantNode*>(node);
                 auto constn = new ConstantNode(t_const);
-                parent->addChild(constn);
-                for(auto c : node->mchildren) {
-                    cloneTree(constn,c,typeMap);
-                }
+                cloned = constn;
             }
             break;
         case AstNodeType::DeferStmt:
             {
                 auto dfr = new DeferStmtNode();
-                parent->addChild(dfr);
-                for(auto c : node->mchildren) {
-                    cloneTree(dfr,c,typeMap);
-                }
+                cloned = dfr;
             }
             break;
         case AstNodeType::SizeOf:
             {
                 auto sof = new SizeOfNode();
+                cloned = sof;
                 sof->mtypeinfo = node->mtypeinfo;
                 if(sof->mtypeinfo.type == SemanticType::Template) {
                     sof->mtypeinfo = typeMap[sof->mtypeinfo.userid];
-                }
-                parent->addChild(sof);
-                for(auto c : node->mchildren) {
-                    cloneTree(sof,c,typeMap);
                 }
             }
             break;
@@ -1778,14 +1751,15 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
             {
                 auto t_fcall = static_cast<FuncCallNode*>(node);
                 auto fcall = new FuncCallNode(t_fcall);
-                parent->addChild(fcall);
-                for(auto c : node->mchildren) {
-                    cloneTree(fcall,c,typeMap);
-                }
+                cloned = fcall;
             }
             break;
         default:
             break;
+    }
+    parent->addChild(cloned);
+    for(auto c : node->mchildren) {
+        cloneTree(cloned,c,typeMap);
     }
     return;
 }

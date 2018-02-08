@@ -11,9 +11,7 @@ class LoopStmtNode : public AstNode {
         LoopStmtNode();
         LoopStmtNode(LoopStmtNode* n);
         ~LoopStmtNode();
-        void setBreak(bool b);
         int id;
-        bool isBreak;
 };
 
 
