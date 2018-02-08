@@ -13,13 +13,16 @@ def diffOutput(expected, actual):
 
 def loadConfFiles():
     ret = []
-    for root, dirs, files in os.walk('.'):
+    for root, dirs, files in os.walk('./configs'):
         for f in  files:
             if len(f) < 5:
                 continue
             if '.conf' in f[-5:]:
                 importString = str(root).replace('/','.')
-                testConf = imp.load_source(f,root+'/'+f)
+                try:
+                    testConf = imp.load_source(f,root+'/'+f)
+                except:
+                    print("couldn't load " + root + '/' + f)
                 ret.append((str(root+'/'+f),testConf.conf))
     return ret
 
@@ -94,7 +97,7 @@ def runTests(tests):
                 print("  Fail: Error running program")
 
             programOut = p2.stdout.decode('utf-8')
-            with open(expected, 'r') as expectedOutFile:
+            with open("./configs/"+expected, 'r') as expectedOutFile:
                 expectedOut = expectedOutFile.read()
                 if programOut != expectedOut:
                     print("  Fail: mismatched program output")
