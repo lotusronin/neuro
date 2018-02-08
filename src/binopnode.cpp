@@ -15,6 +15,18 @@ BinOpNode::BinOpNode() {
     mnodet = AstNodeType::BinOp;
 }
 
+BinOpNode::BinOpNode(BinOpNode* n) {
+    id = BinOpNode::count;
+    BinOpNode::count++;
+    BinOpNode::constructed++;
+    unaryOp = n->unaryOp;
+    mchildren.reserve(2);
+    opOverload = n->opOverload;
+    mnodet = AstNodeType::BinOp;
+    mtoken = n->mtoken;
+    mop = n->mop;
+}
+
 BinOpNode::~BinOpNode() {
     BinOpNode::deleted += 1;
 }

@@ -22,6 +22,8 @@ SymbolTable progSymTab;
 //a list of user defined types with a mapping of member name to member index
 std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
 std::unordered_map<std::string,AstNode*> structList;
+std::vector<AstNode*> templateList;
+std::vector<FuncDefNode*> instantiatedFunctionsList;
 
 //TODO(marcus): put this in the SymbolTable?
 std::unordered_map<std::string,std::vector<FuncDefNode*>> operatorOverloads;
@@ -34,6 +36,7 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(TypeInfo& t1, TypeInfo& t2);
 static void checkForRecursiveTypes();
+static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab);
 
 void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
 {
@@ -147,6 +150,15 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 if(entry.size() == 0) {
                     entry = getEntry(symTab,name,static_cast<FuncCallNode*>(ast)->scopes);
                     if(entry.size() == 0) {
+                        bool callToTemplate = false;
+                        for(auto ptr : templateList) {
+                            auto fdef = static_cast<FuncDefNode*>(ptr);
+                            if(fdef->mfuncname == name) {
+                                callToTemplate = true;
+                                break;
+                            }
+                        }
+                        if(callToTemplate) break;
                         semanticError(SET::NoFunc, ast, symTab);
                     }
                 }
@@ -285,6 +297,10 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncDef:
                 {
                     auto func = static_cast<FuncDefNode*>(c);
+                    if(func->isTemplated) {
+                        templateList.push_back(func);
+                        break;
+                    }
 
                     if(func->isOperatorOverload == 1) {
                         auto op = func->op;
@@ -580,6 +596,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncDef:
                 {
                     auto fundef = static_cast<FuncDefNode*>(c);
+                    if(fundef->isTemplated) {
+                        break;
+                    }
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FunctionDef!\n";
                     auto scope = getScope(symTab, fundef->mfuncname + std::to_string(fundef->id));
                     currentFunc = c;
@@ -618,6 +637,9 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 break;
             case ANT::FuncCall:
                 {
+                    typeCheckPass(c,symTab);
+                    bool instantiateTempl = false;
+                    FuncDefNode* templateFunc = nullptr;
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
                     auto funccall = static_cast<FuncCallNode*>(c);
                     std::string funcname = funccall->mfuncname;
@@ -626,8 +648,30 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     if(entries.size() == 0) {
                         entries = getEntry(symTab,funcname,funccall->scopes);
                         if(entries.size() == 0) {
-                            break;
+                            bool callToTemplate = false;
+                            for(auto ptr : templateList) {
+                                auto fdef = static_cast<FuncDefNode*>(ptr);
+                                if(fdef->mfuncname == funcname) {
+                                    callToTemplate = true;
+                                    instantiateTempl = true;
+                                    templateFunc = fdef;
+                                    break;
+                                }
+                            }
+                            if(!callToTemplate) break;
                         }
+                    }
+
+                    if(instantiateTempl) {
+                        std::cout << "Instantiating function " << funcname << '\n';
+                        //FuncCall matches to a template, need to instantiate
+                        auto save_currentFunc = currentFunc;
+                        auto instanced_func = instantiateTemplate(funccall,templateFunc,symTab);
+                        instantiatedFunctionsList.push_back(static_cast<FuncDefNode*>(instanced_func));
+                        std::cout << "Finished, " << funcname << " is now a concrete function\n";
+                        currentFunc = save_currentFunc;
+                        //Finished instantiating, get entries
+                        entries = getEntry(symTab,funcname);
                     }
                     SymbolTableEntry* e = entries.at(0);
                     auto funcparams = e->funcParams;
@@ -635,7 +679,6 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     auto args = funccall->mchildren;
                     std::vector<TypeInfo> arg_types;
                     arg_types.reserve(sizeof(TypeInfo)*args.size());
-                    typeCheckPass(c,symTab);
                     resolveFunction(funccall,symTab);
                     for(auto a : args) {
                         //typeCheckPass(a,symTab);
@@ -841,7 +884,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     std::string name = static_cast<FuncDefNode*>(currentFunc)->mfuncname;
                     name += std::to_string(static_cast<FuncDefNode*>(currentFunc)->id);
                     //std::string name = currentFunc2;
-                    auto entries = getEntry(symTab,std::move(name));
+                    auto entries = getEntry(symTab,name);
                     //TypeInfo func_typeinfo = currentFunc2->mtypeinfo;
                     TypeInfo func_typeinfo = entries.at(0)->typeinfo;
                     //do compatibility checking
@@ -1571,4 +1614,236 @@ static void checkForRecursiveTypes() {
         }
         semanticError(SET::CyclicTypeDefinitions,unresolvedTypes);
     }
+}
+
+static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::string,TypeInfo>& typeMap) {
+    switch(node->nodeType()) {
+        case AstNodeType::Params:
+            {
+                auto t_param = static_cast<ParamsNode*>(node);
+                auto param = new ParamsNode(t_param);
+                if(param->mtypeinfo.type == SemanticType::Template) {
+                    auto replaceType = typeMap[param->mtypeinfo.userid];
+                    param->mtypeinfo = replaceType;
+                }
+                parent->addChild(param);
+            }
+            break;
+        case AstNodeType::Block:
+            {
+                auto bn = new BlockNode();
+                parent->addChild(bn);
+                for(auto c : node->mchildren) {
+                    cloneTree(bn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::Var:
+            {
+                auto t_vn = static_cast<VarNode*>(node);
+                auto vn = new VarNode(t_vn);
+                if(vn->mtypeinfo.type == SemanticType::Template) {
+                    vn->mtypeinfo = typeMap[vn->mtypeinfo.userid];
+                }
+                parent->addChild(vn);
+                for(auto c : node->mchildren) {
+                    cloneTree(vn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::VarDec:
+        case AstNodeType::VarDecAssign:
+            {
+                auto t_vdn = static_cast<VarDeclNode*>(node);
+                auto vdn = new VarDeclNode(t_vdn);
+                if(vdn->mtypeinfo.type == SemanticType::Template) {
+                    vdn->mtypeinfo = typeMap[vdn->mtypeinfo.userid];
+                }
+                parent->addChild(vdn);
+                for(auto c : node->mchildren) {
+                    cloneTree(vdn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::RetStmnt:
+            {
+                auto t_ret = static_cast<ReturnNode*>(node);
+                auto ret = new ReturnNode(t_ret);
+                parent->addChild(ret);
+                for(auto c : node->mchildren) {
+                    cloneTree(ret,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::BinOp:
+            {
+                auto t_bop = static_cast<BinOpNode*>(node);
+                auto bop = new BinOpNode(t_bop);
+                parent->addChild(bop);
+                for(auto c : node->mchildren) {
+                    cloneTree(bop,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::IfStmt:
+            {
+                auto t_if = static_cast<IfNode*>(node);
+                auto ifn = new IfNode(t_if);
+                parent->addChild(ifn);
+                for(auto c : node->mchildren) {
+                    cloneTree(ifn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::WhileLoop:
+        case AstNodeType::ForLoop:
+            {
+                auto t_loop = static_cast<LoopNode*>(node);
+                auto loopn = new LoopNode(t_loop);
+                parent->addChild(loopn);
+                for(auto c : node->mchildren) {
+                    cloneTree(loopn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::LoopStmt:
+            {
+                auto t_loops = static_cast<LoopStmtNode*>(node);
+                auto loops = new LoopStmtNode(t_loops);
+                parent->addChild(loops);
+                for(auto c : node->mchildren) {
+                    cloneTree(loops,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::Cast:
+            {
+                auto t_cast = static_cast<CastNode*>(node);
+                auto cast = new CastNode(t_cast);
+                if(cast->mtypeinfo.type == SemanticType::Template) {
+                    cast->mtypeinfo = typeMap[cast->mtypeinfo.userid];
+                }
+                if(cast->fromType.type == SemanticType::Template) {
+                    cast->fromType = typeMap[cast->fromType.userid];
+                }
+                parent->addChild(cast);
+                for(auto c : node->mchildren) {
+                    cloneTree(cast,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::Assign:
+            {
+                auto t_asgn = static_cast<AssignNode*>(node);
+                auto asgn = new AssignNode(t_asgn);
+                parent->addChild(asgn);
+                for(auto c : node->mchildren) {
+                    cloneTree(asgn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::Const:
+            {
+                auto t_const = static_cast<ConstantNode*>(node);
+                auto constn = new ConstantNode(t_const);
+                parent->addChild(constn);
+                for(auto c : node->mchildren) {
+                    cloneTree(constn,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::DeferStmt:
+            {
+                auto dfr = new DeferStmtNode();
+                parent->addChild(dfr);
+                for(auto c : node->mchildren) {
+                    cloneTree(dfr,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::SizeOf:
+            {
+                auto sof = new SizeOfNode();
+                sof->mtypeinfo = node->mtypeinfo;
+                if(sof->mtypeinfo.type == SemanticType::Template) {
+                    sof->mtypeinfo = typeMap[sof->mtypeinfo.userid];
+                }
+                parent->addChild(sof);
+                for(auto c : node->mchildren) {
+                    cloneTree(sof,c,typeMap);
+                }
+            }
+            break;
+        case AstNodeType::FuncCall:
+            {
+                auto t_fcall = static_cast<FuncCallNode*>(node);
+                auto fcall = new FuncCallNode(t_fcall);
+                parent->addChild(fcall);
+                for(auto c : node->mchildren) {
+                    cloneTree(fcall,c,typeMap);
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return;
+}
+
+static AstNode* cloneTree(AstNode* t_func, std::unordered_map<std::string,TypeInfo>& typeMap) {
+    auto t_fdef = static_cast<FuncDefNode*>(t_func);
+    auto fdef = new FuncDefNode(t_fdef);
+    if(fdef->mtypeinfo.type == SemanticType::Template) {
+        fdef->mtypeinfo = typeMap[fdef->mtypeinfo.userid];
+        std::cout << "Return type is now... " << fdef->mtypeinfo << '\n';
+    }
+    for(auto c : t_func->mchildren) {
+        cloneTree(fdef,c,typeMap);
+    }
+    return fdef;
+}
+
+static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab)
+{
+    auto func_args = funccall->mchildren;
+    auto func_params = funcdef->getParameters();
+    std::unordered_map<std::string,TypeInfo> typeMap;
+
+    //Make a map of templated types to real types
+    int idx = 0;
+    for(auto p : func_params) {
+        auto pt = p->mtypeinfo;
+        if(pt.type == SemanticType::Template) {
+            auto argn = func_args[idx];
+            auto argt = getTypeInfo(argn,symTab);
+            if(typeMap.find(pt.userid) == typeMap.end()) {
+                typeMap[pt.userid] = argt;
+            } else {
+                //TODO(marcus): Check that types are castable?
+            }
+        }
+        idx++;
+    }
+
+    //clone tree, replacing types as needed
+    auto instancedFunc = cloneTree(funcdef,typeMap);
+
+    //run semantic passes on new tree
+    auto fileScope = getFileScope(symTab);
+    AstNode tmp;
+    tmp.addChild(instancedFunc);
+
+    std::cout << "Got file scope " << fileScope->name << "\n";
+
+    //TODO(marcus): it is odd that some passes need a fake parent to work
+    transformAssignments(instancedFunc);
+    //populateTypeList(ast); //does nothing, no type defs in functions allowed
+    resolveSizeOfs(instancedFunc);
+    std::cout << "Populating SymTab With Function\n";
+    populateSymbolTableFunctions(&tmp,fileScope);
+    semanticPass1(instancedFunc,0,fileScope);
+    typeCheckPass(&tmp, fileScope);
+    deferPass(&tmp);
+
+    return instancedFunc;
 }

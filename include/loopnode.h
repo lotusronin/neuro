@@ -8,6 +8,7 @@ class LoopNode : public AstNode {
     public:
         static int count;
         LoopNode(AstNodeType ntype);
+        LoopNode(LoopNode* n);
         ~LoopNode();
         AstNode* getConditional();
         AstNode* getUpdate();

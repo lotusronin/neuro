@@ -8,7 +8,7 @@
 class LexerTarget
 {
 public:
-    LexerTarget(std::string name, bool debug);
+    LexerTarget(std::string& name, bool debug);
     ~LexerTarget();
     Token lex();
     Token lex_internal();

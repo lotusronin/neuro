@@ -9,6 +9,7 @@ class LoopStmtNode : public AstNode {
     public:
         static int count;
         LoopStmtNode();
+        LoopStmtNode(LoopStmtNode* n);
         ~LoopStmtNode();
         void setBreak(bool b);
         int id;

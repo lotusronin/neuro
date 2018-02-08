@@ -8,6 +8,15 @@ CastNode::CastNode() {
     mnodet = AstNodeType::Cast;
 }
 
+CastNode::CastNode(CastNode* n) {
+    id = CastNode::count;
+    CastNode::count++;
+    mnodet = AstNodeType::Cast;
+    mtoken = n->mtoken;
+    mtypeinfo = n->mtypeinfo;
+    fromType = n->fromType;
+}
+
 CastNode::~CastNode() {
 }
 

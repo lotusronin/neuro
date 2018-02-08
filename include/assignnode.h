@@ -9,6 +9,7 @@ class AssignNode : public AstNode {
     public:
         static int count;
         AssignNode();
+        AssignNode(AssignNode* n);
         ~AssignNode();
         void addChild(AstNode* node);
         AstNode* getLHS();

@@ -203,3 +203,13 @@ std::vector<SymbolTableEntry*> getEntry(SymbolTable* s, const std::string& name,
     }
     return ret;
 }
+
+SymbolTable* getFileScope(SymbolTable* s) {
+    //TODO(marcus): should never call this function with global scope symbol table
+    if(s->parent == nullptr) return nullptr;
+    auto file_scope = s;
+    while(file_scope->parent->name != "global") {
+        file_scope = file_scope->parent;
+    }
+    return file_scope;
+}

@@ -10,6 +10,7 @@ class FuncDefNode : public AstNode {
     public:
         static int count;
         FuncDefNode(AstNodeType ntype);
+        FuncDefNode(FuncDefNode* n);
         ~FuncDefNode();
         void addFuncName(std::string funcname);
         ArrayView getParameters();
@@ -18,6 +19,7 @@ class FuncDefNode : public AstNode {
         std::string mfuncname;
         char* op;
         int isOperatorOverload;
+        int isTemplated;
         int id;
 };
 

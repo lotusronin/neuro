@@ -64,6 +64,7 @@ enum class TokenType {
     tilda,
     mod,
     cast,
+    hashtag,
     ssizeof,
     increment,
     decrement,

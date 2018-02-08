@@ -9,6 +9,14 @@ LoopStmtNode::LoopStmtNode() {
     isBreak = false;
 }
 
+LoopStmtNode::LoopStmtNode(LoopStmtNode* n) {
+    id = LoopStmtNode::count;
+    LoopStmtNode::count++;
+    mnodet = AstNodeType::LoopStmt;
+    isBreak = n->isBreak;
+    mtoken = n->mtoken;
+}
+
 LoopStmtNode::~LoopStmtNode() {
 }
 

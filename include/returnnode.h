@@ -8,6 +8,7 @@ class ReturnNode : public AstNode {
     public:
         static int count;
         ReturnNode();
+        ReturnNode(ReturnNode* n);
         ~ReturnNode();
         int id;
 };

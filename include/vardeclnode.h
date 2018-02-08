@@ -8,6 +8,7 @@ class VarDeclNode : public AstNode {
     public:
         static int count;
         VarDeclNode(AstNodeType ntype);
+        VarDeclNode(VarDeclNode* n);
         ~VarDeclNode();
         AstNode* getLHS();
         AstNode* getRHS();

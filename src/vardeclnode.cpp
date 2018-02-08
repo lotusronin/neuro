@@ -10,6 +10,15 @@ VarDeclNode::VarDeclNode(AstNodeType ntype) {
     mnodet = ntype;
 }
 
+VarDeclNode::VarDeclNode(VarDeclNode* n) {
+    id = VarDeclNode::count;
+    VarDeclNode::count++;
+    mchildren.reserve(2);
+    mnodet = n->mnodet;
+    mtypeinfo = n->mtypeinfo;
+    mtoken = n->mtoken;
+}
+
 VarDeclNode::~VarDeclNode() {
 }
 

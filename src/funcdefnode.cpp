@@ -11,6 +11,20 @@ FuncDefNode::FuncDefNode(AstNodeType ntype) {
     isOperatorOverload = 0;
     op = nullptr;
     mnodet = ntype;
+    isTemplated = 0;
+}
+
+FuncDefNode::FuncDefNode(FuncDefNode* n) {
+    id = FuncDefNode::count;
+    FuncDefNode::count++;
+    mchildren.reserve(n->mchildren.size());
+    isOperatorOverload = n->isOperatorOverload;
+    op = n->op;
+    mnodet = n->mnodet;
+    mfuncname = n->mfuncname;
+    mtypeinfo = n->mtypeinfo;
+    isTemplated = 0;
+    mtoken = n->mtoken;
 }
 
 FuncDefNode::~FuncDefNode() {

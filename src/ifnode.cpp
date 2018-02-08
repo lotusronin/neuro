@@ -8,6 +8,13 @@ IfNode::IfNode() {
     mnodet = AstNodeType::IfStmt;
 }
 
+IfNode::IfNode(IfNode* n) {
+    id = IfNode::count;
+    IfNode::count++;
+    mnodet = AstNodeType::IfStmt;
+    mtoken = n->mtoken;
+}
+
 IfNode::~IfNode() {
 }
 

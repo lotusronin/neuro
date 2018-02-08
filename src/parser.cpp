@@ -287,6 +287,10 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
             parent->addChild(param);
             param->addParamName(n);
             parseType(lexer, param);
+            auto fdef = static_cast<FuncDefNode*>(parent);
+            if(param->mtypeinfo.type == SemanticType::Template) {
+                fdef->isTemplated = 1;
+            }
             tok = lexer->peek();
             if(tok.type != TokenType::comma) {
                 break;
@@ -360,6 +364,9 @@ static SemanticType getSemanticTypeFromTokenType(TokenType t) {
         case TokenType::tulongint:
             mstype = SemanticType::u64;
             break;
+        case TokenType::hashtag:
+            mstype = SemanticType::Template;
+            break;
         default:
             mstype = SemanticType::Typeless;
             break;
@@ -404,6 +411,11 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             int arr_size = 0;
             const char* user_id = nullptr;
             if(mstype == SemanticType::User) user_id = tok.token;
+            else if(mstype == SemanticType::Template) {
+                //consume #
+                tok = lexer->lex();
+                user_id = tok.token;
+            }
             //we have enough information for a type node
             //will be some number of *s and then a type identifier
             auto typeInfoNode = new TypeInfo();
@@ -492,6 +504,7 @@ bool tokenTypeIsAType(TokenType t) {
         case TokenType::tfloat:
         case TokenType::tdouble:
         case TokenType::id:
+        case TokenType::hashtag:
             return true;
             break;
         case TokenType::star:

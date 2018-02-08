@@ -9,6 +9,14 @@ ConstantNode::ConstantNode() {
     ConstantNode::count++;
     mnodet = AstNodeType::Const;
 }
+ConstantNode::ConstantNode(ConstantNode* n) {
+    id = ConstantNode::count;
+    ConstantNode::count++;
+    mnodet = AstNodeType::Const;
+    mtoken = n->mtoken;
+    mval = n->mval;
+    mtypeinfo = n->mtypeinfo;
+}
 
 ConstantNode::~ConstantNode() {
 }

@@ -9,6 +9,7 @@ class IfNode : public AstNode {
     public:
         static int count;
         IfNode();
+        IfNode(IfNode* n);
         ~IfNode();
         AstNode* getConditional();
         AstNode* getThen();

@@ -9,6 +9,7 @@ class CastNode : public AstNode {
     public:
         static int count;
         CastNode();
+        CastNode(CastNode* n);
         ~CastNode();
         void addChild(AstNode* node);
         TypeInfo fromType;

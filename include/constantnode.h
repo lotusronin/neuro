@@ -9,6 +9,7 @@ class ConstantNode : public AstNode {
     public:
         static int count;
         ConstantNode();
+        ConstantNode(ConstantNode* n);
         ~ConstantNode();
         void addChild(AstNode* node);
         std::vector<AstNode*>* getChildren();

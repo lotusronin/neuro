@@ -9,6 +9,15 @@ FuncCallNode::FuncCallNode() {
     func = nullptr;
 }
 
+FuncCallNode::FuncCallNode(FuncCallNode* n) {
+    id = FuncCallNode::count;
+    FuncCallNode::count++;
+    mnodet = AstNodeType::FuncCall;
+    func = n->func;
+    mfuncname = n->mfuncname;
+    scopes = n->scopes;
+}
+
 FuncCallNode::~FuncCallNode() {
 }
 

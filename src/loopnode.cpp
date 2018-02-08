@@ -9,6 +9,13 @@ LoopNode::LoopNode(AstNodeType ntype) {
     mnodet = ntype;
 }
 
+LoopNode::LoopNode(LoopNode* n) {
+    id = LoopNode::count;
+    LoopNode::count++;
+    mnodet = n->mnodet;
+    mtoken = n->mtoken;
+}
+
 LoopNode::~LoopNode() {
 }
 

@@ -91,7 +91,7 @@ const char* keyword_array[32] = {
 };
 unsigned int num_keywords = sizeof(keyword_array)/sizeof(const char*);
 
-LexerTarget::LexerTarget(std::string name, bool debug) {
+LexerTarget::LexerTarget(std::string& name, bool debug) {
     filename = name;
     
     //auto start = std::chrono::steady_clock::now();
@@ -514,6 +514,12 @@ TOP:
             {
                 longest_match_type = TokenType::mod;
                 c_str_tok = "%";
+            }
+            break;
+        case '#':
+            {
+                longest_match_type = TokenType::hashtag;
+                c_str_tok = "#";
             }
             break;
         case '=':

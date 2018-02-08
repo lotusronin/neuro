@@ -8,6 +8,14 @@ VarNode::VarNode() {
     mnodet = AstNodeType::Var;
 }
 
+VarNode::VarNode(VarNode* n) {
+    id = VarNode::count;
+    VarNode::count++;
+    mnodet = AstNodeType::Var;
+    mname = n->mname;
+    mtypeinfo = n->mtypeinfo;
+}
+
 VarNode::~VarNode() {
 }
 

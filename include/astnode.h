@@ -61,7 +61,8 @@ enum class SemanticType {
     intlit,
     floatlit,
     nulllit,
-    Array
+    Array,
+    Template
 };
 
 std::ostream& operator<<(std::ostream& os, const SemanticType& obj);

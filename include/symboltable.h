@@ -31,6 +31,7 @@ struct SymbolTable {
 
 SymbolTable* addNewScope(SymbolTable* s, std::string name);
 SymbolTable* getScope(SymbolTable* s, std::string name);
+SymbolTable* getFileScope(SymbolTable* s);
 
 void addVarEntry(SymbolTable* s, TypeInfo t, std::string name);
 void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n);

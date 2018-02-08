@@ -9,6 +9,7 @@ class VarNode : public AstNode {
     public:
         static int count;
         VarNode();
+        VarNode(VarNode* n);
         ~VarNode();
         void addVarName(std::string name);
         const char* getVarName() const;

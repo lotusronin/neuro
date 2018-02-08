@@ -8,6 +8,13 @@ AssignNode::AssignNode() {
     mnodet = AstNodeType::Assign;
 }
 
+AssignNode::AssignNode(AssignNode* n) {
+    id = AssignNode::count;
+    AssignNode::count++;
+    mnodet = AstNodeType::Assign;
+    mtoken = n->mtoken;
+}
+
 AssignNode::~AssignNode() {
 }
 

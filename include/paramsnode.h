@@ -9,8 +9,9 @@ class ParamsNode : public AstNode {
     public:
         static int count;
         ParamsNode();
+        ParamsNode(ParamsNode* n);
         ~ParamsNode();
-        void addParamName(std::string name);
+        void addParamName(std::string& name);
         std::string mname;
         int id;
 };

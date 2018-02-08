@@ -135,10 +135,19 @@ void testGenCFile() {
     //TODO(marcus): make a test case for this!
 }
 
+extern std::vector<FuncDefNode*> instantiatedFunctionsList;
 static void getFunctionNodes(AstNode* ast, std::vector<FuncDefNode*>& funcs) {
     AstNodeType type = ast->nodeType();
     switch(type) {
         case AstNodeType::Program:
+            {
+                //TODO(marcus): there is currently only 1 program node, so we pull all that
+                //instantiated template functions here. Should probably put this in a better
+                //place
+                for(auto fn : instantiatedFunctionsList) {
+                    funcs.push_back(fn);
+                }
+            }
         case AstNodeType::CompileUnit:
             for(auto c : (*(ast->getChildren()))) {
                 getFunctionNodes(c, funcs);
@@ -146,7 +155,12 @@ static void getFunctionNodes(AstNode* ast, std::vector<FuncDefNode*>& funcs) {
             break;
         case AstNodeType::FuncDef:
         case AstNodeType::Prototype:
-            funcs.push_back(static_cast<FuncDefNode*>(ast));
+            {
+                auto fd = static_cast<FuncDefNode*>(ast);
+                if(!(fd->isTemplated)) {
+                    funcs.push_back(static_cast<FuncDefNode*>(ast));
+                }
+            }
             break;
         default:
             break;
