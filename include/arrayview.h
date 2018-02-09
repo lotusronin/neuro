@@ -1,7 +1,7 @@
 #ifndef ARRAYVIEW_H
 #define ARRAYVIEW_H
 
-#include "astnode.h"
+class AstNode;
 
 class ArrayView {
     public:
