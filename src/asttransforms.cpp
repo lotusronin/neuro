@@ -1783,20 +1783,28 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
     auto func_params = funcdef->getParameters();
     std::unordered_map<std::string,TypeInfo> typeMap;
 
-    //Make a map of templated types to real types
-    int idx = 0;
-    for(auto p : func_params) {
-        auto pt = p->mtypeinfo;
-        if(pt.type == SemanticType::Template) {
-            auto argn = func_args[idx];
-            auto argt = getTypeInfo(argn,symTab);
-            if(typeMap.find(pt.userid) == typeMap.end()) {
-                typeMap[pt.userid] = argt;
-            } else {
-                //TODO(marcus): Check that types are castable?
+    if(funccall->specialized) {
+        std::cout << "Template is specialized!\n";
+        //type mappings given by the user
+        typeMap = funccall->templateTypeParameters;
+        //TODO(marcus): warn/error on unused mappings within the template?
+    } else {
+        //type mappings are inferred
+        //Make a map of templated types to real types
+        int idx = 0;
+        for(auto p : func_params) {
+            auto pt = p->mtypeinfo;
+            if(pt.type == SemanticType::Template) {
+                auto argn = func_args[idx];
+                auto argt = getTypeInfo(argn,symTab);
+                if(typeMap.find(pt.userid) == typeMap.end()) {
+                    typeMap[pt.userid] = argt;
+                } else {
+                    //TODO(marcus): Check that types are castable?
+                }
             }
+            idx++;
         }
-        idx++;
     }
 
     //clone tree, replacing types as needed

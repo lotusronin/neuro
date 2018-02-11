@@ -371,6 +371,7 @@ FuncCallNode::FuncCallNode() {
     FuncCallNode::count++;
     mnodet = AstNodeType::FuncCall;
     func = nullptr;
+    specialized = false;
 }
 
 FuncCallNode::FuncCallNode(FuncCallNode* n) {

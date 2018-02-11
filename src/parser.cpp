@@ -629,6 +629,9 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //consume :
     lexer->lex();
     parseType(lexer, funcnode);
+    if(funcnode->mtypeinfo.type == SemanticType::Template) {
+        funcnode->isTemplated = 1;
+    }
     parseBlock(lexer, funcnode);
 }
 
@@ -871,6 +874,61 @@ void parseConst(LexerTarget* lexer, AstNode* parent) {
     return;
 }
 
+void parseTemplatedFunccall(LexerTarget* lexer, AstNode* parent) {
+    //funccall -> . funcname # (Tmpl = type,...) ( opt_args )
+    // funcname -> id
+    Token tok = lexer->peek();
+    FuncCallNode* funcallnode = new FuncCallNode();
+    funcallnode->addFuncName(tok.token);
+    funcallnode->mtoken = tok;
+    funcallnode->specialized = true;
+    parent->addChild(funcallnode);
+
+    //consume funcname
+    lexer->lex(); //returns #
+
+    //consume #
+    tok = lexer->lex(); //returns (
+    if(tok.type != TokenType::lparen) {
+        parse_error(PET::MissLParen, tok, lexer);
+    }
+    //consume (
+    tok = lexer->lex();
+    AstNode tmp;
+    while(tok.type != TokenType::rparen) {
+        Token tokTemplateIdent = tok;
+        tok = lexer->lex();
+        if(tok.type != TokenType::assignment) {
+            parse_error(PET::Unknown,tok,lexer);
+        }
+        //consume =
+        lexer->lex();
+        parseType(lexer,&tmp);
+        tok = lexer->peek();
+
+        if(funcallnode->templateTypeParameters.find(tokTemplateIdent.token) == funcallnode->templateTypeParameters.end()) {
+            funcallnode->templateTypeParameters[tokTemplateIdent.token] = tmp.mtypeinfo;
+        } else {
+            //TODO(marcus): assigned to same template parameter twice
+            parse_error(PET::Unknown,tok,lexer);
+        }
+    }
+    //consume )
+    tok = lexer->lex();
+    //consume (
+    tok = lexer->lex();
+    if(tok.type != TokenType::rparen) {
+        parseOptargs(lexer, funcallnode);
+    }
+    tok = lexer->peek();
+    if(tok.type != TokenType::rparen) {
+        parse_error(PET::MissRParen, tok, lexer);
+    }
+    //consume ')'
+    lexer->lex();
+    return;
+}
+
 void parseScopedFunccall(LexerTarget* lexer, AstNode* parent) {
     //std::cout << "parsing some scoped function call!\n";
     auto scope = std::string(lexer->peek().token);
@@ -893,6 +951,8 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
     if(tokNext.type == TokenType::lparen) {
         //std::cout << "Parsing FuncCall!\n";
         parseFunccall(lexer, parent);
+    } else if(tokNext.type == TokenType::hashtag) {
+        parseTemplatedFunccall(lexer,parent);
     } else if(tokNext.type == TokenType::dblcolon) {
         parseScopedFunccall(lexer, parent);
     } else {

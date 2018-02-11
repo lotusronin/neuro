@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include "tokens.h"
 #include "arrayview.h"
 
@@ -228,6 +229,8 @@ class FuncCallNode : public AstNode {
         std::string mfuncname;
         std::string scopes;
         FuncDefNode* func;
+        std::unordered_map<std::string,TypeInfo> templateTypeParameters;
+        bool specialized;
 };
 
 
