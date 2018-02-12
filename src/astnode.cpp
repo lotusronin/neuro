@@ -381,6 +381,8 @@ FuncCallNode::FuncCallNode(FuncCallNode* n) {
     func = n->func;
     mfuncname = n->mfuncname;
     scopes = n->scopes;
+    specialized = n->specialized;
+    templateTypeParameters = n->templateTypeParameters;
 }
 
 FuncCallNode::~FuncCallNode() {

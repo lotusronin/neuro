@@ -586,7 +586,7 @@ static void increaseDerefTypeInfo(TypeInfo& t) {
     return;
 }
 
-bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab);
+FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab);
 static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const TypeInfo& lhst, const TypeInfo& rhst);
 static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst);
 
@@ -640,58 +640,27 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
             case ANT::FuncCall:
                 {
                     typeCheckPass(c,symTab);
-                    bool instantiateTempl = false;
-                    FuncDefNode* templateFunc = nullptr;
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
                     auto funccall = static_cast<FuncCallNode*>(c);
                     std::string funcname = funccall->mfuncname;
-                    auto entries = getEntry(symTab,funcname);
-                    //std::cout << "Type checking function call " << funcname << "\n";
-                    if(entries.size() == 0) {
-                        entries = getEntry(symTab,funcname,funccall->scopes);
-                        if(entries.size() == 0) {
-                            bool callToTemplate = false;
-                            for(auto ptr : templateList) {
-                                auto fdef = static_cast<FuncDefNode*>(ptr);
-                                if(fdef->mfuncname == funcname) {
-                                    callToTemplate = true;
-                                    instantiateTempl = true;
-                                    templateFunc = fdef;
-                                    break;
-                                }
-                            }
-                            if(!callToTemplate) break;
-                        }
-                    }
+                    auto fdef = resolveFunction(funccall,symTab);
+                    if(!fdef) break;
 
-                    if(instantiateTempl) {
-                        std::cout << "Instantiating function " << funcname << '\n';
-                        //FuncCall matches to a template, need to instantiate
-                        auto save_currentFunc = currentFunc;
-                        auto instanced_func = instantiateTemplate(funccall,templateFunc,symTab);
-                        instantiatedFunctionsList.push_back(static_cast<FuncDefNode*>(instanced_func));
-                        std::cout << "Finished, " << funcname << " is now a concrete function\n";
-                        currentFunc = save_currentFunc;
-                        //Finished instantiating, get entries
-                        entries = getEntry(symTab,funcname);
-                    }
-                    SymbolTableEntry* e = entries.at(0);
-                    auto funcparams = e->funcParams;
-                    //auto args = funccall->margs;
+                    auto funcparams = fdef->getParameters();
                     auto args = funccall->mchildren;
                     std::vector<TypeInfo> arg_types;
                     arg_types.reserve(sizeof(TypeInfo)*args.size());
-                    resolveFunction(funccall,symTab);
                     for(auto a : args) {
-                        //typeCheckPass(a,symTab);
                         auto tinfo = getTypeInfo(a,symTab);
                         arg_types.push_back(tinfo);
                     }
 
                     //check every arg, against every parameter
-                    for(unsigned int i = 0; i < funcparams.size(); i++) {
+                    for(unsigned int i = 0; i < funcparams.size; i++) {
                         //auto n = args.at(i);
-                        auto param = funcparams.at(i).second;
+                        //auto param = funcparams.at(i).second;
+                        //manual array indexing is sorta iffy... add at() maybe?
+                        auto param = funcparams.ptr[i];
                         auto paramt = param->mtypeinfo;
                         auto argt = arg_types.at(i);
                         //check compatibility
@@ -1319,15 +1288,89 @@ void resolveSizeOfs(AstNode* ast) {
     }
 }
 
-bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
+int callSiteMatchesFunc(FuncDefNode* fn, FuncCallNode* call, SymbolTable* symTab) {
+    auto funcparams = fn->getParameters();
+    if(funcparams.size != call->mchildren.size()) {
+        return -1;
+    }
+    bool matched = true;
+
+    //check every arg, parameter pair
+    for(unsigned int i = 0; i < funcparams.size; i++) {
+        auto param = funcparams.ptr[i];
+        auto paramt = param->mtypeinfo;
+        auto argn = call->mchildren.at(i);
+        auto argt = getTypeInfo(argn,symTab);
+
+        if(!isSameType(paramt,argt)) {
+            if(!canCast(paramt,argt)) {
+                //std::cout << "types different " << paramt << " and " << argt << '\n';
+                matched = false;
+                break;
+            }
+        }
+    }
+    if(matched) return 1;
+    return 0;
+}
+
+FuncDefNode* getTemplatedFunc(FuncCallNode* call) {
+    auto funcname = call->mfuncname;
+    for(auto ptr : templateList) {
+        auto fdef = static_cast<FuncDefNode*>(ptr);
+        if(fdef->mfuncname == funcname) {
+            if(fdef->mchildren.size()-1 == call->mchildren.size())
+                return fdef;
+        }
+    }
+    return nullptr;
+}
+
+
+
+FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     auto funcname = funccall->mfuncname;
+
+    //If we already know the function call is for a template, just instantiate it
+    if(funccall->specialized) {
+        auto templateFunc = getTemplatedFunc(funccall);
+        if(!templateFunc) {
+            semanticError(SemanticErrorType::NoFunction, funccall, symTab);
+            return nullptr;
+        } else {
+            //std::cout << "Call is known to be a template\n";
+            //FuncCall matches to a template, need to instantiate
+            auto save_currentFunc = currentFunc;
+            auto instanced_func = static_cast<FuncDefNode*>(instantiateTemplate(funccall,templateFunc,symTab));
+            currentFunc = save_currentFunc;
+            //Finished instantiating, get entries
+            int matches = callSiteMatchesFunc(instanced_func,funccall,symTab);
+            if(matches > 0) {
+                funccall->func = instanced_func;
+                return instanced_func;
+            }
+            semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+            return nullptr;
+        }
+    }
     auto entries = getEntry(symTab,funcname);
+    FuncDefNode* templateFunc = nullptr;
 
     if(entries.size() == 0) {
         entries = getEntry(symTab,funcname,funccall->scopes);
         if(entries.size() == 0) {
-            semanticError(SemanticErrorType::NoFunction, funccall, symTab);
-            return false;
+            templateFunc = getTemplatedFunc(funccall);
+            if(!templateFunc) {
+                semanticError(SemanticErrorType::NoFunction, funccall, symTab);
+                return nullptr;
+            } else {
+                //FuncCall matches to a template, need to instantiate
+                auto save_currentFunc = currentFunc;
+                auto instanced_func = instantiateTemplate(funccall,templateFunc,symTab);
+                currentFunc = save_currentFunc;
+                //Finished instantiating, get entries
+                entries = getEntry(symTab,funcname);
+            }
         }
     }
     auto e = entries.at(0);
@@ -1335,83 +1378,70 @@ bool resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
     //TODO(marcus): Shouold we allow mix of prototypes and mangled funcs of same name?
     //eg extern foo() and foo()
     if(e->node->nodeType() == AstNodeType::Prototype) {
-        auto funcparams = static_cast<FuncDefNode*>(e->node)->getParameters();
-        if(funcparams.size != funccall->mchildren.size()) {
+        int matches = callSiteMatchesFunc(static_cast<FuncDefNode*>(e->node),funccall,symTab);
+        if(matches == -1) {
+            auto funcparams = static_cast<FuncDefNode*>(e->node)->getParameters();
             std::cout << "Missmatched number of parameters. At Callsite: " << funccall->mchildren.size() << " Function: " << funcparams.size << '\n';
-            return false;
-        }
-        bool matched = true;
-
-        //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams.size; i++) {
-            auto param = funcparams.ptr[i];
-            auto paramt = param->mtypeinfo;
-            auto argn = funccall->mchildren.at(i);
-            auto argt = getTypeInfo(argn,symTab);
-
-            if(!isSameType(paramt,argt)) {
-                if(!canCast(paramt,argt)) {
-                    std::cout << "types different " << paramt << " and " << argt << '\n';
-                    matched = false;
-                    break;
-                }
-            }
-        }
-        if(!matched) {
+            return nullptr;
+        } else if(matches == 0) {
             semanticError(SemanticErrorType::NoResolve, funccall, symTab);
-            return false;
+            return nullptr;
         }
-        return true;
-    }
+        return static_cast<FuncDefNode*>(e->node);
+    } else {
 
-    //TODO(marcus): this matches the first overload found, not the best one.
-    FuncDefNode* matchedNode = nullptr;
-    for(auto overload : e->overloads) {
-        FuncDefNode* candidate = nullptr;
-        if(overload->nodeType() == AstNodeType::FuncDef) {
-            candidate = static_cast<FuncDefNode*>(overload);
-        }
-        auto funcparams = candidate->getParameters();
-
-        if(funcparams.size != funccall->mchildren.size()) {
-            continue;
-        }
-
-        bool matched = true;
-
-        //check every arg, against every parameter
-        for(unsigned int i = 0; i < funcparams.size; i++) {
-            auto param = funcparams.ptr[i];
-            auto paramt = param->mtypeinfo;
-            auto argn = funccall->mchildren.at(i);
-            auto argt = getTypeInfo(argn,symTab);
-
-            if(!isSameType(paramt,argt)) {
-                if(!canCast(paramt,argt)) {
-                    matched = false;
-                    break;
+        //TODO(marcus): this matches the first overload found, not the best one.
+        FuncDefNode* matchedNode = nullptr;
+        for(auto overload : e->overloads) {
+            FuncDefNode* candidate = nullptr;
+            if(overload->nodeType() == AstNodeType::FuncDef) {
+                candidate = static_cast<FuncDefNode*>(overload);
+            }
+            int matches = callSiteMatchesFunc(candidate,funccall,symTab);
+            if(matches == -1) {
+                continue;
+            } else if(matches > 0) {
+                if(!matchedNode) {
+                    matchedNode = candidate;
+                } else {
+                    semanticError(SemanticErrorType::MultipleFuncResolve, funccall, symTab);
+                    //std::cout << "Error. Multiple matching functions found.\n";
                 }
             }
         }
-        if(matched) {
-            if(!matchedNode) {
-                matchedNode = candidate;
-            } else {
-                semanticError(SemanticErrorType::MultipleFuncResolve, funccall, symTab);
-                //std::cout << "Error. Multiple matching functions found.\n";
-            }
-        }
-    }
 
-    if(matchedNode) {
-        auto mangled = matchedNode->mangledName();
-        //std::cout << "Matched: " << mangled << '\n';
-        //std::cout << "Replacing function call name\n";
-        funccall->func = matchedNode;
-    } else {
-        semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+        if(matchedNode) {
+            auto mangled = matchedNode->mangledName();
+            //std::cout << "Matched: " << mangled << '\n';
+            //std::cout << "Replacing function call name\n";
+            funccall->func = matchedNode;
+        } else {
+            //No matching function found, see if we can instantiate a template
+            templateFunc = getTemplatedFunc(funccall);
+            if(!templateFunc) {
+                semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+                return nullptr;
+            } else {
+                //FuncCall matches to a template, need to instantiate
+                auto save_currentFunc = currentFunc;
+                auto instanced_func = static_cast<FuncDefNode*>(instantiateTemplate(funccall,templateFunc,symTab));
+                currentFunc = save_currentFunc;
+                //Finished instantiating, get entries
+                //entries = getEntry(symTab,funcname);
+                //auto e = entries.at(0);
+                int matches = callSiteMatchesFunc(instanced_func,funccall,symTab);
+                if(matches > 0) {
+                    funccall->func = instanced_func;
+                    return instanced_func;
+                }
+                semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+                return nullptr;
+            }
+            //semanticError(SemanticErrorType::NoResolve, funccall, symTab);
+        }
+        //return (matchedNode != nullptr);
+        return matchedNode;
     }
-    return (matchedNode != nullptr);
 }
 
 static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst) {
@@ -1752,6 +1782,19 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 auto t_fcall = static_cast<FuncCallNode*>(node);
                 auto fcall = new FuncCallNode(t_fcall);
                 cloned = fcall;
+                if(fcall->specialized) {
+                    //map of template varname to type for current function
+                    //map of template varname to possible templated type for call
+                    for(auto mapping : fcall->templateTypeParameters) {
+                        if(mapping.second.type == SemanticType::Template) {
+                            if(typeMap.find(mapping.second.userid) != typeMap.end()) {
+                                //std::cout << "Replacing templated type\n";
+                                //std::cout << "New type is " << typeMap[mapping.second.userid] << '\n';
+                                fcall->templateTypeParameters[mapping.first] = typeMap[mapping.second.userid];
+                            }
+                        }
+                    }
+                }
             }
             break;
         default:
@@ -1769,7 +1812,7 @@ static AstNode* cloneTree(AstNode* t_func, std::unordered_map<std::string,TypeIn
     auto fdef = new FuncDefNode(t_fdef);
     if(fdef->mtypeinfo.type == SemanticType::Template) {
         fdef->mtypeinfo = typeMap[fdef->mtypeinfo.userid];
-        std::cout << "Return type is now... " << fdef->mtypeinfo << '\n';
+        //std::cout << "Return type is now... " << fdef->mtypeinfo << '\n';
     }
     for(auto c : t_func->mchildren) {
         cloneTree(fdef,c,typeMap);
@@ -1784,7 +1827,7 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
     std::unordered_map<std::string,TypeInfo> typeMap;
 
     if(funccall->specialized) {
-        std::cout << "Template is specialized!\n";
+        //std::cout << "Template is specialized!\n";
         //type mappings given by the user
         typeMap = funccall->templateTypeParameters;
         //TODO(marcus): warn/error on unused mappings within the template?
@@ -1806,26 +1849,44 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
             idx++;
         }
     }
+    //Check for matching concrete function
+    auto funcname = funccall->mfuncname;
+    for(auto fn : instantiatedFunctionsList) {
+        if(fn->mfuncname !=  funcname) {
+            continue;
+        }
+        //instatiated functions match
+        int matches = callSiteMatchesFunc(fn,funccall,symTab);
+        if(matches == 0) continue;
+        else if(matches > 0) {
+            //std::cout << "Matched Concrete Specialization found\n";
+            return fn;
+        }
+    }
+    //std::cout << "Instantiating function " << funcname << '\n';
 
     //clone tree, replacing types as needed
     auto instancedFunc = cloneTree(funcdef,typeMap);
+    instantiatedFunctionsList.push_back(static_cast<FuncDefNode*>(instancedFunc));
 
     //run semantic passes on new tree
     auto fileScope = getFileScope(symTab);
     AstNode tmp;
     tmp.addChild(instancedFunc);
 
-    std::cout << "Got file scope " << fileScope->name << "\n";
+    //std::cout << "Got file scope " << fileScope->name << "\n";
 
     //TODO(marcus): it is odd that some passes need a fake parent to work
     transformAssignments(instancedFunc);
     //populateTypeList(ast); //does nothing, no type defs in functions allowed
     resolveSizeOfs(instancedFunc);
-    std::cout << "Populating SymTab With Function\n";
+    //std::cout << "Populating SymTab With Function\n";
     populateSymbolTableFunctions(&tmp,fileScope);
     semanticPass1(instancedFunc,0,fileScope);
     typeCheckPass(&tmp, fileScope);
     deferPass(&tmp);
+
+    //std::cout << "Finished, " << funcname << " is now a concrete function\n";
 
     return instancedFunc;
 }
