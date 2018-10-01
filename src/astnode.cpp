@@ -683,6 +683,7 @@ StructDefNode::StructDefNode(AstNodeType nodet) {
     StructDefNode::count++;
     foreign = false;
     mnodet = nodet;
+    isTemplated = 0;
 }
 
 StructDefNode::~StructDefNode() {

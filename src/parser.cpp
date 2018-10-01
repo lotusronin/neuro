@@ -407,18 +407,36 @@ void parseType(LexerTarget* lexer, AstNode* parent) {
             ptr_t = ptr_t->base_t;
             indirection = 0;
         } else {
+            auto typeInfoNode = new TypeInfo();
             auto mstype = getSemanticTypeFromTokenType(tok.type);
             int arr_size = 0;
             const char* user_id = nullptr;
-            if(mstype == SemanticType::User) user_id = tok.token;
-            else if(mstype == SemanticType::Template) {
+            if(mstype == SemanticType::User) {
+                user_id = tok.token;
+                //check for Struct_id#(id_n = type,...) case
+                if(lexer->peekNext().type == TokenType::hashtag) {
+                    typeInfoNode->userTypeParameterTypes = new std::unordered_map<std::string,TypeInfo>();
+                    //consume...
+                    lexer->lex(); //struct_id
+                    lexer->lex(); //#
+                    tok = lexer->lex(); //(
+                    AstNode tmp; //tmp node to parse the typeinfo into;
+                    while(tok.type != TokenType::rparen) {
+                        //consume...
+                        lexer->lex();//id
+                        lexer->lex();//=
+                        parseType(lexer,&tmp);
+                        (*(typeInfoNode->userTypeParameterTypes))[tok.token] = tmp.mtypeinfo;
+                        if(lexer->peek().type == TokenType::comma) tok = lexer->lex();
+                    }
+                }
+            } else if(mstype == SemanticType::Template) {
                 //consume #
                 tok = lexer->lex();
                 user_id = tok.token;
             }
             //we have enough information for a type node
             //will be some number of *s and then a type identifier
-            auto typeInfoNode = new TypeInfo();
             typeInfoNode->type = mstype;
             typeInfoNode->pindirection = indirection;
             typeInfoNode->arr_size = arr_size;
@@ -1073,6 +1091,28 @@ void parseStructDef(LexerTarget* lexer, AstNode* parent) {
     
     //consume id
     tok = lexer->lex();
+
+    if(tok.type == TokenType::hashtag) {
+        structdef->isTemplated = 1;
+        //this is a templated struct
+        //consume #
+        tok = lexer->lex();
+        if(tok.type != TokenType::lparen) parse_error(PET::Unknown,tok,lexer);
+        //consume (
+        tok = lexer->lex();
+        while(true) {
+            if(tok.type == TokenType::rparen) break;
+            if(tok.type != TokenType::id) parse_error(PET::Unknown,tok,lexer);
+            structdef->templateTypeNames.insert(tok.token);
+            //consume identifier
+            tok = lexer->lex();
+            //consume comma
+            if(tok.type == TokenType::comma) tok = lexer->lex();
+        }
+        //consume )
+        tok = lexer->lex();
+    }
+
     if(tok.type != TokenType::lbrace) {
         parse_error(PET::Unknown,tok, lexer);
     }

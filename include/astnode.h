@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include "tokens.h"
 #include "arrayview.h"
 
@@ -77,6 +78,7 @@ struct TypeInfo {
     SemanticType type = SemanticType::Typeless;
     int pindirection = 0;
     int arr_size = 0;
+    std::unordered_map<std::string,TypeInfo>* userTypeParameterTypes = nullptr;
     int indirection() const;
     bool isPointer() const;
     bool isArray() const;
@@ -319,6 +321,8 @@ class StructDefNode : public AstNode {
         std::string ident;
         bool foreign;
         int id;
+        int isTemplated;
+        std::unordered_set<std::string> templateTypeNames;
 };
 
 

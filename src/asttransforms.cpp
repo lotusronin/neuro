@@ -23,7 +23,9 @@ SymbolTable progSymTab;
 std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesList;
 std::unordered_map<std::string,AstNode*> structList;
 std::vector<AstNode*> templateList;
+std::vector<StructDefNode*> templatedStructList;
 std::vector<FuncDefNode*> instantiatedFunctionsList;
+std::vector<StructDefNode*> instantiatedStructList;
 
 //TODO(marcus): put this in the SymbolTable?
 std::unordered_map<std::string,std::vector<FuncDefNode*>> operatorOverloads;
@@ -97,7 +99,24 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                         }
                     }
                     if(!isStructMember) {
-                        semanticError(SET::UndefUse, ast, symTab);
+                        bool isTemplateStructMember = false;
+                        for(auto struct_t : templatedStructList) {
+                            for(auto c : struct_t->mchildren) {
+                                if(c->nodeType() != ANT::VarDec) {
+                                    continue;
+                                }
+                                auto vdec = static_cast<VarDeclNode*>(c);
+                                auto v = static_cast<VarNode*>(vdec->getLHS());
+                                std::string member_name = v->getVarName();
+                                if(member_name == name) {
+                                    isTemplateStructMember = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if(!isTemplateStructMember) {
+                            semanticError(SET::UndefUse, ast, symTab);
+                        }
                     }
                 }
             }
@@ -213,6 +232,11 @@ void semanticPass1(AstNode* ast)
 
 static void registerTypeDef(StructDefNode* n) {
     auto type_name = n->ident;
+    if(n->isTemplated) {
+        templatedStructList.push_back(n);
+        return;
+    }
+
     if(userTypesList.find(type_name) != userTypesList.end()) {
         //TODO(marcus): We already have the type registered
         //should we error?
