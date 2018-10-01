@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 
-void printErrorContext(int line, int col, std::string filename) {
+void printErrorContext(int line, int col, const std::string& filename) {
     std::ifstream in(filename, std::ios::binary);
     in.seekg(0,std::ios::end);
     int size = in.tellg();
@@ -51,7 +51,7 @@ void printErrorContext(int line, int col, std::string filename) {
 
 
 #define PET ParseErrorType
-int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
+int parse_error(const ParseErrorType type, const Token& t, const LexerTarget* l) {
     printErrorContext(t.line,t.col,l->targetName());
     switch (type) {
         case ParseErrorType::BadTopLevelStatement:
@@ -132,7 +132,7 @@ int parse_error(ParseErrorType type, Token& t, LexerTarget* l) {
 #define SET SemanticErrorType
 extern bool semantic_error;
 
-void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
+void semanticError(const SemanticErrorType err, AstNode* n, const SymbolTable* s) {
     std::string file = "Unknown File";
     auto tmp_s = s;
     while(tmp_s->parent && (tmp_s->parent->name != "global")) {
@@ -269,7 +269,7 @@ void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s) {
     semantic_error = true;
 }
 
-void semanticError(SemanticErrorType err, std::vector<StructDefNode*>& types) {
+void semanticError(const SemanticErrorType err, const std::vector<StructDefNode*>& types) {
     if(err == SemanticErrorType::CyclicTypeDefinitions) {
         ERROR("<Error> Couldn't resolve dependencies with provided types\n");
         std::cout << "Unresolved Types: ";

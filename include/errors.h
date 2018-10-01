@@ -53,8 +53,8 @@ enum class SemanticErrorType{
     Unknown
 };
 
-void printErrorContext(int line, int col, std::string filename);
-void semanticError(SemanticErrorType err, AstNode* n, SymbolTable* s);
-void semanticError(SemanticErrorType err, std::vector<StructDefNode*>& types);
-int parse_error(ParseErrorType type, Token& t, LexerTarget* l);
+void printErrorContext(int line, int col, const std::string& filename);
+void semanticError(const SemanticErrorType err, AstNode* n, const SymbolTable* s);
+void semanticError(const SemanticErrorType err, const std::vector<StructDefNode*>& types);
+int parse_error(const ParseErrorType type, const Token& t, const LexerTarget* l);
 #endif //ERRORS
