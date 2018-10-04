@@ -122,7 +122,7 @@ class BinOpNode : public AstNode {
     public:
         static int count;
         static int constructed;
-        BinOpNode(AstNodeType ntype);
+        BinOpNode(const AstNodeType ntype);
         BinOpNode(BinOpNode* n);
         ~BinOpNode();
         void setOp(const char* op);
@@ -205,7 +205,7 @@ class DeferStmtNode : public AstNode {
 class FuncDefNode : public AstNode {
     public:
         static int count;
-        FuncDefNode(AstNodeType ntype);
+        FuncDefNode(const AstNodeType ntype, const std::string& funcname);
         FuncDefNode(FuncDefNode* n);
         ~FuncDefNode();
         void addFuncName(std::string funcname);
@@ -223,7 +223,7 @@ class FuncDefNode : public AstNode {
 class FuncCallNode : public AstNode {
     public:
         static int count;
-        FuncCallNode();
+        FuncCallNode(const std::string& funcname);
         FuncCallNode(FuncCallNode* n);
         ~FuncCallNode();
         void addFuncName(std::string funcname);
@@ -252,7 +252,7 @@ class IfNode : public AstNode {
 class LoopNode : public AstNode {
     public:
         static int count;
-        LoopNode(AstNodeType ntype);
+        LoopNode(const AstNodeType ntype);
         LoopNode(LoopNode* n);
         ~LoopNode();
         AstNode* getConditional();
@@ -277,7 +277,7 @@ class LoopStmtNode : public AstNode {
 class ParamsNode : public AstNode {
     public:
         static int count;
-        ParamsNode();
+        ParamsNode(const std::string& name);
         ParamsNode(ParamsNode* n);
         ~ParamsNode();
         void addParamName(std::string& name);
@@ -315,7 +315,7 @@ class SizeOfNode : public AstNode {
 class StructDefNode : public AstNode {
     public:
         static int count;
-        StructDefNode(AstNodeType nodet);
+        StructDefNode(const AstNodeType nodet);
         ~StructDefNode();
         std::string& getIdent();
         std::string ident;
@@ -329,7 +329,7 @@ class StructDefNode : public AstNode {
 class VarDeclNode : public AstNode {
     public:
         static int count;
-        VarDeclNode(AstNodeType ntype);
+        VarDeclNode(const AstNodeType ntype);
         VarDeclNode(VarDeclNode* n);
         ~VarDeclNode();
         AstNode* getLHS();
@@ -341,7 +341,7 @@ class VarDeclNode : public AstNode {
 class VarNode : public AstNode {
     public:
         static int count;
-        VarNode();
+        VarNode(const std::string& name);
         VarNode(VarNode* n);
         ~VarNode();
         void addVarName(std::string name);

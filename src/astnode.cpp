@@ -153,7 +153,7 @@ int BinOpNode::count = 0;
 int BinOpNode::deleted = 0;
 int BinOpNode::constructed = 0;
 
-BinOpNode::BinOpNode(AstNodeType ntype) {
+BinOpNode::BinOpNode(const AstNodeType ntype) {
     id = BinOpNode::count;
     BinOpNode::count++;
     BinOpNode::constructed++;
@@ -366,7 +366,7 @@ DeferStmtNode::~DeferStmtNode() {
 
 int FuncCallNode::count = 0;
 
-FuncCallNode::FuncCallNode() {
+FuncCallNode::FuncCallNode(const std::string& funcname) : mfuncname(funcname) {
     id = FuncCallNode::count;
     FuncCallNode::count++;
     mnodet = AstNodeType::FuncCall;
@@ -396,7 +396,7 @@ void FuncCallNode::addFuncName(std::string funcname) {
 
 int FuncDefNode::count = 0;
 
-FuncDefNode::FuncDefNode(AstNodeType ntype) {
+FuncDefNode::FuncDefNode(const AstNodeType ntype, const std::string& funcname) : mfuncname(funcname) {
     id = FuncDefNode::count;
     FuncDefNode::count++;
     mchildren.reserve(8);
@@ -538,7 +538,7 @@ AstNode* IfNode::getElse() {
 
 int LoopNode::count = 0;
 
-LoopNode::LoopNode(AstNodeType ntype) {
+LoopNode::LoopNode(const AstNodeType ntype) {
     id = LoopNode::count;
     LoopNode::count++;
     mnodet = ntype;
@@ -608,7 +608,7 @@ LoopStmtNode::~LoopStmtNode() {
 
 int ParamsNode::count = 0;
 
-ParamsNode::ParamsNode() {
+ParamsNode::ParamsNode(const std::string& name) : mname(name) {
     id = ParamsNode::count;
     ParamsNode::count++;
     mnodet = AstNodeType::Params;
@@ -678,7 +678,7 @@ SizeOfNode::~SizeOfNode() {
 
 int StructDefNode::count = 0;
 
-StructDefNode::StructDefNode(AstNodeType nodet) {
+StructDefNode::StructDefNode(const AstNodeType nodet) {
     id = StructDefNode::count;
     StructDefNode::count++;
     foreign = false;
@@ -697,7 +697,7 @@ std::string& StructDefNode::getIdent() {
 
 int VarDeclNode::count = 0;
 
-VarDeclNode::VarDeclNode(AstNodeType ntype) {
+VarDeclNode::VarDeclNode(const AstNodeType ntype) {
     id = VarDeclNode::count;
     VarDeclNode::count++;
     mchildren.reserve(2);
@@ -729,7 +729,7 @@ AstNode* VarDeclNode::getRHS() {
 
 int VarNode::count = 0;
 
-VarNode::VarNode() {
+VarNode::VarNode(const std::string& name) : mname(name) {
     id = VarNode::count;
     VarNode::count++;
     mnodet = AstNodeType::Var;

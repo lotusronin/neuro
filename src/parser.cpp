@@ -203,7 +203,7 @@ void parsePrototypeOrStruct(LexerTarget* lexer, CompileUnitNode* parent) {
 
 void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
     //prototypes -> . extern fn id ( opt_params ) : type ;
-    FuncDefNode* protonode = new FuncDefNode(AstNodeType::Prototype);
+
     //consume extern
     Token tok = lexer->lex();
     if(tok.type != TokenType::fn) {
@@ -214,7 +214,8 @@ void parsePrototype(LexerTarget* lexer, CompileUnitNode* parent) {
     if(tok.type != TokenType::id) {
         parse_error(ParseErrorType::BadPrototypeName, tok, lexer);
     }
-    protonode->addFuncName(tok.token);
+    FuncDefNode* protonode = new FuncDefNode(AstNodeType::Prototype, tok.token);
+
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -259,9 +260,8 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::colon) {
         parse_error(PET::MissColon, tok, lexer);
     }
-    ParamsNode* param = new ParamsNode();
+    ParamsNode* param = new ParamsNode(n);
     parent->addChild(param);
-    param->addParamName(n);
     //consume :
     lexer->lex();
     parseType(lexer, param);
@@ -283,9 +283,8 @@ void parseOptparams(LexerTarget* lexer, AstNode* parent) {
             }
             //consume :
             lexer->lex();
-            ParamsNode* param = new ParamsNode();
+            ParamsNode* param = new ParamsNode(n);
             parent->addChild(param);
-            param->addParamName(n);
             parseType(lexer, param);
             auto fdef = static_cast<FuncDefNode*>(parent);
             if(param->mtypeinfo.type == SemanticType::Template) {
@@ -498,8 +497,7 @@ void parseVarAssign(LexerTarget* lexer, AstNode* parent) {
     if(tok.type != TokenType::id) {
         parse_error(PET::Unknown, tok, lexer);
     }
-    VarNode* vnode = new VarNode();
-    vnode->addVarName(tok.token);
+    VarNode* vnode = new VarNode(tok.token);
     anode->addChild(vnode);
     tok = lexer->lex();
     if(!isAssignmentOp(tok.type)) {
@@ -555,9 +553,8 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     lexer->lex();
     //consume :
     lexer->lex();
-    VarNode* vnode = new VarNode();
+    VarNode* vnode = new VarNode(tokid.token);
     vnode->mtoken = tokid;
-    vnode->addVarName(tokid.token);
 
     parseOptType(lexer,vnode);
     Token tok = lexer->peek();
@@ -607,13 +604,14 @@ bool tokenIsOperator(Token& t) {
 void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
     //functiondefs -> . fn id ( opt_params ) : type block
     //consume fn
-    FuncDefNode* funcnode = new FuncDefNode(AstNodeType::FuncDef);
-    parent->addChild(funcnode);
     Token tok = lexer->lex();
     //std::cout << tok.token << '\n';
     if(tok.type != TokenType::id) {
         parse_error(PET::BadPrototypeName, tok, lexer);
     }
+
+    FuncDefNode* funcnode = new FuncDefNode(AstNodeType::FuncDef,tok.token);
+    parent->addChild(funcnode);
 
     const char* operatorOverload = "op";
     if(strcmp(operatorOverload, tok.token) == 0) {
@@ -626,7 +624,7 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
         }
     }
     funcnode->mtoken = tok;
-    funcnode->addFuncName(tok.token);
+
     //consume id
     tok = lexer->lex();
     if(tok.type != TokenType::lparen) {
@@ -896,8 +894,7 @@ void parseTemplatedFunccall(LexerTarget* lexer, AstNode* parent) {
     //funccall -> . funcname # (Tmpl = type,...) ( opt_args )
     // funcname -> id
     Token tok = lexer->peek();
-    FuncCallNode* funcallnode = new FuncCallNode();
-    funcallnode->addFuncName(tok.token);
+    FuncCallNode* funcallnode = new FuncCallNode(tok.token);
     funcallnode->mtoken = tok;
     funcallnode->specialized = true;
     parent->addChild(funcallnode);
@@ -983,8 +980,7 @@ void parseFunccallOrVar(LexerTarget* lexer, AstNode* parent) {
             //unneeded check? do we already know its an id?
             parse_error(PET::BadVarName, tok, lexer);
         }
-        VarNode* varnode = new VarNode();
-        varnode->addVarName(tok.token);
+        VarNode* varnode = new VarNode(tok.token);
         varnode->mtoken = tok;
         if(parent != nullptr) {
             parent->addChild(varnode);
@@ -997,8 +993,7 @@ void parseFunccall(LexerTarget* lexer, AstNode* parent) {
     //funccall -> . funcname ( opt_args )
     // funcname -> id
     Token tok = lexer->peek();
-    FuncCallNode* funcallnode = new FuncCallNode();
-    funcallnode->addFuncName(tok.token);
+    FuncCallNode* funcallnode = new FuncCallNode(tok.token);
     funcallnode->mtoken = tok;
     if(parent != nullptr) {
         parent->addChild(funcallnode);
@@ -1149,8 +1144,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         
         //we have a declaration
         VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
-        VarNode* vnode = new VarNode();
-        vnode->addVarName(tokid.token);
+        VarNode* vnode = new VarNode(tokid.token);
         vdecnode->addChild(vnode);
         parseType(lexer, vdecnode);
         vnode->mtypeinfo = vdecnode->mtypeinfo;
