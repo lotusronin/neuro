@@ -11,9 +11,9 @@
 #include <llvm/IR/BasicBlock.h>
 #include "symboltable.h"
 
-llvm::Type* getIRType(TypeInfo& info);
-llvm::Type* getIRType(SemanticType t, std::string ident, int indirection);
-llvm::StructType* getStructIRType(std::string ident);
+llvm::Type* getIRType(const TypeInfo& info);
+llvm::Type* getIRType(SemanticType t, const std::string& ident, int indirection);
+llvm::StructType* getStructIRType(const std::string& ident);
 llvm::Value* expressionCodegen(AstNode* n, SymbolTable* sym, bool lvalue=false);
 llvm::Function* prototypeCodegen(AstNode* n, SymbolTable* sym);
 llvm::Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass=false);

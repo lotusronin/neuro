@@ -169,7 +169,7 @@ class CompileUnitNode : public AstNode {
         static int count;
         CompileUnitNode();
         ~CompileUnitNode();
-        void setFileName(std::string name);
+        void setFileName(const std::string& name);
         std::string getFileName() const;
         int id;
         std::string mname;
@@ -208,7 +208,7 @@ class FuncDefNode : public AstNode {
         FuncDefNode(const AstNodeType ntype, const std::string& funcname);
         FuncDefNode(FuncDefNode* n);
         ~FuncDefNode();
-        void addFuncName(std::string funcname);
+        void addFuncName(const std::string& funcname);
         ArrayView getParameters();
         AstNode* getFunctionBody();
         std::string mangledName();
@@ -226,7 +226,7 @@ class FuncCallNode : public AstNode {
         FuncCallNode(const std::string& funcname);
         FuncCallNode(FuncCallNode* n);
         ~FuncCallNode();
-        void addFuncName(std::string funcname);
+        void addFuncName(const std::string& funcname);
         int id;
         std::string mfuncname;
         std::string scopes;
@@ -344,7 +344,7 @@ class VarNode : public AstNode {
         VarNode(const std::string& name);
         VarNode(VarNode* n);
         ~VarNode();
-        void addVarName(std::string name);
+        void addVarName(const std::string& name);
         const char* getVarName() const;
         int id;
         std::string mname;

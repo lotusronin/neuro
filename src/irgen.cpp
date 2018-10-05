@@ -59,11 +59,11 @@ Type* getIRPtrType(Type* t, int indirection) {
 }
 
 #define ST SemanticType
-Type* getIRType(TypeInfo& info) {
+Type* getIRType(const TypeInfo& info) {
     return getIRType(info.type,info.userid,info.indirection());
 }
 
-Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
+Type* getIRType(ST t, const std::string& ident = "", int indirection = 0) {
     Type* ret;
     switch(t) {
         case ST::Void:
@@ -114,7 +114,7 @@ Type* getIRType(ST t, std::string ident = "", int indirection = 0) {
 bool isPrimitiveType(ST type);
 
 //TODO(marcus): do a better check for primitive types (pointers?)
-bool isPrimitiveType(TypeInfo t) {
+bool isPrimitiveType(const TypeInfo& t) {
     bool ret = true;
     ST type = t.type;
     switch(type) {
@@ -178,7 +178,7 @@ Type* generateTypeCodegen(AstNode* n) {
     return ret;
 }
 
-StructType* getStructIRType(std::string ident) {
+StructType* getStructIRType(const std::string& ident) {
     StructType* ret = nullptr;
     auto iter = irTypeMap.find(ident);
     if(iter != irTypeMap.end()) {
@@ -229,7 +229,7 @@ Function* prototypeCodegen(AstNode* n, SymbolTable* sym) {
 Function* functionCodegen(AstNode* n, SymbolTable* sym, bool prepass) {
     FuncDefNode* funcnode = static_cast<FuncDefNode*>(n);
     //std::cout << "Generating function " << funcnode->mfuncname << "\n";
-    std::string mangledName = funcnode->mangledName();
+    const std::string mangledName = funcnode->mangledName();
     Function* F = module->getFunction(mangledName);
     auto vec = funcnode->getParameters();
     if(!F) {
@@ -769,7 +769,7 @@ void vardecCodegen(AstNode* n, SymbolTable* sym) {
     auto entryBB = &func->getEntryBlock();
     IRBuilder<> tmpBuilder(entryBB,entryBB->begin());
     auto alloc = tmpBuilder.CreateAlloca(irtype,0,varn->getVarName());
-    symbol_table_entry->address = (void*)alloc;
+    symbol_table_entry->address = static_cast<void*>(alloc);
     return;
 }
 
@@ -1130,8 +1130,8 @@ void dumpIR() {
     return;
 }
 
-void writeIR(std::string o) {
-    std::string out = o + ".ll";
+void writeIR(const std::string& o) {
+    const std::string out = o + ".ll";
     std::error_code EC;
     raw_fd_ostream dest(out,EC,sys::fs::F_Text);
     module->print(dest,nullptr,false,true);
@@ -1146,8 +1146,8 @@ void generateIR(AstNode* ast) {
     generateIR_llvm(ast, &progSymTab);
 }
 
-void writeObj(std::string o) {
-    std::string out = o + ".o";
+void writeObj(const std::string& o) {
+    const std::string out = o + ".o";
   
     InitializeNativeTarget();
     InitializeNativeTargetAsmParser();

@@ -587,7 +587,7 @@ void parseSomeVarDecStmt(LexerTarget* lexer, AstNode* parent) {
     }
 }
 
-bool tokenIsOperator(Token& t) {
+bool tokenIsOperator(const Token& t) {
     //TODO(marcus): we will want to allow other operators later
     switch(t.type) {
         case TokenType::plus:
@@ -619,7 +619,8 @@ void parseFunctionDef(LexerTarget* lexer, AstNode* parent) {
         if(tokenIsOperator(next_tok)) {
             //we have an operator overload
             funcnode->isOperatorOverload = 1;
-            funcnode->op = (char*) next_tok.token;
+            //funcnode->op = (char*) next_tok.token;
+            funcnode->op = const_cast<char*>(next_tok.token);
             lexer->lex();
         }
     }

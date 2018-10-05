@@ -281,7 +281,7 @@ CompileUnitNode::CompileUnitNode() {
 CompileUnitNode::~CompileUnitNode() {
 }
 
-void CompileUnitNode::setFileName(std::string name) {
+void CompileUnitNode::setFileName(const std::string& name) {
     mname = name;
 }
 
@@ -388,7 +388,7 @@ FuncCallNode::FuncCallNode(FuncCallNode* n) {
 FuncCallNode::~FuncCallNode() {
 }
 
-void FuncCallNode::addFuncName(std::string funcname) {
+void FuncCallNode::addFuncName(const std::string& funcname) {
     mfuncname = funcname;
 }
 
@@ -422,7 +422,7 @@ FuncDefNode::FuncDefNode(FuncDefNode* n) {
 FuncDefNode::~FuncDefNode() {
 }
 
-void FuncDefNode::addFuncName(std::string funcname) {
+void FuncDefNode::addFuncName(const std::string& funcname) {
     mfuncname = funcname;
 }
 
@@ -746,7 +746,7 @@ VarNode::VarNode(VarNode* n) {
 VarNode::~VarNode() {
 }
 
-void VarNode::addVarName(std::string name) {
+void VarNode::addVarName(const std::string& name) {
     mname = name;
 }
 

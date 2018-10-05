@@ -35,7 +35,7 @@ void addVarEntry(SymbolTable* s, SemanticType t, AstNode* n) {
     s->table.insert(std::make_pair(name,entry));
 }
 
-void addVarEntry(SymbolTable* s, TypeInfo t, std::string name) {
+void addVarEntry(SymbolTable* s, const TypeInfo& t, std::string name) {
     auto entry = new SymbolTableEntry;
     entry->typeinfo = t;
     s->table.insert(std::make_pair(name,entry));
@@ -49,7 +49,7 @@ void updateVarEntry(SymbolTable* s, SemanticType t, const std::string& name) {
     }
 }
 
-void updateVarEntry(SymbolTable* s, TypeInfo t, const std::string& name) {
+void updateVarEntry(SymbolTable* s, const TypeInfo& t, const std::string& name) {
     //std::cout << __FUNCTION__ << " : updating var\n";
     auto entry = s->table.find(name);
     if(entry != s->table.end()) {

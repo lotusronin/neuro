@@ -12,7 +12,7 @@ void printErrorContext(int line, int col, const std::string& filename) {
     std::ifstream in(filename, std::ios::binary);
     in.seekg(0,std::ios::end);
     int size = in.tellg();
-    char* content = (char*) malloc(size+1);
+    char* content = static_cast<char*>(malloc(size+1));
     in.seekg(0,std::ios::beg);
     in.read(content,size);
     content[size] = '\0';

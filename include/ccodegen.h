@@ -7,7 +7,7 @@
 #include "astnodetypes.h"
 #include "symboltable.h"
 
-void genCFile(std::string filename, const std::vector<SymbolTableEntry*>& exported);
+void genCFile(const std::string& filename, const std::vector<SymbolTableEntry*>& exported);
 void testGenCFile();
 
 #endif //CCODEGEN_H

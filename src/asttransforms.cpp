@@ -36,7 +36,7 @@ static const char* getOperatorName(const char* op);
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
-static bool isSameType(TypeInfo& t1, TypeInfo& t2);
+static bool isSameType(const TypeInfo& t1, const TypeInfo& t2);
 static void checkForRecursiveTypes();
 static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab);
 
@@ -293,7 +293,7 @@ void populateSymbolTableFunctions(AstNode* ast) {
     populateSymbolTableFunctions(ast,&progSymTab);
 }
 
-SymbolTable* getSymtab(std::string& file) {
+SymbolTable* getSymtab(const std::string& file) {
     return progSymTab.children.find(file)->second;
 }
 
@@ -393,7 +393,7 @@ void typeCheckPass(AstNode* ast) {
 
 }
 
-static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
+static bool isSameType(const TypeInfo& t1, const TypeInfo& t2) {
     if(t1.indirection() == t2.indirection()) {
         if(t1.type == t2.type) {
             if(t1.type != SemanticType::User) {
@@ -407,7 +407,7 @@ static bool isSameType(TypeInfo& t1, TypeInfo& t2) {
 }
 
 #define ST SemanticType
-bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
+bool isPointerMath(const TypeInfo& t1, const TypeInfo& t2) {
     if(t1.indirection() > 0 && t2.indirection() > 0) {
         return false;
     }
@@ -439,7 +439,7 @@ bool isPointerMath(TypeInfo& t1, TypeInfo& t2) {
     return false;
 }
 
-static bool canCast(TypeInfo& t1, TypeInfo& t2) {
+static bool canCast(const TypeInfo& t1, const TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
 
     if((t1.type == SemanticType::nulllit && t2.indirection()) || (t2.type == SemanticType::nulllit && t1.indirection())) {
@@ -1203,7 +1203,7 @@ void deferPass(AstNode* ast) {
 
 #define ST SemanticType
 
-static std::pair<int,int> typeSizeAndAlign(TypeInfo t) {
+static std::pair<int,int> typeSizeAndAlign(const TypeInfo& t) {
     int size = 0;
     int align = 0;
     //TODO(marcus): Support array sizes
@@ -1282,7 +1282,7 @@ static std::pair<int,int> typeSizeAndAlign(TypeInfo t) {
     return std::pair<int,int>(size,align);
 }
 
-static int calcTypeSize(TypeInfo t) {
+static int calcTypeSize(const TypeInfo& t) {
     auto ret = typeSizeAndAlign(t);
     return ret.first;
 }

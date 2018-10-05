@@ -61,7 +61,7 @@ std::string typeToString(ST type, AstNode* n) {
 }
 #undef ST
 
-void genCFile(std::string filename, const std::vector<SymbolTableEntry*>& exported) {
+void genCFile(const std::string& filename, const std::vector<SymbolTableEntry*>& exported) {
     std::cout << "Generating C file\n";
     std::ofstream outfile(filename+"_neuro.h",std::ofstream::out);
     std::set<std::string> types;
@@ -187,7 +187,7 @@ static void getUserTypeNodes(AstNode* ast, std::vector<StructDefNode*>& types) {
     return;
 }
 
-std::pair<std::string,std::string> generateTypeString(TypeInfo& t) {
+std::pair<std::string,std::string> generateTypeString(const TypeInfo& t) {
     std::string type;
     std::string arr;
     if(t.type == SemanticType::User) {
@@ -277,7 +277,7 @@ void printStruct(StructDefNode* n, std::ofstream& out) {
             auto vdec = static_cast<VarDeclNode*>(c);
             auto var = static_cast<VarNode*>(vdec->getLHS());
             auto p = generateTypeString(vdec->mtypeinfo);
-            std::string type_str = p.first;
+            const std::string type_str = p.first;
             out << type_str << ' ' << var->getVarName() << p.second << ";\n";
         }
     }
@@ -286,7 +286,7 @@ void printStruct(StructDefNode* n, std::ofstream& out) {
 
 void printFunctionHeader(FuncDefNode* fn, std::ofstream& out, bool is_proto) {
     auto typeinfo = fn->mtypeinfo;
-    std::string return_type = generateTypeString(typeinfo).first;
+    const std::string return_type = generateTypeString(typeinfo).first;
     std::string extern_mod = "";
     std::string fn_name = "";
     if(fn->nodeType() == AstNodeType::Prototype) {
@@ -302,8 +302,8 @@ void printFunctionHeader(FuncDefNode* fn, std::ofstream& out, bool is_proto) {
     for(auto p : params) {
         if(add_comma) out << ", ";
         auto pr = generateTypeString(p->mtypeinfo);
-        std::string type_str = pr.first;
-        std::string param_name = static_cast<ParamsNode*>(p)->mname;
+        const std::string type_str = pr.first;
+        const std::string param_name = static_cast<ParamsNode*>(p)->mname;
         out << type_str << ' ' << param_name << pr.second;
         add_comma = true;
     }
@@ -377,13 +377,13 @@ void printBody(AstNode* n, std::ofstream& out) {
             break;
         case AstNodeType::LoopStmtCnt:
             {
-                auto node = static_cast<LoopStmtNode*>(n);
+                //auto node = static_cast<LoopStmtNode*>(n);
                 out << "continue";
             }
             break;
         case AstNodeType::LoopStmtBrk:
             {
-                auto node = static_cast<LoopStmtNode*>(n);
+                //auto node = static_cast<LoopStmtNode*>(n);
                 out << "break";
             }
             break;
@@ -401,7 +401,7 @@ void printBody(AstNode* n, std::ofstream& out) {
             {
                 auto node = static_cast<CastNode*>(n);
                 auto end_t = node->mtypeinfo;
-                std::string type_str = generateTypeString(end_t).first;
+                const std::string type_str = generateTypeString(end_t).first;
                 out << '(' << type_str << ')';
                 printBody(node->mchildren.at(0),out);
             }
@@ -409,7 +409,7 @@ void printBody(AstNode* n, std::ofstream& out) {
         case AstNodeType::UnaryOp:
             {
                 auto node = static_cast<BinOpNode*>(n);
-                std::string op = node->getOp();
+                const std::string op = node->getOp();
                 if(op == "@") {
                     out << "(*(";
                     printBody(node->LHS(),out);
@@ -499,7 +499,7 @@ void printBody(AstNode* n, std::ofstream& out) {
                 auto node = static_cast<VarDeclNode*>(n);
                 auto var = static_cast<VarNode*>(node->getLHS());
                 auto p = generateTypeString(var->mtypeinfo);
-                std::string type_str = p.first;
+                const std::string type_str = p.first;
                 out << type_str << ' ' << var->getVarName() << p.second;
             }
             break;
