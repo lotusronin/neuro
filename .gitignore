@@ -2,6 +2,7 @@
 *.o
 neuro
 Neuro
+test_Neuro
 *.output
 *.dot
 *.png
@@ -15,3 +16,10 @@ Neuro
 /vs_build
 /vs_release_build
 callgrind.out.*
+test/*.nro
+test/*.h
+test/*.c
+test/*.out
+test/*.s
+test/__pycache__
+test/configs/__pycache__
