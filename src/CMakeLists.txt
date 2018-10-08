@@ -7,6 +7,12 @@ find_package(LLVM REQUIRED)
 include_directories(${LLVM_INCLUDE_DIRS})
 
 
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE "${Neuro_SOURCE_DIR}/include/catch/single_include/catch2/")
+
+set(MY_TEST_SOURCES test_catch_main.cpp lexer.cpp astnode.cpp
+    test_asttransforms.cpp symboltable.cpp
+    errors.cpp arrayview.cpp)
 
 set(MY_SOURCES main.cpp lexer.cpp parser.cpp astnode.cpp
     asttransforms.cpp symboltable.cpp
@@ -45,4 +51,17 @@ if(CPPLINT_PROG)
     list(APPEND CPPLINT_PROG
         "--filter=-whitespace,-legal,-build")
     set_target_properties(Neuro PROPERTIES CXX_CPPLINT "${CPPLINT_PROG}")
+endif()
+
+#run catch
+option(RUN_TESTS "Run unit tests" ON)
+if(RUN_TESTS)
+    add_executable(test_Neuro ${MY_TEST_SOURCES})
+    target_link_libraries(test_Neuro Catch)
+    target_compile_features(test_Neuro PUBLIC cxx_std_11)
+    set_target_properties(test_Neuro PROPERTIES CXX_EXTENSIONS OFF)
+    target_include_directories(test_Neuro PUBLIC "${Neuro_SOURCE_DIR}/include/")
+    target_include_directories(test_Neuro PUBLIC "${Neuro_SOURCE_DIR}/src/")
+
+    add_test(NAME TestNeuro COMMAND test_Neuro)
 endif()

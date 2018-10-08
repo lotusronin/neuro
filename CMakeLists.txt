@@ -14,3 +14,5 @@ else()
     add_compile_options(-Wall)
 endif()
 add_subdirectory(src)
+
+enable_testing()

@@ -39,6 +39,7 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
 static bool isSameType(const TypeInfo& t1, const TypeInfo& t2);
 static void checkForRecursiveTypes();
 static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab);
+static int calcTypeSize(const TypeInfo& t);
 
 void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
 {
@@ -439,6 +440,50 @@ bool isPointerMath(const TypeInfo& t1, const TypeInfo& t2) {
     return false;
 }
 
+static bool isIntegerSigned(const TypeInfo& t)
+{
+    switch(t.type) {
+        case ST::u8:
+        case ST::u16:
+        case ST::u32:
+        case ST::u64:
+            return false;
+        case ST::s8:
+        case ST::s16:
+        case ST::s32:
+        case ST::s64:
+        case ST::Int:
+        case ST::intlit:
+            return true;
+            break;
+        default:
+            break;
+    }
+    return false;
+}
+
+static bool isIntegerType(const TypeInfo& t)
+{
+    if(t.indirection() || t.arraySize()) return false;
+    switch(t.type) {
+        case ST::u8:
+        case ST::u16:
+        case ST::u32:
+        case ST::u64:
+        case ST::s8:
+        case ST::s16:
+        case ST::s32:
+        case ST::s64:
+        case ST::Int:
+        case ST::intlit:
+            return true;
+            break;
+        default:
+            break;
+    }
+    return false;
+}
+
 static bool canCast(const TypeInfo& t1, const TypeInfo& t2) {
     //helper function to check if we can implicitly cast t2 to the t1
 
@@ -488,85 +533,27 @@ static bool canCast(const TypeInfo& t1, const TypeInfo& t2) {
         //TODO(marcus): check for (u/s)64 types
         return true;
     }
-    if(t2.type == ST::intlit) {
-        switch(t1.type) {
-            case ST::u8:
-            case ST::u32:
-            case ST::u64:
-            case ST::s8:
-            case ST::s32:
-            case ST::s64:
-            case ST::Int:
-                return true;
-                break;
-            default:
-                return false;
-                break;
-        }
-    }
 
-    if(t2.type == ST::u8) {
-        switch(t1.type) {
-            case ST::u32:
-            case ST::u64:
-            case ST::s8:
-            case ST::s32:
-            case ST::s64:
-            case ST::Char:
-                return true;
-                break;
-            default:
+    if(isIntegerType(t2) && isIntegerType(t1)) {
+        int t1_size = calcTypeSize(t1);
+        int t2_size = calcTypeSize(t2);
+        bool t1_signed = isIntegerSigned(t1);
+        bool t2_signed = isIntegerSigned(t2);
+        if(t1_signed == t2_signed)
+        {
+            //If their signs match, then accept as long as resulting size is >= current
+            return (t1_size >= t2_size);
+        } else {
+            //signed to unsigned cast is not allowed
+            if(t2_signed && !(t1_signed)) {
                 return false;
-                break;
-        }
-    }
-
-    if(t2.type == ST::u32) {
-        switch(t1.type) {
-            case ST::Int:
-            case ST::u64:
-            case ST::s32:
-            case ST::s64:
-                return true;
-                break;
-            default:
-                return false;
-                break;
-        }
-    }
-
-    if(t2.type == ST::Int) {
-        switch(t1.type) {
-            case ST::u32:
-            case ST::u64:
-                return true;
-                break;
-            default:
-                return false;
-                break;
-        }
-    }
-
-    if(t2.type == ST::s8) {
-        switch(t1.type) {
-            case ST::s32:
-            case ST::s64:
-                return true;
-                break;
-            default:
-                return false;
-                break;
-        }
-    }
-
-    if(t2.type == ST::s32) {
-        switch(t1.type) {
-            case ST::s64:
-                return true;
-                break;
-            default:
-                return false;
-                break;
+            }
+            //unsigned to signed cast allowed if the signed size is larger
+            if(!(t2_signed) && t1_signed) {
+                return (t1_size > t2_size);
+            }
+            //hopefully unrechable
+            return false;
         }
     }
 
