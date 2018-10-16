@@ -115,6 +115,61 @@ int TypeInfo::arraySize() const {
     return arr_size;
 }
 
+std::string TypeInfoToString(const TypeInfo& ti) {
+    std::string mangled;
+
+    //TODO(marcus): will need to represent arrays
+    const int indirection = ti.indirection();
+    if(indirection) {
+        mangled = "p" + std::to_string(indirection);
+    }
+    switch(ti.type) {
+        case SemanticType::Void:
+            mangled += "v";
+            break;
+        case SemanticType::Bool:
+            mangled += "b";
+            break;
+        case SemanticType::Char:
+            mangled += "c";
+            break;
+        case SemanticType::Int:
+            mangled += "i";
+            break;
+        case SemanticType::Float:
+            mangled += "f";
+            break;
+        case SemanticType::Double:
+            mangled += "d";
+            break;
+        case SemanticType::u8:
+            mangled += "u8";
+            break;
+        case SemanticType::u32:
+            mangled += "u32";
+            break;
+        case SemanticType::u64:
+            mangled += "u64";
+            break;
+        case SemanticType::s8:
+            mangled += "s8";
+            break;
+        case SemanticType::s32:
+            mangled += "s32";
+            break;
+        case SemanticType::s64:
+            mangled += "s64";
+            break;
+        case SemanticType::User:
+            mangled += ti.userid;
+            break;
+        default:
+            mangled += "_default_";
+            break;
+    }
+    return mangled;
+}
+
 
 
 int AssignNode::count = 0;
@@ -443,60 +498,15 @@ std::string FuncDefNode::mangledName() {
         return mfuncname;
     }
 
+    //TODO(marcus): If we make this string a lot, cache it
     std::string mangled = mfuncname + "_";
     for(auto arg : mchildren) {
         if(arg->nodeType() != AstNodeType::Params)
             continue;
-        auto argti = arg->mtypeinfo;
-        auto indirection = argti.indirection();
-        if(indirection) {
-            mangled = mangled + "p" + std::to_string(indirection);
-        }
-        switch(argti.type) {
-            case SemanticType::Void:
-                mangled += "v";
-                break;
-            case SemanticType::Bool:
-                mangled += "b";
-                break;
-            case SemanticType::Char:
-                mangled += "c";
-                break;
-            case SemanticType::Int:
-                mangled += "i";
-                break;
-            case SemanticType::Float:
-                mangled += "f";
-                break;
-            case SemanticType::Double:
-                mangled += "d";
-                break;
-            case SemanticType::u8:
-                mangled += "u8";
-                break;
-            case SemanticType::u32:
-                mangled += "u32";
-                break;
-            case SemanticType::u64:
-                mangled += "u64";
-                break;
-            case SemanticType::s8:
-                mangled += "s8";
-                break;
-            case SemanticType::s32:
-                mangled += "s32";
-                break;
-            case SemanticType::s64:
-                mangled += "s64";
-                break;
-            case SemanticType::User:
-                mangled += argti.userid;
-                break;
-            default:
-                mangled += "_default_";
-                break;
-        }
+        mangled += TypeInfoToString(arg->mtypeinfo);
     }
+    mangled += "_r";
+    mangled += TypeInfoToString(mtypeinfo);
     //std::cout << "Mangled: " << mangled << '\n';
     return mangled;
 }
