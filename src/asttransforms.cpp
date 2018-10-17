@@ -24,7 +24,7 @@ std::unordered_map<std::string,std::unordered_map<std::string,int>*> userTypesLi
 std::unordered_map<std::string,AstNode*> structList;
 std::vector<AstNode*> templateList;
 std::vector<StructDefNode*> templatedStructList;
-std::vector<FuncDefNode*> instantiatedFunctionsList;
+std::vector<std::pair<std::unordered_map<std::string,TypeInfo>,FuncDefNode*>> instantiatedFunctionsList;
 std::vector<StructDefNode*> instantiatedStructList;
 
 //TODO(marcus): put this in the SymbolTable?
@@ -1893,7 +1893,8 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
     }
     //Check for matching concrete function
     auto funcname = funccall->mfuncname;
-    for(auto fn : instantiatedFunctionsList) {
+    for(auto& map_fn_pair : instantiatedFunctionsList) {
+        auto fn = map_fn_pair.second;
         if(fn->mfuncname !=  funcname) {
             continue;
         }
@@ -1901,15 +1902,26 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
         int matches = callSiteMatchesFunc(fn,funccall,symTab);
         if(matches == 0) continue;
         else if(matches > 0) {
+            //Make sure the instantiated function used the same template types too
+            bool exact_type_match = true;
+            auto map_string_type = map_fn_pair.first;
+            for(auto& template_type_pair : map_string_type)
+            {
+                if(!isSameType(typeMap.at(template_type_pair.first), template_type_pair.second)) {
+                    exact_type_match = false;
+                    break;
+                }
+            }
             //std::cout << "Matched Concrete Specialization found\n";
-            return fn;
+            if(exact_type_match)
+                return fn;
         }
     }
     //std::cout << "Instantiating function " << funcname << '\n';
 
     //clone tree, replacing types as needed
     auto instancedFunc = cloneTree(funcdef,typeMap);
-    instantiatedFunctionsList.push_back(static_cast<FuncDefNode*>(instancedFunc));
+    instantiatedFunctionsList.push_back(std::make_pair(typeMap,static_cast<FuncDefNode*>(instancedFunc)));
 
     //run semantic passes on new tree
     auto fileScope = getFileScope(symTab);

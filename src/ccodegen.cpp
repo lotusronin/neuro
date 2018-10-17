@@ -135,7 +135,7 @@ void testGenCFile() {
     //TODO(marcus): make a test case for this!
 }
 
-extern std::vector<FuncDefNode*> instantiatedFunctionsList;
+extern std::vector<std::pair<std::unordered_map<std::string,TypeInfo>,FuncDefNode*>> instantiatedFunctionsList;
 static void getFunctionNodes(AstNode* ast, std::vector<FuncDefNode*>& funcs) {
     AstNodeType type = ast->nodeType();
     switch(type) {
@@ -145,7 +145,7 @@ static void getFunctionNodes(AstNode* ast, std::vector<FuncDefNode*>& funcs) {
                 //instantiated template functions here. Should probably put this in a better
                 //place
                 for(auto fn : instantiatedFunctionsList) {
-                    funcs.push_back(fn);
+                    funcs.push_back(fn.second);
                 }
             }
         case AstNodeType::CompileUnit:
