@@ -85,6 +85,9 @@ struct TypeInfo {
     int arraySize() const;
 };
 
+bool operator==(const TypeInfo& lhs, const TypeInfo& rhs);
+bool operator!=(const TypeInfo& lhs, const TypeInfo& rhs);
+
 std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);
 
 class AstNode {

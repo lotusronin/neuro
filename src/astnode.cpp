@@ -115,6 +115,24 @@ int TypeInfo::arraySize() const {
     return arr_size;
 }
 
+bool operator==(const TypeInfo& lhs, const TypeInfo& rhs) {
+    if(lhs.type != rhs.type) return false;
+    if(lhs.pindirection != rhs.pindirection) return false;
+    if(lhs.arr_size != rhs.arr_size) return false;
+
+    if(lhs.type == SemanticType::User && lhs.userid && rhs.userid) {
+        return strcmp(lhs.userid,rhs.userid);
+    } else {
+        return true;
+    }
+    //TODO(marcus): compare template types?
+    //TODO(marcus): compare array types?
+}
+
+bool operator!=(const TypeInfo& lhs, const TypeInfo& rhs) {
+    return !(lhs == rhs);
+}
+
 std::string TypeInfoToString(const TypeInfo& ti) {
     std::string mangled;
 
