@@ -122,6 +122,13 @@ void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
                 }
             }
             break;
+        case ANT::UnionDef:
+        case ANT::StructDef:
+            {
+                //TODO(marcus): we return here because we don't want struct var decls to be added to
+                //the symbol table, this should be fixed another way though.
+                return;
+            }
         case ANT::VarDec:
             {
                 std::string name = static_cast<VarNode*>(ast->getChildren()->at(0))->getVarName();
@@ -1041,6 +1048,8 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
                     ast->mtypeinfo = e->typeinfo;
                     return e->typeinfo;
                 } else {
+                    //TODO(marcus): We need some way of determining if
+                    //we are accessing a struct var or not.
                     std::cout << "No Entries! Var name is " << name << "\n";
                 }
             }
