@@ -556,10 +556,12 @@ static bool canCast(const TypeInfo& t1, const TypeInfo& t2) {
         } else {
             //signed to unsigned cast is not allowed
             if(t2_signed && !(t1_signed)) {
+                if(t2.type == ST::intlit) return true;
                 return false;
             }
             //unsigned to signed cast allowed if the signed size is larger
             if(!(t2_signed) && t1_signed) {
+                if(t1.type == ST::Int) return true;
                 return (t1_size > t2_size);
             }
             //hopefully unrechable
