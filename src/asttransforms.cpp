@@ -1291,6 +1291,10 @@ static int calcTypeSize(const TypeInfo& t) {
 #undef ST
 
 void resolveSizeOfs(AstNode* ast) {
+    if(ast->nodeType() == ANT::FuncDef) {
+        auto fundef = static_cast<FuncDefNode*>(ast);
+        if(fundef->isTemplated) return;
+    }
     std::vector<AstNode*>* vec = ast->getChildren();
     for(unsigned int i = 0; i < vec->size(); i++) {
         AstNode* child = (*vec)[i];
