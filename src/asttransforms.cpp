@@ -1684,7 +1684,7 @@ static void checkForRecursiveTypes() {
     }
 }
 
-static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::string,TypeInfo>& typeMap) {
+static void cloneTree(AstNode* parent, AstNode* node, const std::unordered_map<std::string,TypeInfo>& typeMap) {
     AstNode* cloned = nullptr;
     switch(node->nodeType()) {
         case AstNodeType::Params:
@@ -1693,9 +1693,9 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 auto param = new ParamsNode(t_param);
                 cloned = param;
                 if(param->mtypeinfo.type == SemanticType::Template) {
-                    auto replaceType = typeMap[param->mtypeinfo.userid];
-                    replaceType.pindirection = param->mtypeinfo.pindirection;
-                    param->mtypeinfo = replaceType;
+                    auto pindr = param->mtypeinfo.pindirection;
+                    param->mtypeinfo = typeMap.at(param->mtypeinfo.userid);
+                    param->mtypeinfo.pindirection = pindr;
                 }
             }
             break;
@@ -1712,7 +1712,7 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 cloned = vn;
                 if(vn->mtypeinfo.type == SemanticType::Template) {
                     int pindr = vn->mtypeinfo.pindirection;
-                    vn->mtypeinfo = typeMap[vn->mtypeinfo.userid];
+                    vn->mtypeinfo = typeMap.at(vn->mtypeinfo.userid);
                     vn->mtypeinfo.pindirection = pindr;
                 }
             }
@@ -1725,7 +1725,7 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 cloned = vdn;
                 if(vdn->mtypeinfo.type == SemanticType::Template) {
                     int pindr = vdn->mtypeinfo.pindirection;
-                    vdn->mtypeinfo = typeMap[vdn->mtypeinfo.userid];
+                    vdn->mtypeinfo = typeMap.at(vdn->mtypeinfo.userid);
                     vdn->mtypeinfo.pindirection = pindr;
                 }
             }
@@ -1775,12 +1775,12 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 cloned = cast;
                 if(cast->mtypeinfo.type == SemanticType::Template) {
                     int pindr = cast->mtypeinfo.pindirection;
-                    cast->mtypeinfo = typeMap[cast->mtypeinfo.userid];
+                    cast->mtypeinfo = typeMap.at(cast->mtypeinfo.userid);
                     cast->mtypeinfo.pindirection = pindr;
                 }
                 if(cast->fromType.type == SemanticType::Template) {
                     int pindr = cast->fromType.pindirection;
-                    cast->fromType = typeMap[cast->fromType.userid];
+                    cast->fromType = typeMap.at(cast->fromType.userid);
                     cast->fromType.pindirection = pindr;
                 }
             }
@@ -1812,7 +1812,7 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                 sof->mtypeinfo = node->mtypeinfo;
                 if(sof->mtypeinfo.type == SemanticType::Template) {
                     int pindr = sof->mtypeinfo.pindirection;
-                    sof->mtypeinfo = typeMap[sof->mtypeinfo.userid];
+                    sof->mtypeinfo = typeMap.at(sof->mtypeinfo.userid);
                     sof->mtypeinfo.pindirection = pindr;
                 }
             }
@@ -1830,7 +1830,7 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
                             if(typeMap.find(mapping.second.userid) != typeMap.end()) {
                                 //std::cout << "Replacing templated type\n";
                                 //std::cout << "New type is " << typeMap[mapping.second.userid] << '\n';
-                                fcall->templateTypeParameters[mapping.first] = typeMap[mapping.second.userid];
+                                fcall->templateTypeParameters[mapping.first] = typeMap.at(mapping.second.userid);
                             }
                         }
                     }
@@ -1847,12 +1847,12 @@ static void cloneTree(AstNode* parent, AstNode* node, std::unordered_map<std::st
     return;
 }
 
-static AstNode* cloneTree(AstNode* t_func, std::unordered_map<std::string,TypeInfo>& typeMap) {
+static AstNode* cloneTree(AstNode* t_func, const std::unordered_map<std::string,TypeInfo>& typeMap) {
     auto t_fdef = static_cast<FuncDefNode*>(t_func);
     auto fdef = new FuncDefNode(t_fdef);
     if(fdef->mtypeinfo.type == SemanticType::Template) {
         int pindr = fdef->mtypeinfo.pindirection;
-        fdef->mtypeinfo = typeMap[fdef->mtypeinfo.userid];
+        fdef->mtypeinfo = typeMap.at(fdef->mtypeinfo.userid);
         fdef->mtypeinfo.pindirection = pindr;
         //std::cout << "Return type is now... " << fdef->mtypeinfo << '\n';
     }
