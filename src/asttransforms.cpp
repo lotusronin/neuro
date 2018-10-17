@@ -363,6 +363,9 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                                         break;
                                     }
                                 }
+                                if(!isSameType(func->mtypeinfo,ol->mtypeinfo)) {
+                                    repeat = false;
+                                }
                                 if(repeat) {
                                     semanticError(SemanticErrorType::DupFuncDef, ol, symTab);
                                 }
