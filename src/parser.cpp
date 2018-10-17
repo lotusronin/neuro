@@ -1146,6 +1146,7 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
         //we have a declaration
         VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
         VarNode* vnode = new VarNode(tokid.token);
+        vnode->mtoken = tokid;
         vdecnode->addChild(vnode);
         parseType(lexer, vdecnode);
         vnode->mtypeinfo = vdecnode->mtypeinfo;
