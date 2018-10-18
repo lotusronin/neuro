@@ -44,21 +44,21 @@ The following are ideas that are planned or I am considering for the language:
   - [x] Pointer types
   - [ ] Bitwise operators
   - [ ] Arrays
-  - [ ] Casting
-  - [ ] Unary operators
-  - [ ] Logical operators
+  - [x] Casting
+  - [x] Unary operators
+  - [x] Logical operators
   - [ ] Strings
-- [ ] Semantic Checking
-  - [ ] Type Inferencing
-  - [ ] Type Checking
+- [x] Semantic Checking
+  - [x] Type Inferencing
+  - [x] Type Checking
   - [x] Break and Continue used only within loops
-- [ ] Semantic Features/IR Code Generation
+- [x] Semantic Features/IR Code Generation
   - [x] Function definitions
   - [x] Prototypes
   - [x] Struct Types
-  - [ ] Expressions
-    - [ ] Pointer arithmetic
-    - [ ] Implicit casting
+  - [x] Expressions
+    - [x] Pointer arithmetic
+    - [x] Implicit casting
 - [ ] Build System
 - [ ] Standard Library
 
@@ -70,10 +70,10 @@ Syntax highlighting is available for vim [here](https://github.com/lotusronin/ne
 ## Hello World
 The following is Hello World in my language: 
 ```
-import io;
+extern fn puts(s : *u8) : s32;
 
-fn main(argc : int, argv : *char[]) : int {
-    io::println("Hello World");
+fn main() : s32 {
+    puts("Hello World");
     return 0;
 }
 ```
