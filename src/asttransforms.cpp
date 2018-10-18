@@ -358,12 +358,12 @@ static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab) {
                                 bool repeat = true;
                                 //check for any mismatched param types
                                 for(unsigned int i = 0; i < numParams; ++i) {
-                                    if(!isSameType(params.ptr[i]->mtypeinfo,ol->mchildren.at(i)->mtypeinfo)) {
+                                    if(params.ptr[i]->mtypeinfo != ol->mchildren.at(i)->mtypeinfo) {
                                         repeat = false;
                                         break;
                                     }
                                 }
-                                if(!isSameType(func->mtypeinfo,ol->mtypeinfo)) {
+                                if(func->mtypeinfo != ol->mtypeinfo) {
                                     repeat = false;
                                 }
                                 if(repeat) {
@@ -687,7 +687,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         auto paramt = param->mtypeinfo;
                         auto argt = arg_types.at(i);
                         //check compatibility
-                        if(!isSameType(paramt,argt)) {
+                        if(paramt != argt) {
                             //check for casts
                             if(canCast(paramt,argt)) {
                                 CastNode* cast = new CastNode();
@@ -801,7 +801,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         TypeInfo rhs_t = getTypeInfo(binopn->RHS(),symTab);
                         //do compatiblity checking
-                        if(!isSameType(lhs_t,rhs_t)) {
+                        if(lhs_t != rhs_t) {
                             //check for casts
                             if(canCast(lhs_t,rhs_t)) {
                                 CastNode* cast = new CastNode();
@@ -831,7 +831,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         }
 
                         //do compatiblity checking
-                        if(isSameType(lhs_t,rhs_t)) {
+                        if(lhs_t == rhs_t) {
                             binopn->mtypeinfo = lhs_t;
                             //binopn->mstype = lhs_t.type;
                         } else {
@@ -888,7 +888,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //TypeInfo func_typeinfo = currentFunc2->mtypeinfo;
                     TypeInfo func_typeinfo = entries.at(0)->typeinfo;
                     //do compatibility checking
-                    if(isSameType(func_typeinfo,ret_typeinfo)) {
+                    if(func_typeinfo == ret_typeinfo) {
                         //std::cout << "return type and function type matched!\n";
                     } else {
                         //check for casts
@@ -921,7 +921,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                     //std::cout << "All Type info gotten, beginning type checks\n";
 
                     //Do compatibility checking
-                    if(!isSameType(lhs_typeinfo,rhs_typeinfo)) {
+                    if(lhs_typeinfo != rhs_typeinfo) {
                         //check for casts
                         if(canCast(lhs_typeinfo,rhs_typeinfo)) {
                             CastNode* cast = new CastNode();
@@ -984,7 +984,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
 
 
                     //Do compatibility checking
-                    if(!isSameType(lhs_typeinfo,rhs_typeinfo)) {
+                    if(lhs_typeinfo != rhs_typeinfo) {
                     //check for casts
                         if(canCast(lhs_typeinfo,rhs_typeinfo)) {
                             //assignn->mtypeinfo = lhs_typeinfo;
@@ -1335,7 +1335,7 @@ int callSiteMatchesFunc(FuncDefNode* fn, FuncCallNode* call, SymbolTable* symTab
         auto argn = call->mchildren.at(i);
         auto argt = getTypeInfo(argn,symTab);
 
-        if(!isSameType(paramt,argt)) {
+        if(paramt != argt) {
             if(!canCast(paramt,argt)) {
                 //std::cout << "types different " << paramt << " and " << argt << '\n';
                 matched = false;
@@ -1590,7 +1590,7 @@ static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const Ty
             auto paramt = param->mtypeinfo;
             auto argt = arg_typeinfo[i];
 
-            if(!isSameType(paramt,argt)) {
+            if(paramt == argt) {
                 if(!canCast(paramt,argt)) {
                     matched = false;
                     break;
@@ -1911,7 +1911,7 @@ static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef
             auto map_string_type = map_fn_pair.first;
             for(auto& template_type_pair : map_string_type)
             {
-                if(!isSameType(typeMap.at(template_type_pair.first), template_type_pair.second)) {
+                if(typeMap.at(template_type_pair.first) != template_type_pair.second) {
                     exact_type_match = false;
                     break;
                 }
