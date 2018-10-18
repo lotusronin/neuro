@@ -1078,7 +1078,11 @@ TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab) {
         case ANT::FuncCall:
             {
                 //TODO(marcus): will have to deal with overloads somehow
+                //NOTE(marcus): we need to clean up how the symbol table works
                 std::string name = static_cast<FuncCallNode*>(ast)->mfuncname;
+                if(static_cast<FuncCallNode*>(ast)->func != nullptr) {
+                    return static_cast<FuncCallNode*>(ast)->func->mtypeinfo;
+                }
                 auto entries = getEntry(symTab,name);
                 if(entries.size() == 0) {
                     entries = getEntry(symTab,name,static_cast<FuncCallNode*>(ast)->scopes);
