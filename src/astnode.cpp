@@ -121,7 +121,7 @@ bool operator==(const TypeInfo& lhs, const TypeInfo& rhs) {
     if(lhs.arr_size != rhs.arr_size) return false;
 
     if(lhs.type == SemanticType::User && lhs.userid && rhs.userid) {
-        return strcmp(lhs.userid,rhs.userid);
+        return strcmp(lhs.userid,rhs.userid) == 0;
     } else {
         return true;
     }
