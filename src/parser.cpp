@@ -1134,25 +1134,27 @@ void parseStructDefBody(LexerTarget* lexer, AstNode* parent) {
     while(lexer->peek().type != TokenType::rbrace) {
         //std::cout << "parsing member of struct\n";
         Token tokid = lexer->peek();
-        //consume id
-        lexer->lex();
-        //consume :
-        //Token tok = lexer->lex();
-        lexer->lex();
-        // it : . type
-        
-        //std::cout << "var " << tokid.token << " of type " << tok.token << "\n";
-        
-        //we have a declaration
-        VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
-        VarNode* vnode = new VarNode(tokid.token);
-        vnode->mtoken = tokid;
-        vdecnode->addChild(vnode);
-        parseType(lexer, vdecnode);
-        vnode->mtypeinfo = vdecnode->mtypeinfo;
-        //consume ;
-        lexer->lex();
-        parent->addChild(vdecnode);
+        if(tokid.type == TokenType::fn) {
+            parseFunctionDef(lexer,parent);
+        } else {
+            //consume id
+            lexer->lex();
+            //consume :
+            //Token tok = lexer->lex();
+            lexer->lex();
+            // it : . type
+
+            //we have a declaration
+            VarDeclNode* vdecnode = new VarDeclNode(AstNodeType::VarDec);
+            VarNode* vnode = new VarNode(tokid.token);
+            vnode->mtoken = tokid;
+            vdecnode->addChild(vnode);
+            parseType(lexer, vdecnode);
+            vnode->mtypeinfo = vdecnode->mtypeinfo;
+            //consume ;
+            lexer->lex();
+            parent->addChild(vdecnode);
+        }
     }
     return;
 }
