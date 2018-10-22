@@ -1,13 +1,13 @@
 #ifndef ASTNODE_H
 #define ASTNODE_H
 
-#include <fstream>
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include "tokens.h"
 #include "arrayview.h"
+#include "typeinfo.h"
 
 enum class AstNodeType {
     Program,
@@ -44,51 +44,6 @@ enum class AstNodeType {
     SizeOf,
     UnionDef
 };
-
-enum class SemanticType {
-    Bool,
-    Int,
-    Void,
-    Char,
-    Double,
-    Float,
-    Typeless,
-    Infer,
-    User,
-    u8,
-    u16,
-    u32,
-    u64,
-    s8,
-    s16,
-    s32,
-    s64,
-    intlit,
-    floatlit,
-    nulllit,
-    Array,
-    Template
-};
-
-std::ostream& operator<<(std::ostream& os, const SemanticType& obj);
-
-struct TypeInfo {
-    const char* userid = nullptr;
-    TypeInfo* base_t = nullptr;
-    SemanticType type = SemanticType::Typeless;
-    int pindirection = 0;
-    int arr_size = 0;
-    std::unordered_map<std::string,TypeInfo>* userTypeParameterTypes = nullptr;
-    int indirection() const;
-    bool isPointer() const;
-    bool isArray() const;
-    int arraySize() const;
-};
-
-bool operator==(const TypeInfo& lhs, const TypeInfo& rhs);
-bool operator!=(const TypeInfo& lhs, const TypeInfo& rhs);
-
-std::ostream& operator<<(std::ostream& os, const TypeInfo& obj);
 
 class AstNode {
     public:

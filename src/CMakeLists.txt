@@ -12,12 +12,12 @@ target_include_directories(Catch INTERFACE "${Neuro_SOURCE_DIR}/include/catch/si
 
 set(MY_TEST_SOURCES test_catch_main.cpp lexer.cpp astnode.cpp
     test_asttransforms.cpp symboltable.cpp
-    errors.cpp arrayview.cpp)
+    errors.cpp arrayview.cpp typeinfo.cpp)
 
 set(MY_SOURCES main.cpp lexer.cpp parser.cpp astnode.cpp
     asttransforms.cpp symboltable.cpp
     irgen.cpp ccodegen.cpp linker.cpp graphDotGenerator.cpp
-    errors.cpp arrayview.cpp)
+    errors.cpp arrayview.cpp typeinfo.cpp)
 
 if (WIN32)
     list(APPEND MY_SOURCES win32_linker.cpp)

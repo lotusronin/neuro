@@ -36,7 +36,6 @@ static const char* getOperatorName(const char* op);
 static void typeCheckPass(AstNode* ast, SymbolTable* symTab);
 static void populateSymbolTableFunctions(AstNode* ast, SymbolTable* symTab);
 TypeInfo getTypeInfo(AstNode* ast, SymbolTable* symTab);
-static bool isSameType(const TypeInfo& t1, const TypeInfo& t2);
 static void checkForRecursiveTypes();
 static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab);
 static int calcTypeSize(const TypeInfo& t);
@@ -405,19 +404,6 @@ void typeCheckPass(AstNode* ast) {
 
 }
 
-static bool isSameType(const TypeInfo& t1, const TypeInfo& t2) {
-    if(t1.indirection() == t2.indirection()) {
-        if(t1.type == t2.type) {
-            if(t1.type != SemanticType::User) {
-                return true;
-            } else {
-                return (std::strcmp(t1.userid,t2.userid) == 0);
-            }
-        }
-    }
-    return false;
-}
-
 #define ST SemanticType
 bool isPointerMath(const TypeInfo& t1, const TypeInfo& t2) {
     if(t1.indirection() > 0 && t2.indirection() > 0) {
@@ -595,20 +581,6 @@ static bool canCast(const TypeInfo& t1, const TypeInfo& t2) {
     return false;
 }
 #undef ST
-
-static int decreaseDerefTypeInfo(TypeInfo& t) {
-    if(t.indirection() > 0) {
-        t.pindirection -= 1;
-    } else {
-        return 1;
-    }
-    return 0;
-}
-
-static void increaseDerefTypeInfo(TypeInfo& t) {
-    t.pindirection += 1;
-    return;
-}
 
 FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab, TypeInfo* self_param);
 static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const TypeInfo& lhst, const TypeInfo& rhst);
