@@ -433,13 +433,25 @@ void printBody(AstNode* n, std::ofstream& out) {
                     out << ')';
                 } else {
                     if(op == ".") {
-                        printBody(node->LHS(),out);
-                        if(node->unaryOp) {
-                            out << "->";
+                        if(node->RHS()->nodeType() == AstNodeType::FuncCall) {
+                            auto call_node = static_cast<FuncCallNode*>(node->RHS());
+                            const std::string funcname = call_node->func->mangledName();
+                            out << funcname << '(';
+                            printBody(node->LHS(),out);
+                            for(auto c : call_node->mchildren) {
+                                out << ", ";
+                                printBody(c,out);
+                            }
+                            out << ')';
                         } else {
-                            out << op;
+                            printBody(node->LHS(),out);
+                            if(node->unaryOp) {
+                                out << "->";
+                            } else {
+                                out << op;
+                            }
+                            printBody(node->RHS(),out);
                         }
-                        printBody(node->RHS(),out);
                     } else if(op == "[") {
                         out << '(';
                         printBody(node->LHS(),out);

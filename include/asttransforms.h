@@ -13,6 +13,7 @@ void resolveSizeOfs(AstNode* ast);
 void semanticPass1(AstNode* ast);
 void importPrepass(AstNode* root);
 void transformAssignments(AstNode* ast);
+void lowerStructMethods(AstNode* ast);
 SymbolTable* getSymtab(std::string& file);
 
 #endif

@@ -98,6 +98,7 @@ int main(int argc, char** argv) {
             populateTypeList(ast);
             resolveSizeOfs(ast);
             importPrepass(ast);
+            lowerStructMethods(ast);
             populateSymbolTableFunctions(ast);
             semanticPass1(ast);
             //printSymbolTable();

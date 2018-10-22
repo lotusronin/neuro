@@ -40,6 +40,7 @@ static bool isSameType(const TypeInfo& t1, const TypeInfo& t2);
 static void checkForRecursiveTypes();
 static AstNode* instantiateTemplate(FuncCallNode* funccall, FuncDefNode* funcdef, SymbolTable* symTab);
 static int calcTypeSize(const TypeInfo& t);
+static void lowerStructMethods(AstNode* ast, SymbolTable* symTab);
 
 void semanticPass1(AstNode* ast, int loopDepth, SymbolTable* symTab)
 {
@@ -609,7 +610,7 @@ static void increaseDerefTypeInfo(TypeInfo& t) {
     return;
 }
 
-FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab);
+FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab, TypeInfo* self_param);
 static AstNode* getOpFunction(BinOpNode* funccall, SymbolTable* symTab, const TypeInfo& lhst, const TypeInfo& rhst);
 static bool isOpOverloadCandidate(const TypeInfo& lhst, const TypeInfo& rhst);
 
@@ -664,11 +665,27 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                 {
                     typeCheckPass(c,symTab);
                     //std::cout << __FILE__ << ':' << __FUNCTION__ << " FuncCall!\n";
+                    TypeInfo struct_type;
+                    TypeInfo* struct_info = nullptr;
+                    if(ast->nodeType() == ANT::BinOp) {
+                        auto dot_op = static_cast<BinOpNode*>(ast);
+                        if(dot_op->getOp()[0] == '.') {
+                            struct_type = getTypeInfo(dot_op->LHS(),symTab);
+                            struct_info = &struct_type;
+                        }
+                    }
                     auto funccall = static_cast<FuncCallNode*>(c);
                     std::string funcname = funccall->mfuncname;
-                    auto fdef = resolveFunction(funccall,symTab);
+                    auto fdef = resolveFunction(funccall,symTab,struct_info);
                     if(!fdef) break;
+                    //TODO(marcus): skipping adding casts to function call args for now
+                    //but we will need to add this back in later
+                    if(struct_info) {
+                        break;
+                    }
 
+                    //TODO(marcus): we already do all this type casting checking
+                    //in resolveFunction, we should just do this work in there.
                     auto funcparams = fdef->getParameters();
                     auto args = funccall->mchildren;
                     std::vector<TypeInfo> arg_types;
@@ -767,8 +784,8 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         binopn->mtypeinfo = lhst;
                     } else if(std::strcmp(op,".") == 0) {
                         //get member name
-                        if(binopn->RHS()->nodeType() != ANT::Var) {
-                            std::cout << "RHS of . op was not a variable\n";
+                        if(binopn->RHS()->nodeType() != ANT::Var && binopn->RHS()->nodeType() != ANT::FuncCall) {
+                            std::cout << "RHS of . op was not a variable or method\n";
                             break;
                         }
                         auto lhs_t = getTypeInfo(binopn->LHS(),symTab);
@@ -777,7 +794,10 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         auto tmp = structList.find(structtypename);
                         if(tmp == structList.end()) std::cout << "Error, struct not found...\n";
                         auto strdef = tmp->second;
+                        auto rhs_node_t = binopn->RHS()->nodeType();
                         for(auto member : strdef->mchildren) {
+                            if(rhs_node_t == ANT::Var) {
+                                if(member->nodeType() != ANT::VarDec) continue;
                             auto vardec = static_cast<VarDeclNode*>(member);
                             auto var = static_cast<VarNode*>(vardec->mchildren[0]);
                             if(var->getVarName() == membername) {
@@ -788,6 +808,24 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                                     binopn->unaryOp = true;
                                 }
                                 break;
+                            }
+                            } else if(rhs_node_t == ANT::FuncCall) {
+                                if(member->nodeType() != ANT::FuncDef) continue;
+                                auto method = static_cast<FuncDefNode*>(member);
+                                if(method->mfuncname == membername) {
+                                    binopn->mtypeinfo = method->mtypeinfo;
+                                    if(lhs_t.indirection() != 1) {
+                                        auto implicit_addr_of = new BinOpNode(AstNodeType::UnaryOp);
+                                        implicit_addr_of->unaryOp = true;
+                                        implicit_addr_of->setToken(binopn->mtoken);
+                                        implicit_addr_of->setOp("&");
+                                        implicit_addr_of->mtypeinfo = lhs_t;
+                                        implicit_addr_of->mtypeinfo.pindirection += 1;
+                                        implicit_addr_of->addChild(binopn->LHS());
+                                        binopn->setLHS(implicit_addr_of);
+                                        binopn->unaryOp = true;
+                                    }
+                                }
                             }
                         }
                     } else if(std::strcmp(op,"&") == 0) {
@@ -1321,18 +1359,29 @@ void resolveSizeOfs(AstNode* ast) {
     }
 }
 
-int callSiteMatchesFunc(FuncDefNode* fn, FuncCallNode* call, SymbolTable* symTab) {
+int callSiteMatchesFunc(FuncDefNode* fn, FuncCallNode* call, SymbolTable* symTab, TypeInfo* self_param=nullptr) {
     auto funcparams = fn->getParameters();
-    if(funcparams.size != call->mchildren.size()) {
+    int num_implicit_params = self_param ? 1 : 0;
+    if(funcparams.size != call->mchildren.size() + num_implicit_params) {
         return -1;
     }
     bool matched = true;
 
+    if(self_param) {
+        auto param = funcparams.ptr[0];
+        auto paramt = param->mtypeinfo;
+        auto argt = *self_param;
+        if(!argt.isPointer()) argt.pindirection = 1;
+        if(paramt != argt) {
+            return 0;
+        }
+    }
+
     //check every arg, parameter pair
-    for(unsigned int i = 0; i < funcparams.size; i++) {
+    for(unsigned int i = num_implicit_params; i < funcparams.size; i++) {
         auto param = funcparams.ptr[i];
         auto paramt = param->mtypeinfo;
-        auto argn = call->mchildren.at(i);
+        auto argn = call->mchildren.at(i-num_implicit_params);
         auto argt = getTypeInfo(argn,symTab);
 
         if(paramt != argt) {
@@ -1361,7 +1410,7 @@ FuncDefNode* getTemplatedFunc(FuncCallNode* call) {
 
 
 
-FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
+FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab, TypeInfo* self_param) {
     auto funcname = funccall->mfuncname;
 
     //If we already know the function call is for a template, just instantiate it
@@ -1430,7 +1479,7 @@ FuncDefNode* resolveFunction(FuncCallNode* funccall, SymbolTable* symTab) {
             if(overload->nodeType() == AstNodeType::FuncDef) {
                 candidate = static_cast<FuncDefNode*>(overload);
             }
-            int matches = callSiteMatchesFunc(candidate,funccall,symTab);
+            int matches = callSiteMatchesFunc(candidate,funccall,symTab,self_param);
             if(matches == -1) {
                 continue;
             } else if(matches > 0) {
@@ -1543,6 +1592,48 @@ void transformAssignments(AstNode* ast) {
                 break;
         }
     }
+}
+
+static void lowerStructMethods(AstNode* ast, SymbolTable* symTab)
+{
+    for(auto c : (*(ast->getChildren()))) {
+        switch(c->nodeType()) {
+            case ANT::CompileUnit:
+                {
+                    auto scope = addNewScope(symTab, static_cast<CompileUnitNode*>(c)->getFileName());
+                    lowerStructMethods(c, scope);
+                }
+                break;
+            case ANT::StructDef:
+                {
+                    //make all struct methods children of the parent compile unit ast
+                    StructDefNode* n = static_cast<StructDefNode*>(c);
+                    for(auto member : n->mchildren) {
+                        if(member->nodeType() != ANT::FuncDef) continue;
+                        ast->addChild(member);
+
+                        //add the implicit struct parameter
+                        ParamsNode* implicit_self_param = new ParamsNode("self");
+                        TypeInfo struct_type_info;
+                        struct_type_info.type = SemanticType::User;
+                        struct_type_info.pindirection = 1;
+                        struct_type_info.arr_size = 0;
+                        auto struct_name = n->getIdent();
+                        struct_type_info.userid = strdup(struct_name.c_str());
+                        implicit_self_param->mtypeinfo = struct_type_info;
+
+                        member->mchildren.insert(member->mchildren.begin(),implicit_self_param);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void lowerStructMethods(AstNode* ast) {
+    lowerStructMethods(ast,&progSymTab);
 }
 
 static const char* getOperatorName(const char* op)
