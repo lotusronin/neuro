@@ -3,7 +3,6 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <regex>
 #include <utility>
 #include <ctype.h>
 #include <chrono>
@@ -208,9 +207,8 @@ void printLn(char* s) {
     std::cout << "\n";
 }
 
-std::regex stripped("\"([^\"]*)\"");
-std::string newlines = "\\n";
-std::string newlinec = "\n";
+const std::string newlines = "\\n";
+const std::string newlinec = "\n";
 
 Token LexerTarget::lex_internal() {
 
@@ -357,10 +355,9 @@ TOP:
                 }
                 longest_match = match_len;
                 longest_match_type = TokenType::strlit;
-                std::string token = std::string(ln+colNum,longest_match);
-                std::smatch m;
-                if(std::regex_match(token, m, stripped)) {
-                    token = m[1].str();
+                char* str_literal = ln + colNum + 1; //Add 1 to skip the double quotes
+                std::string token = std::string(str_literal,longest_match-2); //subtract 2 for the double quotes
+                {
                     size_t index;
                     while( (index = token.find(newlines)) != std::string::npos) {
                         token.replace(index, newlines.length(), newlinec);
