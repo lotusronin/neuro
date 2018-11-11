@@ -256,6 +256,11 @@ void semanticError(const SemanticErrorType err, AstNode* n, const SymbolTable* s
             ERROR("Struct type \"" << lt.userid << "\" has no definition\n");
         }
         break;
+        case SemanticErrorType::NegationPtr:
+        {
+            ERROR("Cannot negate pointer\n");
+        }
+        break;
         case SemanticErrorType::Unknown:
         {
             ERROR("UNKNOWN ERROR TYPE");
@@ -283,4 +288,14 @@ void semanticError(const SemanticErrorType err, const std::vector<StructDefNode*
     std::cout << "\n";
     semantic_error = true;
     exit(-1);
+}
+
+void semanticError(const SemanticErrorType err, const TypeInfo& type) {
+    if(err == SemanticErrorType::TypeSizeAlignCalc) {
+        ERROR("Cannot calculate size or alignment for: " << type << "\n");
+    } else {
+        std::cout << __FILE__ << ':' << __LINE__ << " Compiler error, unknown error type " << static_cast<int>(err) << '\n';
+    }
+    std::cout << "\n";
+    semantic_error = true;
 }

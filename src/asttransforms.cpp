@@ -720,8 +720,7 @@ static void typeCheckPass(AstNode* ast, SymbolTable* symTab) {
                         //unary negation
                         TypeInfo lhs_t = getTypeInfo(binopn->LHS(),symTab);
                         if(lhs_t.indirection()) {
-                            //TODO(marcus): get actual errors!
-                            semanticError(SET::Unknown,binopn,symTab);
+                            semanticError(SET::NegationPtr,binopn,symTab);
                         }
                         //TODO(marcus): actually type check
                         binopn->mtypeinfo = lhs_t;
@@ -1256,7 +1255,10 @@ static std::pair<int,int> typeSizeAndAlign(const TypeInfo& t) {
                     auto iter = structList.find(std::string(t.userid));
                     if(iter == structList.end()) {
                         //TODO(marcus): error, struct type doesn't exist
-                        semanticError(SemanticErrorType::Unknown, nullptr, &progSymTab);
+                        //TODO(marcus): move the semantic error out of this function,
+                        //have the function return an option, and error at the call site
+                        semanticError(SemanticErrorType::TypeSizeAlignCalc, t);
+                        break;
                     }
                     auto struct_node = static_cast<StructDefNode*>(iter->second);
 
